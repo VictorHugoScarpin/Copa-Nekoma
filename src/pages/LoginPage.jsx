@@ -22,32 +22,53 @@ export default function LoginPage() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px', background: 'var(--bg-void)' }}>
-      {/* BG accent */}
-      <div style={{ position: 'fixed', top: '-20%', left: '50%', transform: 'translateX(-50%)', width: '60vw', height: '60vw', borderRadius: '50%', background: 'radial-gradient(circle, rgba(201,168,76,0.06) 0%, transparent 70%)', pointerEvents: 'none' }} />
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px', background: 'var(--bg-void)', overflow: 'hidden' }}>
+      {/* BG orbs animados */}
+      <div style={{ position: 'fixed', top: '-30%', left: '-20%', width: '80vw', height: '80vw', borderRadius: '50%', background: 'radial-gradient(circle, rgba(201,168,76,0.08) 0%, transparent 65%)', pointerEvents: 'none', animation: 'floatA 8s ease-in-out infinite' }} />
+      <div style={{ position: 'fixed', bottom: '-20%', right: '-20%', width: '70vw', height: '70vw', borderRadius: '50%', background: 'radial-gradient(circle, rgba(34,197,94,0.05) 0%, transparent 65%)', pointerEvents: 'none', animation: 'floatB 10s ease-in-out infinite' }} />
 
-      <div style={{ width: '100%', maxWidth: '360px' }}>
+      <style>{`
+        @keyframes floatA { 0%,100%{transform:translate(0,0)} 50%{transform:translate(5%,8%)} }
+        @keyframes floatB { 0%,100%{transform:translate(0,0)} 50%{transform:translate(-5%,-6%)} }
+        @keyframes fadeUp { from{opacity:0;transform:translateY(24px)} to{opacity:1;transform:translateY(0)} }
+      `}</style>
+
+      <div style={{ width: '100%', maxWidth: '360px', animation: 'fadeUp 0.6s ease both' }}>
         {/* Logo */}
-        <div style={{ textAlign: 'center', marginBottom: '40px' }}>
-          <div style={{ fontFamily: 'var(--font-display)', fontSize: '48px', letterSpacing: '0.08em', color: 'var(--accent-gold)', lineHeight: 1 }}>BOLÃO</div>
-          <div style={{ fontFamily: 'var(--font-display)', fontSize: '18px', letterSpacing: '0.2em', color: 'var(--text-secondary)', marginTop: '4px' }}>COPA DO MUNDO</div>
+        <div style={{ textAlign: 'center', marginBottom: '36px' }}>
+          <img
+            src="/copa2026.png"
+            alt="Copa do Mundo 2026"
+            style={{ width: '120px', marginBottom: '20px', filter: 'drop-shadow(0 0 32px rgba(201,168,76,0.5)) drop-shadow(0 0 64px rgba(201,168,76,0.2))' }}
+            onError={e => { e.target.style.display='none' }}
+          />
+          <div style={{ fontFamily: 'var(--font-display)', fontSize: '44px', letterSpacing: '0.1em', lineHeight: 1, background: 'linear-gradient(135deg, #b8860b 0%, #ffd700 40%, #c9a84c 60%, #ffe082 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+            BOLÃO
+          </div>
+          <div style={{ fontFamily: 'var(--font-display)', fontSize: '13px', letterSpacing: '0.35em', color: 'var(--text-muted)', marginTop: '6px' }}>
+            COPA DO MUNDO 2026
+          </div>
         </div>
 
-        <div className="glass-card" style={{ padding: '28px 24px' }}>
+        <div className="glass-card" style={{ padding: '28px 24px', border: '1px solid rgba(201,168,76,0.15)' }}>
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <div className="input-group">
               <label className="input-label">Nick</label>
-              <input className="input" value={nick} onChange={e => setNick(e.target.value)} placeholder="seu_nick" autoCapitalize="none" />
+              <input className="input" value={nick} onChange={e => setNick(e.target.value)} placeholder="seu_nick" autoCapitalize="none" autoCorrect="off" />
             </div>
             <div className="input-group">
               <label className="input-label">Senha</label>
-              <input className="input" type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••" />
+              <input className="input" type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••" />
             </div>
 
-            {error && <div style={{ color: 'var(--red)', fontSize: '13px', textAlign: 'center' }}>{error}</div>}
+            {error && (
+              <div style={{ color: 'var(--red)', fontSize: '13px', textAlign: 'center', padding: '8px', background: 'var(--red-bg)', borderRadius: '8px' }}>
+                {error}
+              </div>
+            )}
 
-            <button className="btn btn-primary" type="submit" disabled={loading} style={{ marginTop: '4px' }}>
-              {loading ? 'Entrando...' : mode === 'login' ? 'Entrar' : 'Criar conta'}
+            <button className="btn btn-primary" type="submit" disabled={loading} style={{ marginTop: '4px', padding: '13px', fontSize: '15px', letterSpacing: '0.06em' }}>
+              {loading ? '...' : mode === 'login' ? 'ENTRAR' : 'CRIAR CONTA'}
             </button>
           </form>
 
@@ -56,14 +77,10 @@ export default function LoginPage() {
               style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '13px' }}
               onClick={() => { setMode(mode === 'login' ? 'register' : 'login'); setError('') }}
             >
-              {mode === 'login' ? 'Novo por aqui? Criar conta →' : '← Já tenho conta'}
+              {mode === 'login' ? 'Primeira vez? Criar conta →' : '← Já tenho conta'}
             </button>
           </div>
         </div>
-
-        <p style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '12px', marginTop: '24px' }}>
-          Bolão privado · Roberto, Ezio, Fabrício & Pedro
-        </p>
       </div>
     </div>
   )

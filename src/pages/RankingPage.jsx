@@ -85,7 +85,7 @@ export default function RankingPage() {
                       </div>
                     </div>
                   </div>
-                  {(p.exact_hits !== undefined) && (
+                  {false && (
                     <div style={{ display: 'flex', gap: '12px', marginTop: '8px', paddingLeft: '40px' }}>
                       <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>✓ Exatos: <strong style={{ color: 'var(--green)' }}>{p.exact_hits || 0}</strong></span>
                       <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>~ Parciais: <strong style={{ color: 'var(--accent-gold)' }}>{p.partial_hits || 0}</strong></span>
