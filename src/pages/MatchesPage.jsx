@@ -1,8 +1,7 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { format, parseISO } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
-import { useNavigate } from 'react-router-dom'
 
 const TEAM_FLAGS = {
   'Brasil':'https://flagcdn.com/w160/br.png','Brazil':'https://flagcdn.com/w160/br.png',
@@ -51,56 +50,6 @@ function TeamFlag({ name, emoji, size = 44 }) {
   )
 }
 
-
-
-function MatchCard({ match }) {
-  const finished = match.status === 'finished'
-  const live = match.status === 'live'
-
-  return (
-    <div style={{ position: 'relative', background: live ? 'rgba(239,68,68,0.06)' : 'var(--bg-glass)', border: `1px solid ${live ? 'rgba(239,68,68,0.3)' : 'var(--border-glass)'}`, borderRadius: 'var(--radius-lg)', overflow: 'hidden', padding: '14px 16px' }}>
-        {/* Flag bgs */}
-        <FlagBg name={match.home_team} emoji={match.home_flag} side="left" />
-        <FlagBg name={match.away_team} emoji={match.away_flag} side="right" />
-
-        <div style={{ position: 'relative', zIndex: 1 }}>
-          {/* Header */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-            <span className="badge badge-muted">{match.stage}{match.group_name ? ` · G${match.group_name}` : ''}</span>
-{live && <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: 'var(--red)', fontWeight: 700 }}><div className="live-dot" />AO VIVO</span>}
-          </div>
-
-          {/* Times */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
-              <TeamFlag name={match.home_team} emoji={match.home_flag} />
-              <span style={{ fontSize: '12px', fontWeight: 600, textAlign: 'center', lineHeight: 1.2 }}>{match.home_team}</span>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
-              {finished
-                ? <div style={{ fontFamily: 'var(--font-display)', fontSize: '30px', letterSpacing: '0.04em', lineHeight: 1 }}>{match.home_score} <span style={{ color: 'var(--text-muted)', fontSize: '20px' }}>×</span> {match.away_score}</div>
-                : <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--accent-gold)', letterSpacing: '0.06em' }}>{format(parseISO(match.match_date), 'HH:mm')}</div>
-              }
-              <div style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{format(parseISO(match.match_date), 'dd/MM')}</div>
-            </div>
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
-              <TeamFlag name={match.away_team} emoji={match.away_flag} />
-              <span style={{ fontSize: '12px', fontWeight: 600, textAlign: 'center', lineHeight: 1.2 }}>{match.away_team}</span>
-            </div>
-          </div>
-
-          {/* Assistir */}
-          {live && match.stream_url && (
-            <a href={match.stream_url} target="_blank" rel="noreferrer" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', marginTop: '12px', padding: '8px', borderRadius: 'var(--radius-sm)', background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.35)', color: 'var(--red)', fontSize: '12px', fontWeight: 700, textDecoration: 'none' }}>
-              📺 Assistir na CazéTV
-            </a>
-          )}
-        </div>
-      </div>
-
-  )
-}
-
 function FlagBg({ name, emoji, side }) {
   const url = TEAM_FLAGS[name]
   return (
@@ -111,10 +60,49 @@ function FlagBg({ name, emoji, side }) {
   )
 }
 
+function MatchCard({ match }) {
+  const finished = match.status === 'finished'
+  const live = match.status === 'live'
+
+  return (
+    <div style={{ position: 'relative', background: live ? 'rgba(239,68,68,0.06)' : 'var(--bg-glass)', border: `1px solid ${live ? 'rgba(239,68,68,0.3)' : 'var(--border-glass)'}`, borderRadius: 'var(--radius-lg)', overflow: 'hidden', padding: '14px 16px' }}>
+      <FlagBg name={match.home_team} emoji={match.home_flag} side="left" />
+      <FlagBg name={match.away_team} emoji={match.away_flag} side="right" />
+      <div style={{ position: 'relative', zIndex: 1 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+          <span className="badge badge-muted">{match.stage}{match.group_name ? ` · G${match.group_name}` : ''}</span>
+          {live && <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: 'var(--red)', fontWeight: 700 }}><div className="live-dot" />AO VIVO</span>}
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
+            <TeamFlag name={match.home_team} emoji={match.home_flag} />
+            <span style={{ fontSize: '12px', fontWeight: 600, textAlign: 'center', lineHeight: 1.2 }}>{match.home_team}</span>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
+            {finished
+              ? <div style={{ fontFamily: 'var(--font-display)', fontSize: '30px', letterSpacing: '0.04em', lineHeight: 1 }}>{match.home_score} <span style={{ color: 'var(--text-muted)', fontSize: '20px' }}>×</span> {match.away_score}</div>
+              : <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--accent-gold)', letterSpacing: '0.06em' }}>{format(parseISO(match.match_date), 'HH:mm')}</div>
+            }
+            <div style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{format(parseISO(match.match_date), 'dd/MM')}</div>
+          </div>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
+            <TeamFlag name={match.away_team} emoji={match.away_flag} />
+            <span style={{ fontSize: '12px', fontWeight: 600, textAlign: 'center', lineHeight: 1.2 }}>{match.away_team}</span>
+          </div>
+        </div>
+        {live && match.stream_url && (
+          <a href={match.stream_url} target="_blank" rel="noreferrer" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', marginTop: '12px', padding: '8px', borderRadius: 'var(--radius-sm)', background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.35)', color: 'var(--red)', fontSize: '12px', fontWeight: 700, textDecoration: 'none' }}>
+            📺 Assistir na CazéTV
+          </a>
+        )}
+      </div>
+    </div>
+  )
+}
+
 export default function MatchesPage() {
   const [matches, setMatches] = useState([])
   const [loading, setLoading] = useState(true)
-  const navigate = useNavigate()
 
   useEffect(() => {
     supabase.from('matches').select('*').order('match_date').then(({ data }) => {
@@ -132,13 +120,7 @@ export default function MatchesPage() {
 
   return (
     <div className="page">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-        <div className="section-title" style={{ marginBottom: 0 }}>Jogos</div>
-        <button onClick={() => navigate('/palpites')} className="btn" style={{ width: 'auto', padding: '8px 16px', fontSize: '13px' }}>
-          ⚽ Meus Palpites
-        </button>
-      </div>
-
+      <div className="section-title">Jogos</div>
       {loading ? Array.from({ length: 4 }).map((_, i) => <div key={i} className="skeleton" style={{ height: 140, marginBottom: 12 }} />) :
         matches.length === 0 ? <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '60px 0' }}>Nenhum jogo cadastrado ainda.</div> :
         Object.entries(grouped).map(([date, dayMatches]) => (

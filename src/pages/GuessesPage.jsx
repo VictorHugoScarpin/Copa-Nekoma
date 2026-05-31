@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
-import { format, differenceInSeconds, parseISO, isPast } from 'date-fns'
+import { format, differenceInSeconds, parseISO } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 
 const LOCK_SECS = 60
@@ -75,8 +75,8 @@ function FlagBg({ name, emoji, side }) {
   )
 }
 
-
-function GuessesDrawer({ matchId, open, onClose }) {
+// Popover inline pequeno — não fullscreen
+function GuessesPopover({ matchId, open, onClose }) {
   const [guesses, setGuesses] = useState([])
   const [loading, setLoading] = useState(false)
 
@@ -90,33 +90,35 @@ function GuessesDrawer({ matchId, open, onClose }) {
   if (!open) return null
 
   return (
-    <>
-      <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(0,0,0,0.4)' }} />
-      <div style={{ position: 'fixed', top: 0, right: 0, bottom: 0, width: 260, background: 'rgba(13,17,23,0.97)', borderLeft: '1px solid var(--border-glass)', backdropFilter: 'blur(24px)', zIndex: 201, padding: '24px 16px', display: 'flex', flexDirection: 'column', gap: '12px', animation: 'slideIn 0.2s ease' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ fontFamily: 'var(--font-display)', fontSize: '18px', letterSpacing: '0.06em', color: 'var(--accent-gold)' }}>PALPITES</div>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '20px' }}>×</button>
-        </div>
-        {loading ? <div className="skeleton" style={{ height: 40 }} /> :
-          guesses.length === 0 ? <div style={{ color: 'var(--text-muted)', fontSize: '13px' }}>Nenhum palpite ainda.</div> :
-          guesses.map(g => (
-            <div key={g.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', background: 'var(--bg-glass)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-glass)' }}>
-              <span style={{ fontSize: '13px', fontWeight: 500 }}>{g.profiles?.display_name}</span>
-              <span style={{ fontFamily: 'var(--font-display)', fontSize: '18px', color: 'var(--accent-gold-bright)', letterSpacing: '0.06em' }}>{g.home_score} × {g.away_score}</span>
-            </div>
-          ))
-        }
+    <div style={{ marginTop: '10px', background: 'rgba(13,17,23,0.95)', border: '1px solid var(--border-glass-strong)', borderRadius: 'var(--radius-md)', padding: '12px', animation: 'fadeUp 0.15s ease' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+        <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--accent-gold)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Palpites da galera</span>
+        <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '16px', lineHeight: 1, padding: '0 2px' }}>×</button>
       </div>
-    </>
+      {loading ? (
+        <div className="skeleton" style={{ height: 32, borderRadius: 6 }} />
+      ) : guesses.length === 0 ? (
+        <div style={{ fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center', padding: '8px 0' }}>Nenhum palpite ainda.</div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+          {guesses.map(g => (
+            <div key={g.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 8px', background: 'rgba(255,255,255,0.04)', borderRadius: '6px' }}>
+              <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{g.profiles?.display_name}</span>
+              <span style={{ fontFamily: 'var(--font-display)', fontSize: '16px', color: 'var(--accent-gold-bright)', letterSpacing: '0.06em' }}>{g.home_score} × {g.away_score}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
   )
 }
 
-function GuessCard({ match, myGuess, allGuesses, onSave }) {
+function GuessCard({ match, myGuess, onSave }) {
   const [home, setHome] = useState(myGuess?.home_score ?? '')
   const [away, setAway] = useState(myGuess?.away_score ?? '')
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
-  const [drawerOpen, setDrawerOpen] = useState(false)
+  const [popoverOpen, setPopoverOpen] = useState(false)
   const [, tick] = useState(0)
 
   useEffect(() => {
@@ -139,8 +141,6 @@ function GuessCard({ match, myGuess, allGuesses, onSave }) {
   }
 
   return (
-    <>
-    <GuessesDrawer matchId={match.id} open={drawerOpen} onClose={() => setDrawerOpen(false)} />
     <div style={{
       position: 'relative', overflow: 'hidden',
       background: finished ? (correct ? 'rgba(34,197,94,0.06)' : wrong ? 'rgba(239,68,68,0.06)' : 'var(--bg-glass)') : 'var(--bg-glass)',
@@ -161,33 +161,36 @@ function GuessCard({ match, myGuess, allGuesses, onSave }) {
               : cd ? <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{cd}</span>
               : null
             }
-            <button onClick={() => setDrawerOpen(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: '4px', display: 'flex', flexDirection: 'column', gap: '3px', alignItems: 'center' }} title="Ver palpites da galera">
-              <span style={{ display: 'block', width: '15px', height: '2px', background: 'currentColor', borderRadius: '1px' }} />
-              <span style={{ display: 'block', width: '15px', height: '2px', background: 'currentColor', borderRadius: '1px' }} />
-              <span style={{ display: 'block', width: '15px', height: '2px', background: 'currentColor', borderRadius: '1px' }} />
+            {/* 3 risquinhos */}
+            <button
+              onClick={() => setPopoverOpen(o => !o)}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: popoverOpen ? 'var(--accent-gold)' : 'var(--text-muted)', padding: '4px', display: 'flex', flexDirection: 'column', gap: '3px', alignItems: 'center' }}
+              title="Ver palpites"
+            >
+              {[0,1,2].map(i => <span key={i} style={{ display: 'block', width: '15px', height: '2px', background: 'currentColor', borderRadius: '1px' }} />)}
             </button>
           </div>
         </div>
 
         {/* Times + palpite */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
             <TeamFlag name={match.home_team} emoji={match.home_flag} />
             <span style={{ fontSize: '12px', fontWeight: 600, textAlign: 'center', lineHeight: 1.2 }}>{match.home_team}</span>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px', flexShrink: 0 }}>
             {finished && (
-              <div style={{ fontFamily: 'var(--font-display)', fontSize: '28px', letterSpacing: '0.04em', lineHeight: 1, color: 'var(--text-primary)', textAlign: 'center' }}>
-                {match.home_score} <span style={{ color: 'var(--text-muted)', fontSize: '20px' }}>×</span> {match.away_score}
+              <div style={{ fontFamily: 'var(--font-display)', fontSize: '26px', letterSpacing: '0.04em', lineHeight: 1, color: 'var(--text-primary)', textAlign: 'center' }}>
+                {match.home_score}<span style={{ color: 'var(--text-muted)', fontSize: '18px', margin: '0 2px' }}>×</span>{match.away_score}
               </div>
             )}
-            <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-              <input className="score-input" type="number" min="0" max="20" value={home} onChange={e => setHome(e.target.value)} disabled={locked} />
-              <span style={{ color: 'var(--text-muted)', fontSize: '18px' }}>×</span>
-              <input className="score-input" type="number" min="0" max="20" value={away} onChange={e => setAway(e.target.value)} disabled={locked} />
+            <div style={{ display: 'flex', gap: '5px', alignItems: 'center' }}>
+              <input className="score-input" type="number" min="0" max="20" value={home} onChange={e => setHome(e.target.value)} disabled={locked} style={{ width: '44px', fontSize: '22px' }} />
+              <span style={{ color: 'var(--text-muted)', fontSize: '16px' }}>×</span>
+              <input className="score-input" type="number" min="0" max="20" value={away} onChange={e => setAway(e.target.value)} disabled={locked} style={{ width: '44px', fontSize: '22px' }} />
             </div>
-            <div style={{ fontSize: '9px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 600 }}>seu palpite</div>
+            <div style={{ fontSize: '9px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 600 }}>palpite</div>
           </div>
 
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
@@ -202,81 +205,111 @@ function GuessCard({ match, myGuess, allGuesses, onSave }) {
           </button>
         )}
 
-        {/* Resenha */}
-        {finished && allGuesses.length > 0 && (
-          <div style={{ marginTop: '12px', borderTop: '1px solid var(--border-glass)', paddingTop: '10px' }}>
+        {/* Popover inline */}
+        <GuessesPopover matchId={match.id} open={popoverOpen} onClose={() => setPopoverOpen(false)} />
+
+        {/* Resenha pós-jogo */}
+        {finished && (
+          <div style={{ marginTop: '10px', borderTop: '1px solid var(--border-glass)', paddingTop: '8px' }}>
             <div style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 600, marginBottom: '6px' }}>Resenha</div>
-            {allGuesses.map(g => {
-              const ok = g.home_score === match.home_score && g.away_score === match.away_score
-              return (
-                <div key={g.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 10px', borderRadius: 'var(--radius-sm)', background: ok ? 'var(--green-bg)' : 'var(--red-bg)', marginBottom: '4px' }}>
-                  <span style={{ fontSize: '13px', fontWeight: 500 }}>{g.profiles?.display_name}</span>
-                  <span style={{ fontFamily: 'var(--font-display)', fontSize: '16px', color: ok ? 'var(--green)' : 'var(--red)', letterSpacing: '0.06em' }}>{g.home_score} × {g.away_score}</span>
-                </div>
-              )
-            })}
+            <GuessesPopover matchId={match.id} open={true} onClose={() => {}} />
           </div>
         )}
       </div>
     </div>
-    </>
   )
 }
 
-// ── Palpite Mestre ──
 function MasterGuess({ userId }) {
-  const [finalists, setFinalists] = useState({ team1: '', team2: '' })
+  const [t1, setT1] = useState('')
+  const [t2, setT2] = useState('')
   const [saved, setSaved] = useState(false)
   const [existing, setExisting] = useState(null)
-  const [locked, setLocked] = useState(false)
   const COPA_START = new Date('2026-06-11T00:00:00')
+  const locked = new Date() >= COPA_START
 
   useEffect(() => {
-    setLocked(new Date() >= COPA_START)
     supabase.from('master_guess').select('*').eq('user_id', userId).single()
-      .then(({ data }) => { if (data) { setExisting(data); setFinalists({ team1: data.team1, team2: data.team2 }) } })
+      .then(({ data }) => { if (data) { setExisting(data); setT1(data.team1); setT2(data.team2) } })
   }, [userId])
 
   async function saveMaster() {
-    if (!finalists.team1 || !finalists.team2 || finalists.team1 === finalists.team2) return
-    if (existing) {
-      await supabase.from('master_guess').update(finalists).eq('user_id', userId)
-    } else {
-      await supabase.from('master_guess').insert({ user_id: userId, ...finalists })
-    }
+    if (!t1 || !t2 || t1 === t2) return
+    const payload = { user_id: userId, team1: t1, team2: t2 }
+    if (existing) await supabase.from('master_guess').update({ team1: t1, team2: t2 }).eq('user_id', userId)
+    else await supabase.from('master_guess').insert(payload)
     setSaved(true); setTimeout(() => setSaved(false), 2000)
+    setExisting(payload)
   }
 
   return (
-    <div className="glass-card" style={{ padding: '20px', marginBottom: '24px', border: '1px solid rgba(212,168,50,0.25)' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-        <span style={{ fontSize: '20px' }}>🏆</span>
-        <div style={{ fontFamily: 'var(--font-display)', fontSize: '20px', letterSpacing: '0.06em', color: 'var(--accent-gold)' }}>PALPITE MESTRE</div>
+    <div className="glass-card" style={{ padding: '16px', marginBottom: '20px', border: '1px solid rgba(212,168,50,0.25)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+        <span style={{ fontSize: '18px' }}>🏆</span>
+        <div style={{ fontFamily: 'var(--font-display)', fontSize: '18px', letterSpacing: '0.06em', color: 'var(--accent-gold)' }}>PALPITE MESTRE</div>
       </div>
-      <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '16px', lineHeight: 1.5 }}>
-        Quem vai disputar a final? Acertar um time = <strong style={{ color: 'var(--accent-gold)' }}>+4pts</strong>. Acertar os dois = <strong style={{ color: 'var(--accent-gold)' }}>+8pts</strong>. Bloqueado quando a Copa começar.
+      <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '12px', lineHeight: 1.5 }}>
+        Quem vai à final? Um time = <strong style={{ color: 'var(--accent-gold)' }}>+4pts</strong> · Dois times = <strong style={{ color: 'var(--accent-gold)' }}>+8pts</strong> · Bloqueado em 11/Jun
       </div>
       {locked ? (
-        <div style={{ padding: '12px', background: 'rgba(255,255,255,0.04)', borderRadius: 'var(--radius-sm)', fontSize: '13px', color: 'var(--text-secondary)' }}>
-          🔒 Copa iniciada — {existing ? `${existing.team1} × ${existing.team2}` : 'Sem palpite registrado'}
+        <div style={{ padding: '10px', background: 'rgba(255,255,255,0.04)', borderRadius: 'var(--radius-sm)', fontSize: '13px', color: 'var(--text-secondary)', textAlign: 'center' }}>
+          🔒 {existing ? `${existing.team1} × ${existing.team2}` : 'Sem palpite registrado'}
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          <div style={{ display: 'flex', gap: '10px' }}>
-            <div className="input-group" style={{ flex: 1 }}>
-              <label className="input-label">Time 1</label>
-              <input className="input" value={finalists.team1} onChange={e => setFinalists(f => ({ ...f, team1: e.target.value }))} placeholder="Ex: Brasil" />
-            </div>
-            <div className="input-group" style={{ flex: 1 }}>
-              <label className="input-label">Time 2</label>
-              <input className="input" value={finalists.team2} onChange={e => setFinalists(f => ({ ...f, team2: e.target.value }))} placeholder="Ex: França" />
-            </div>
+        <>
+          <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
+            <input className="input" value={t1} onChange={e => setT1(e.target.value)} placeholder="Time 1" style={{ flex: 1, padding: '10px 12px', fontSize: '14px' }} />
+            <input className="input" value={t2} onChange={e => setT2(e.target.value)} placeholder="Time 2" style={{ flex: 1, padding: '10px 12px', fontSize: '14px' }} />
           </div>
-          <button className={`btn ${saved ? 'btn-primary' : ''}`} onClick={saveMaster} disabled={!finalists.team1 || !finalists.team2 || finalists.team1 === finalists.team2}>
-            {saved ? '✓ Palpite Mestre Salvo!' : 'Salvar Palpite Mestre'}
+          <button className={`btn ${saved ? 'btn-primary' : ''}`} onClick={saveMaster} disabled={!t1 || !t2 || t1 === t2} style={{ padding: '10px', fontSize: '13px' }}>
+            {saved ? '✓ Salvo!' : 'Salvar Palpite Mestre'}
           </button>
-        </div>
+        </>
       )}
+    </div>
+  )
+}
+
+function RegrasTab() {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+      <div className="glass-card" style={{ padding: '16px 20px' }}>
+        <div style={{ fontFamily: 'var(--font-display)', fontSize: '18px', color: 'var(--accent-gold)', marginBottom: '14px', letterSpacing: '0.06em' }}>PONTUAÇÃO</div>
+        {[
+          { icon: '🎯', label: 'Placar Exato', desc: 'Acertou o placar certinho (ex: 2×1 = 2×1)', pts: '+3', color: 'var(--green)' },
+          { icon: '✅', label: 'Vencedor Certo', desc: 'Acertou quem ganhou mas errou o placar', pts: '+1', color: 'var(--accent-gold)' },
+          { icon: '🤝', label: 'Empate Certo', desc: 'Previu empate e deu empate', pts: '+1', color: 'var(--accent-gold)' },
+          { icon: '❌', label: 'Errou', desc: 'Não acertou nem o resultado', pts: '0', color: 'var(--red)' },
+        ].map(item => (
+          <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 0', borderBottom: '1px solid var(--border-glass)' }}>
+            <span style={{ fontSize: '20px', flexShrink: 0 }}>{item.icon}</span>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>{item.label}</div>
+              <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>{item.desc}</div>
+            </div>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: '24px', color: item.color, flexShrink: 0 }}>{item.pts}</div>
+          </div>
+        ))}
+      </div>
+      <div className="glass-card" style={{ padding: '16px 20px' }}>
+        <div style={{ fontFamily: 'var(--font-display)', fontSize: '18px', color: 'var(--accent-gold)', marginBottom: '14px', letterSpacing: '0.06em' }}>PALPITE MESTRE</div>
+        {[
+          { icon: '🏆', label: 'Dois finalistas certos', pts: '+8' },
+          { icon: '🥈', label: 'Um finalista certo', pts: '+4' },
+          { icon: '❌', label: 'Errou os dois', pts: '0' },
+        ].map(item => (
+          <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '8px 0', borderBottom: '1px solid var(--border-glass)' }}>
+            <span style={{ fontSize: '20px' }}>{item.icon}</span>
+            <div style={{ flex: 1, fontSize: '14px', color: 'var(--text-primary)' }}>{item.label}</div>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: '24px', color: 'var(--accent-gold)' }}>{item.pts}</div>
+          </div>
+        ))}
+      </div>
+      <div className="glass-card" style={{ padding: '14px 16px' }}>
+        <div style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.7 }}>
+          🔒 <strong style={{ color: 'var(--text-secondary)' }}>Trava de 1 minuto:</strong> palpites bloqueados automaticamente 1 minuto antes do apito inicial. Sem exceções!
+        </div>
+      </div>
     </div>
   )
 }
@@ -285,20 +318,17 @@ export default function GuessesPage() {
   const { user } = useAuth()
   const [matches, setMatches] = useState([])
   const [myGuesses, setMyGuesses] = useState({})
-  const [allGuesses, setAllGuesses] = useState({})
   const [loading, setLoading] = useState(true)
+  const [tab, setTab] = useState('palpites')
 
   const fetchData = useCallback(async () => {
-    const [{ data: mData }, { data: myData }, { data: allData }] = await Promise.all([
+    const [{ data: mData }, { data: myData }] = await Promise.all([
       supabase.from('matches').select('*').order('match_date'),
       supabase.from('guesses').select('*').eq('user_id', user.id),
-      supabase.from('guesses').select('*, profiles(display_name)'),
     ])
     setMatches(mData || [])
     const myMap = {}; (myData || []).forEach(g => { myMap[g.match_id] = g })
     setMyGuesses(myMap)
-    const allMap = {}; (allData || []).forEach(g => { if (!allMap[g.match_id]) allMap[g.match_id] = []; allMap[g.match_id].push(g) })
-    setAllGuesses(allMap)
     setLoading(false)
   }, [user])
 
@@ -320,17 +350,31 @@ export default function GuessesPage() {
   return (
     <div className="page">
       <div className="section-title">Palpites</div>
-      <MasterGuess userId={user.id} />
-      {loading ? Array.from({ length: 3 }).map((_, i) => <div key={i} className="skeleton" style={{ height: 200, marginBottom: 12 }} />) :
-        Object.entries(grouped).map(([date, dayMatches]) => (
-          <div key={date}>
-            <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--accent-gold)', textTransform: 'capitalize', letterSpacing: '0.08em', marginBottom: '10px', marginTop: '20px' }}>{date}</div>
-            {dayMatches.map(m => (
-              <GuessCard key={m.id} match={m} myGuess={myGuesses[m.id]} allGuesses={(allGuesses[m.id] || []).filter(g => g.user_id !== user.id)} onSave={handleSave} />
-            ))}
-          </div>
-        ))
-      }
+
+      {/* Tabs */}
+      <div style={{ display: 'flex', background: 'var(--bg-glass)', borderRadius: 'var(--radius-md)', padding: '4px', marginBottom: '16px', gap: '4px' }}>
+        {[['palpites', '⚽ Palpites'], ['regras', '📋 Regras']].map(([key, label]) => (
+          <button key={key} onClick={() => setTab(key)} style={{ flex: 1, padding: '9px', borderRadius: '10px', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: '13px', fontWeight: 600, transition: 'all 0.2s', background: tab === key ? 'rgba(255,255,255,0.1)' : 'transparent', color: tab === key ? 'var(--text-primary)' : 'var(--text-muted)' }}>
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {tab === 'regras' ? <RegrasTab /> : (
+        <>
+          <MasterGuess userId={user.id} />
+          {loading ? Array.from({ length: 3 }).map((_, i) => <div key={i} className="skeleton" style={{ height: 190, marginBottom: 12 }} />) :
+            Object.entries(grouped).map(([date, dayMatches]) => (
+              <div key={date}>
+                <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--accent-gold)', textTransform: 'capitalize', letterSpacing: '0.08em', marginBottom: '10px', marginTop: '16px' }}>{date}</div>
+                {dayMatches.map(m => (
+                  <GuessCard key={m.id} match={m} myGuess={myGuesses[m.id]} onSave={handleSave} />
+                ))}
+              </div>
+            ))
+          }
+        </>
+      )}
     </div>
   )
 }
