@@ -43,16 +43,14 @@ const TEAM_FLAGS = {
   'Wales':'https://flagcdn.com/w160/gb-wls.png',
 }
 
-function isLocked(dateStr) {
-  return differenceInSeconds(parseISO(dateStr), new Date()) <= LOCK_SECS
-}
+function isLocked(dateStr) { return differenceInSeconds(parseISO(dateStr), new Date()) <= LOCK_SECS }
 
 function countdown(dateStr) {
   const diff = differenceInSeconds(parseISO(dateStr), new Date())
   if (diff <= 0) return null
   if (diff > 3600) return format(parseISO(dateStr), "dd/MM 'às' HH:mm", { locale: ptBR })
   const m = Math.floor(diff / 60), s = diff % 60
-  return `${m}m ${s.toString().padStart(2, '0')}s`
+  return `${m}m ${s.toString().padStart(2,'0')}s`
 }
 
 function TeamFlag({ name, emoji, size = 48 }) {
@@ -75,50 +73,44 @@ function FlagBg({ name, emoji, side }) {
   )
 }
 
-// Popover inline pequeno — não fullscreen
-function GuessesPopover({ matchId, open, onClose }) {
+function ResenhaList({ matchId, matchHomeScore, matchAwayScore }) {
   const [guesses, setGuesses] = useState([])
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (!open) return
-    setLoading(true)
     supabase.from('guesses').select('*, profiles(display_name)').eq('match_id', matchId)
       .then(({ data }) => { setGuesses(data || []); setLoading(false) })
-  }, [open, matchId])
+  }, [matchId])
 
-  if (!open) return null
+  if (loading) return <div className="skeleton" style={{ height: 32, borderRadius: 6 }} />
+  if (guesses.length === 0) return <div style={{ fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center', padding: '6px 0' }}>Nenhum palpite registrado.</div>
 
   return (
-    <div style={{ marginTop: '10px', background: 'rgba(13,17,23,0.95)', border: '1px solid var(--border-glass-strong)', borderRadius: 'var(--radius-md)', padding: '12px', animation: 'fadeUp 0.15s ease' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-        <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--accent-gold)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Palpites da galera</span>
-        <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '16px', lineHeight: 1, padding: '0 2px' }}>×</button>
-      </div>
-      {loading ? (
-        <div className="skeleton" style={{ height: 32, borderRadius: 6 }} />
-      ) : guesses.length === 0 ? (
-        <div style={{ fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center', padding: '8px 0' }}>Nenhum palpite ainda.</div>
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-          {guesses.map(g => (
-            <div key={g.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 8px', background: 'rgba(255,255,255,0.04)', borderRadius: '6px' }}>
-              <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{g.profiles?.display_name}</span>
-              <span style={{ fontFamily: 'var(--font-display)', fontSize: '16px', color: 'var(--accent-gold-bright)', letterSpacing: '0.06em' }}>{g.home_score} × {g.away_score}</span>
-            </div>
-          ))}
-        </div>
-      )}
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+      {guesses.map(g => {
+        const ok = g.home_score === matchHomeScore && g.away_score === matchAwayScore
+        return (
+          <div key={g.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 10px', borderRadius: '6px', background: ok ? 'var(--green-bg)' : 'var(--red-bg)' }}>
+            <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)' }}>{g.profiles?.display_name}</span>
+            <span style={{ fontFamily: 'var(--font-display)', fontSize: '16px', color: ok ? 'var(--green)' : 'var(--red)', letterSpacing: '0.06em' }}>{g.home_score} × {g.away_score}</span>
+          </div>
+        )
+      })}
     </div>
   )
 }
 
 function GuessCard({ match, myGuess, onSave }) {
+  const finished = match.status === 'finished'
+  const live = match.status === 'live'
+
+  // Encerrado = expandido por padrão; outros = minimizado
+  const [expanded, setExpanded] = useState(finished)
+  const [popoverOpen, setPopoverOpen] = useState(false)
   const [home, setHome] = useState(myGuess?.home_score ?? '')
   const [away, setAway] = useState(myGuess?.away_score ?? '')
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
-  const [popoverOpen, setPopoverOpen] = useState(false)
   const [, tick] = useState(0)
 
   useEffect(() => {
@@ -127,7 +119,6 @@ function GuessCard({ match, myGuess, onSave }) {
   }, [])
 
   const locked = isLocked(match.match_date)
-  const finished = match.status === 'finished'
   const correct = finished && myGuess && myGuess.home_score === match.home_score && myGuess.away_score === match.away_score
   const wrong = finished && myGuess && !correct
   const cd = countdown(match.match_date)
@@ -140,79 +131,108 @@ function GuessCard({ match, myGuess, onSave }) {
     setTimeout(() => setSaved(false), 2000)
   }
 
+  const borderColor = finished
+    ? correct ? 'rgba(34,197,94,0.4)' : wrong ? 'rgba(239,68,68,0.35)' : 'var(--border-glass)'
+    : live ? 'rgba(239,68,68,0.3)' : 'var(--border-glass)'
+
+  const bgColor = finished
+    ? correct ? 'rgba(34,197,94,0.06)' : wrong ? 'rgba(239,68,68,0.06)' : 'var(--bg-glass)'
+    : live ? 'rgba(239,68,68,0.04)' : 'var(--bg-glass)'
+
   return (
-    <div style={{
-      position: 'relative', overflow: 'hidden',
-      background: finished ? (correct ? 'rgba(34,197,94,0.06)' : wrong ? 'rgba(239,68,68,0.06)' : 'var(--bg-glass)') : 'var(--bg-glass)',
-      border: `1px solid ${finished ? (correct ? 'rgba(34,197,94,0.4)' : wrong ? 'rgba(239,68,68,0.35)' : 'var(--border-glass)') : 'var(--border-glass)'}`,
-      borderRadius: 'var(--radius-lg)', marginBottom: '12px',
-    }}>
+    <div style={{ position: 'relative', overflow: 'hidden', background: bgColor, border: `1px solid ${borderColor}`, borderRadius: 'var(--radius-lg)', marginBottom: '10px' }}>
       <FlagBg name={match.home_team} emoji={match.home_flag} side="left" />
       <FlagBg name={match.away_team} emoji={match.away_flag} side="right" />
 
-      <div style={{ position: 'relative', zIndex: 1, padding: '14px 16px' }}>
-        {/* Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-          <span className="badge badge-muted">{match.stage}{match.group_name ? ` · G${match.group_name}` : ''}</span>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+      <div style={{ position: 'relative', zIndex: 1 }}>
+        {/* Header clicável — sempre visível */}
+        <div
+          onClick={() => !finished && setExpanded(e => !e)}
+          style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', cursor: finished ? 'default' : 'pointer' }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            {/* Flags pequenas */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <TeamFlag name={match.home_team} emoji={match.home_flag} size={28} />
+              <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)', maxWidth: 60, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{match.home_team}</span>
+            </div>
+            <span style={{ fontFamily: 'var(--font-display)', fontSize: finished ? '20px' : '13px', color: finished ? 'var(--text-primary)' : 'var(--accent-gold)', letterSpacing: '0.04em', flexShrink: 0 }}>
+              {finished ? `${match.home_score} × ${match.away_score}` : (live ? '🔴' : cd || '–')}
+            </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)', maxWidth: 60, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{match.away_team}</span>
+              <TeamFlag name={match.away_team} emoji={match.away_flag} size={28} />
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
             {finished
               ? <span className={`badge ${correct ? 'badge-green' : 'badge-red'}`}>{correct ? `✓ +${myGuess?.points_earned || 0}pts` : '✗ Erro'}</span>
-              : locked ? <span className="badge badge-muted">🔒 Travado</span>
-              : cd ? <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{cd}</span>
-              : null
+              : locked ? <span className="badge badge-muted" style={{fontSize:'9px'}}>🔒</span>
+              : myGuess?.home_score !== undefined ? <span className="badge badge-gold">✓ {myGuess.home_score}×{myGuess.away_score}</span>
+              : <span className="badge badge-muted" style={{fontSize:'9px'}}>sem palpite</span>
             }
-            {/* 3 risquinhos */}
+            {/* 3 risquinhos — só pra ver quem palpitou */}
             <button
-              onClick={() => setPopoverOpen(o => !o)}
+              onClick={e => { e.stopPropagation(); setPopoverOpen(o => !o) }}
               style={{ background: 'none', border: 'none', cursor: 'pointer', color: popoverOpen ? 'var(--accent-gold)' : 'var(--text-muted)', padding: '4px', display: 'flex', flexDirection: 'column', gap: '3px', alignItems: 'center' }}
-              title="Ver palpites"
             >
-              {[0,1,2].map(i => <span key={i} style={{ display: 'block', width: '15px', height: '2px', background: 'currentColor', borderRadius: '1px' }} />)}
+              {[0,1,2].map(i => <span key={i} style={{ display: 'block', width: '14px', height: '2px', background: 'currentColor', borderRadius: '1px' }} />)}
             </button>
-          </div>
-        </div>
-
-        {/* Times + palpite */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
-            <TeamFlag name={match.home_team} emoji={match.home_flag} />
-            <span style={{ fontSize: '12px', fontWeight: 600, textAlign: 'center', lineHeight: 1.2 }}>{match.home_team}</span>
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px', flexShrink: 0 }}>
-            {finished && (
-              <div style={{ fontFamily: 'var(--font-display)', fontSize: '26px', letterSpacing: '0.04em', lineHeight: 1, color: 'var(--text-primary)', textAlign: 'center' }}>
-                {match.home_score}<span style={{ color: 'var(--text-muted)', fontSize: '18px', margin: '0 2px' }}>×</span>{match.away_score}
-              </div>
+            {/* Seta expand (só em não-finalizados) */}
+            {!finished && (
+              <span style={{ color: 'var(--text-muted)', fontSize: '12px', transform: expanded ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform 0.2s', display: 'inline-block' }}>▼</span>
             )}
-            <div style={{ display: 'flex', gap: '5px', alignItems: 'center' }}>
-              <input className="score-input" type="number" min="0" max="20" value={home} onChange={e => setHome(e.target.value)} disabled={locked} style={{ width: '44px', fontSize: '22px' }} />
-              <span style={{ color: 'var(--text-muted)', fontSize: '16px' }}>×</span>
-              <input className="score-input" type="number" min="0" max="20" value={away} onChange={e => setAway(e.target.value)} disabled={locked} style={{ width: '44px', fontSize: '22px' }} />
-            </div>
-            <div style={{ fontSize: '9px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 600 }}>palpite</div>
-          </div>
-
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
-            <TeamFlag name={match.away_team} emoji={match.away_flag} />
-            <span style={{ fontSize: '12px', fontWeight: 600, textAlign: 'center', lineHeight: 1.2 }}>{match.away_team}</span>
           </div>
         </div>
 
-        {!locked && !finished && (
-          <button className={`btn ${saved ? 'btn-primary' : ''}`} style={{ marginTop: '12px', padding: '9px', fontSize: '13px' }} onClick={save} disabled={saving || home === '' || away === ''}>
-            {saving ? 'Salvando...' : saved ? '✓ Salvo!' : 'Salvar Palpite'}
-          </button>
+        {/* Popover quem palpitou */}
+        {popoverOpen && (
+          <div style={{ margin: '0 16px 12px', background: 'rgba(13,17,23,0.95)', border: '1px solid var(--border-glass-strong)', borderRadius: 'var(--radius-md)', padding: '10px 12px', animation: 'fadeUp 0.15s ease' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+              <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--accent-gold)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Palpites da galera</span>
+              <button onClick={() => setPopoverOpen(false)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '14px' }}>×</button>
+            </div>
+            <ResenhaList matchId={match.id} matchHomeScore={match.home_score} matchAwayScore={match.away_score} />
+          </div>
         )}
 
-        {/* Popover inline */}
-        <GuessesPopover matchId={match.id} open={popoverOpen} onClose={() => setPopoverOpen(false)} />
+        {/* Corpo expandido */}
+        {expanded && (
+          <div style={{ padding: '0 16px 14px', animation: 'fadeUp 0.2s ease' }}>
+            {/* Times grandes + input palpite */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '12px' }}>
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' }}>
+                <TeamFlag name={match.home_team} emoji={match.home_flag} size={44} />
+                <span style={{ fontSize: '11px', fontWeight: 600, textAlign: 'center', lineHeight: 1.2, color: 'var(--text-secondary)' }}>{match.home_team}</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px', flexShrink: 0 }}>
+                <div style={{ display: 'flex', gap: '5px', alignItems: 'center' }}>
+                  <input className="score-input" type="number" min="0" max="20" value={home} onChange={e => setHome(e.target.value)} disabled={locked} style={{ width: '44px', fontSize: '22px' }} />
+                  <span style={{ color: 'var(--text-muted)', fontSize: '16px' }}>×</span>
+                  <input className="score-input" type="number" min="0" max="20" value={away} onChange={e => setAway(e.target.value)} disabled={locked} style={{ width: '44px', fontSize: '22px' }} />
+                </div>
+                <div style={{ fontSize: '9px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 600 }}>palpite</div>
+              </div>
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' }}>
+                <TeamFlag name={match.away_team} emoji={match.away_flag} size={44} />
+                <span style={{ fontSize: '11px', fontWeight: 600, textAlign: 'center', lineHeight: 1.2, color: 'var(--text-secondary)' }}>{match.away_team}</span>
+              </div>
+            </div>
 
-        {/* Resenha pós-jogo */}
-        {finished && (
-          <div style={{ marginTop: '10px', borderTop: '1px solid var(--border-glass)', paddingTop: '8px' }}>
-            <div style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 600, marginBottom: '6px' }}>Resenha</div>
-            <GuessesPopover matchId={match.id} open={true} onClose={() => {}} />
+            {!locked && !finished && (
+              <button className={`btn ${saved ? 'btn-primary' : ''}`} style={{ padding: '9px', fontSize: '13px' }} onClick={save} disabled={saving || home === '' || away === ''}>
+                {saving ? 'Salvando...' : saved ? '✓ Salvo!' : 'Salvar Palpite'}
+              </button>
+            )}
+
+            {/* Resenha automática se encerrado */}
+            {finished && (
+              <div style={{ borderTop: '1px solid var(--border-glass)', paddingTop: '10px' }}>
+                <div style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 600, marginBottom: '6px' }}>Resenha</div>
+                <ResenhaList matchId={match.id} matchHomeScore={match.home_score} matchAwayScore={match.away_score} />
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -225,8 +245,7 @@ function MasterGuess({ userId }) {
   const [t2, setT2] = useState('')
   const [saved, setSaved] = useState(false)
   const [existing, setExisting] = useState(null)
-  const COPA_START = new Date('2026-06-11T00:00:00')
-  const locked = new Date() >= COPA_START
+  const locked = new Date() >= new Date('2026-06-11T00:00:00')
 
   useEffect(() => {
     supabase.from('master_guess').select('*').eq('user_id', userId).single()
@@ -234,37 +253,34 @@ function MasterGuess({ userId }) {
   }, [userId])
 
   async function saveMaster() {
-    if (!t1 || !t2 || t1 === t2) return
-    const payload = { user_id: userId, team1: t1, team2: t2 }
-    if (existing) await supabase.from('master_guess').update({ team1: t1, team2: t2 }).eq('user_id', userId)
-    else await supabase.from('master_guess').insert(payload)
+    if (!t1.trim() || !t2.trim() || t1 === t2) return
+    if (existing) await supabase.from('master_guess').update({ team1: t1.trim(), team2: t2.trim() }).eq('user_id', userId)
+    else await supabase.from('master_guess').insert({ user_id: userId, team1: t1.trim(), team2: t2.trim() })
+    setExisting({ team1: t1.trim(), team2: t2.trim() })
     setSaved(true); setTimeout(() => setSaved(false), 2000)
-    setExisting(payload)
   }
 
   return (
-    <div className="glass-card" style={{ padding: '16px', marginBottom: '20px', border: '1px solid rgba(212,168,50,0.25)' }}>
+    <div className="glass-card" style={{ padding: '14px 16px', marginBottom: '18px', border: '1px solid rgba(212,168,50,0.25)' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-        <span style={{ fontSize: '18px' }}>🏆</span>
-        <div style={{ fontFamily: 'var(--font-display)', fontSize: '18px', letterSpacing: '0.06em', color: 'var(--accent-gold)' }}>PALPITE MESTRE</div>
+        <span>🏆</span>
+        <div style={{ fontFamily: 'var(--font-display)', fontSize: '17px', letterSpacing: '0.06em', color: 'var(--accent-gold)' }}>PALPITE MESTRE</div>
       </div>
-      <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '12px', lineHeight: 1.5 }}>
-        Quem vai à final? Um time = <strong style={{ color: 'var(--accent-gold)' }}>+4pts</strong> · Dois times = <strong style={{ color: 'var(--accent-gold)' }}>+8pts</strong> · Bloqueado em 11/Jun
+      <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '10px', lineHeight: 1.5 }}>
+        Finalistas? Um certo = <strong style={{ color: 'var(--accent-gold)' }}>+4pts</strong> · Dois certos = <strong style={{ color: 'var(--accent-gold)' }}>+8pts</strong> · Bloqueado em 11/Jun
       </div>
       {locked ? (
-        <div style={{ padding: '10px', background: 'rgba(255,255,255,0.04)', borderRadius: 'var(--radius-sm)', fontSize: '13px', color: 'var(--text-secondary)', textAlign: 'center' }}>
+        <div style={{ padding: '8px 12px', background: 'rgba(255,255,255,0.04)', borderRadius: 'var(--radius-sm)', fontSize: '13px', color: 'var(--text-secondary)', textAlign: 'center' }}>
           🔒 {existing ? `${existing.team1} × ${existing.team2}` : 'Sem palpite registrado'}
         </div>
       ) : (
-        <>
-          <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
-            <input className="input" value={t1} onChange={e => setT1(e.target.value)} placeholder="Time 1" style={{ flex: 1, padding: '10px 12px', fontSize: '14px' }} />
-            <input className="input" value={t2} onChange={e => setT2(e.target.value)} placeholder="Time 2" style={{ flex: 1, padding: '10px 12px', fontSize: '14px' }} />
-          </div>
-          <button className={`btn ${saved ? 'btn-primary' : ''}`} onClick={saveMaster} disabled={!t1 || !t2 || t1 === t2} style={{ padding: '10px', fontSize: '13px' }}>
-            {saved ? '✓ Salvo!' : 'Salvar Palpite Mestre'}
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-end' }}>
+          <input className="input" value={t1} onChange={e => setT1(e.target.value)} placeholder="Time 1" style={{ flex: 1, padding: '9px 10px', fontSize: '13px', minWidth: 0 }} />
+          <input className="input" value={t2} onChange={e => setT2(e.target.value)} placeholder="Time 2" style={{ flex: 1, padding: '9px 10px', fontSize: '13px', minWidth: 0 }} />
+          <button className={`btn ${saved ? 'btn-primary' : ''}`} onClick={saveMaster} disabled={!t1.trim() || !t2.trim() || t1 === t2} style={{ width: 'auto', padding: '9px 14px', fontSize: '13px', flexShrink: 0 }}>
+            {saved ? '✓' : 'Salvar'}
           </button>
-        </>
+        </div>
       )}
     </div>
   )
@@ -282,12 +298,12 @@ function RegrasTab() {
           { icon: '❌', label: 'Errou', desc: 'Não acertou nem o resultado', pts: '0', color: 'var(--red)' },
         ].map(item => (
           <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 0', borderBottom: '1px solid var(--border-glass)' }}>
-            <span style={{ fontSize: '20px', flexShrink: 0 }}>{item.icon}</span>
+            <span style={{ fontSize: '18px', flexShrink: 0 }}>{item.icon}</span>
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>{item.label}</div>
-              <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>{item.desc}</div>
+              <div style={{ fontSize: '13px', fontWeight: 600 }}>{item.label}</div>
+              <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>{item.desc}</div>
             </div>
-            <div style={{ fontFamily: 'var(--font-display)', fontSize: '24px', color: item.color, flexShrink: 0 }}>{item.pts}</div>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: '22px', color: item.color, flexShrink: 0 }}>{item.pts}</div>
           </div>
         ))}
       </div>
@@ -299,15 +315,15 @@ function RegrasTab() {
           { icon: '❌', label: 'Errou os dois', pts: '0' },
         ].map(item => (
           <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '8px 0', borderBottom: '1px solid var(--border-glass)' }}>
-            <span style={{ fontSize: '20px' }}>{item.icon}</span>
-            <div style={{ flex: 1, fontSize: '14px', color: 'var(--text-primary)' }}>{item.label}</div>
-            <div style={{ fontFamily: 'var(--font-display)', fontSize: '24px', color: 'var(--accent-gold)' }}>{item.pts}</div>
+            <span style={{ fontSize: '18px' }}>{item.icon}</span>
+            <div style={{ flex: 1, fontSize: '13px' }}>{item.label}</div>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: '22px', color: 'var(--accent-gold)' }}>{item.pts}</div>
           </div>
         ))}
       </div>
-      <div className="glass-card" style={{ padding: '14px 16px' }}>
-        <div style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.7 }}>
-          🔒 <strong style={{ color: 'var(--text-secondary)' }}>Trava de 1 minuto:</strong> palpites bloqueados automaticamente 1 minuto antes do apito inicial. Sem exceções!
+      <div className="glass-card" style={{ padding: '12px 16px' }}>
+        <div style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.7 }}>
+          🔒 <strong style={{ color: 'var(--text-secondary)' }}>Trava de 1 minuto:</strong> palpites bloqueados automaticamente 1 minuto antes do apito inicial.
         </div>
       </div>
     </div>
@@ -327,7 +343,8 @@ export default function GuessesPage() {
       supabase.from('guesses').select('*').eq('user_id', user.id),
     ])
     setMatches(mData || [])
-    const myMap = {}; (myData || []).forEach(g => { myMap[g.match_id] = g })
+    const myMap = {}
+    ;(myData || []).forEach(g => { myMap[g.match_id] = g })
     setMyGuesses(myMap)
     setLoading(false)
   }, [user])
@@ -351,7 +368,6 @@ export default function GuessesPage() {
     <div className="page">
       <div className="section-title">Palpites</div>
 
-      {/* Tabs */}
       <div style={{ display: 'flex', background: 'var(--bg-glass)', borderRadius: 'var(--radius-md)', padding: '4px', marginBottom: '16px', gap: '4px' }}>
         {[['palpites', '⚽ Palpites'], ['regras', '📋 Regras']].map(([key, label]) => (
           <button key={key} onClick={() => setTab(key)} style={{ flex: 1, padding: '9px', borderRadius: '10px', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: '13px', fontWeight: 600, transition: 'all 0.2s', background: tab === key ? 'rgba(255,255,255,0.1)' : 'transparent', color: tab === key ? 'var(--text-primary)' : 'var(--text-muted)' }}>
@@ -363,15 +379,18 @@ export default function GuessesPage() {
       {tab === 'regras' ? <RegrasTab /> : (
         <>
           <MasterGuess userId={user.id} />
-          {loading ? Array.from({ length: 3 }).map((_, i) => <div key={i} className="skeleton" style={{ height: 190, marginBottom: 12 }} />) :
-            Object.entries(grouped).map(([date, dayMatches]) => (
-              <div key={date}>
-                <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--accent-gold)', textTransform: 'capitalize', letterSpacing: '0.08em', marginBottom: '10px', marginTop: '16px' }}>{date}</div>
-                {dayMatches.map(m => (
-                  <GuessCard key={m.id} match={m} myGuess={myGuesses[m.id]} onSave={handleSave} />
-                ))}
-              </div>
-            ))
+          {loading
+            ? Array.from({ length: 4 }).map((_, i) => <div key={i} className="skeleton" style={{ height: 56, marginBottom: 8, borderRadius: 12 }} />)
+            : matches.length === 0
+              ? <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '40px 0' }}>Nenhum jogo cadastrado ainda.</div>
+              : Object.entries(grouped).map(([date, dayMatches]) => (
+                <div key={date}>
+                  <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--accent-gold)', textTransform: 'capitalize', letterSpacing: '0.08em', marginBottom: '8px', marginTop: '16px' }}>{date}</div>
+                  {dayMatches.map(m => (
+                    <GuessCard key={m.id} match={m} myGuess={myGuesses[m.id]} onSave={handleSave} />
+                  ))}
+                </div>
+              ))
           }
         </>
       )}

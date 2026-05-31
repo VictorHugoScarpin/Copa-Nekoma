@@ -2,8 +2,7 @@ import { useLocation } from 'react-router-dom'
 
 const TITLES = {
   '/': 'JOGOS', '/palpites': 'PALPITES', '/ranking': 'RANKING',
-  '/grupos': 'GRUPOS', '/mata-mata': 'ELIMINATÓRIAS',
-  '/stats': 'ESTATÍSTICAS', '/mapa': 'SEDES', '/perfil': 'PERFIL',
+  '/grupos': 'GRUPOS', '/mata-mata': 'ELIMINATÓRIAS', '/perfil': 'PERFIL',
 }
 
 export default function TopHeader() {
