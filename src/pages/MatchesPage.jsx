@@ -172,14 +172,9 @@ function getPT(name) {
   return TEAM_PT[name] || name
 }
 
-// Bolinha: brasão da seleção (fallback: bandeira)
-// shieldUrl = crest da football-data (banco), fallback = bandeira flagcdn
-function TeamCircle({ name, shieldUrl, size = 46 }) {
+// Bolinha: sempre bandeira, cover 100%
+function TeamCircle({ name, size = 46 }) {
   const flagUrl = getFlagUrl(name)
-  const [failed, setFailed] = useState(false)
-
-  const useShield = shieldUrl && !failed
-  const src = useShield ? shieldUrl : flagUrl
 
   return (
     <div style={{
@@ -188,16 +183,11 @@ function TeamCircle({ name, shieldUrl, size = 46 }) {
       border: '2px solid rgba(255,255,255,0.18)',
       background: '#1a1f2e',
     }}>
-      {src ? (
+      {flagUrl ? (
         <img
-          src={src}
+          src={flagUrl}
           alt={name}
-          style={{
-            width: '100%',
-            height: '100%',
-            objectFit: 'cover',
-          }}
-          onError={() => { if (useShield) setFailed(true) }}
+          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
         />
       ) : (
         <div style={{ display:'flex', alignItems:'center', justifyContent:'center', width:'100%', height:'100%', fontSize: size * 0.42 }}>🏳️</div>
@@ -274,7 +264,7 @@ function MatchCard({ match }) {
         {/* Times */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '7px' }}>
-            <TeamCircle name={match.home_team} shieldUrl={match.home_shield} size={46} />
+            <TeamCircle name={match.home_team} size={46} />
             <span style={{ fontSize: '11px', fontWeight: 600, textAlign: 'center', lineHeight: 1.2, color: 'var(--text-primary)', maxWidth: '80px' }}>
               {getPT(match.home_team)}
             </span>
@@ -300,7 +290,7 @@ function MatchCard({ match }) {
           </div>
 
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '7px' }}>
-            <TeamCircle name={match.away_team} shieldUrl={match.away_shield} size={46} />
+            <TeamCircle name={match.away_team} size={46} />
             <span style={{ fontSize: '11px', fontWeight: 600, textAlign: 'center', lineHeight: 1.2, color: 'var(--text-primary)', maxWidth: '80px' }}>
               {getPT(match.away_team)}
             </span>
