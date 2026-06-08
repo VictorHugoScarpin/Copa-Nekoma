@@ -5,7 +5,7 @@ const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY
 const FOOTBALL_API_KEY = process.env.FOOTBALL_API_KEY
 
 const LEAGUE_ID = 1
-const SEASON = 2022 // Teste com 2022, depois altera para 2026 quando a API libertar
+const SEASON = 2022 
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
   auth: { persistSession: false }
@@ -98,4 +98,4 @@ async function main() {
   }
 }
 
-main()
+main();
