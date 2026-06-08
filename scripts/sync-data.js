@@ -105,23 +105,29 @@ async function syncMatches() {
     if (['1H', '2H', 'HT', 'ET', 'P', 'LIVE'].includes(s)) status = 'live'
     if (['FT', 'AET', 'PEN'].includes(s)) status = 'finished'
 
-    const { error } = await supabase.from('matches').upsert({
-      external_id: String(f.id),
-      home_team: h.name,
-      away_team: a.name,
-      home_flag: FLAG_MAP[h.name] || '🏳️',
-      away_flag: FLAG_MAP[a.name] || '🏳️',
-      home_score: status === 'finished' ? g.home : null,
-      away_score: status === 'finished' ? g.away : null,
-      match_date: new Date(f.date).toISOString(),
-      stage,
-      group_name: groupName,
-      status,
-      stream_url: 'https://www.youtube.com/@CazeTV',
-    }, { onConflict: 'external_id' })
+    // Dentro da função syncMatches, substitua o bloco do supabase.from('matches') por este:
+    
+    const { data, error } = await supabase
+      .from('matches') // Certifique-se que no Supabase a tabela se chama 'matches'
+      .upsert({
+        external_id: String(f.id),
+        home_team: h.name,
+        away_team: a.name,
+        home_flag: FLAG_MAP[h.name] || '🏳️',
+        away_flag: FLAG_MAP[a.name] || '🏳️',
+        home_score: status === 'finished' ? g.home : null,
+        away_score: status === 'finished' ? g.away : null,
+        match_date: new Date(f.date).toISOString(),
+        stage,
+        group_name: groupName,
+        status,
+        stream_url: 'https://www.youtube.com/@CazeTV',
+      }, { onConflict: 'external_id' });
 
-    if (error) throw new Error(`Falha a guardar jogo no Supabase: ${error.message}`);
-  }
+    if (error) {
+      console.error("ERRO DETALHADO SUPABASE:", error);
+      throw new Error(`Falha a guardar jogo: ${error.message}`);
+    }
   console.log(`✅ ${fixtures.length} jogos guardados no banco de dados!`)
 }
 
