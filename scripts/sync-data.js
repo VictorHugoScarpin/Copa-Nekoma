@@ -5,14 +5,11 @@ const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY
 const FOOTBALL_API_KEY = process.env.FOOTBALL_API_KEY
 
 const LEAGUE_ID = 1
-const SEASON = 2022 // Usamos 2022 como teste garantido
+const SEASON = 2022 // Teste com 2022, depois altera para 2026 quando a API libertar
 
-// Substitua a linha const supabase = createClient(...) por isto:
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
-  auth: {
-    persistSession: false
-  }
-});
+  auth: { persistSession: false }
+})
 
 const FLAG_MAP = {
   'Brazil': '🇧🇷', 'Argentina': '🇦🇷', 'France': '🇫🇷', 'Germany': '🇩🇪',
@@ -30,29 +27,16 @@ const FLAG_MAP = {
 }
 
 async function checkApiStatus() {
-  if (!FOOTBALL_API_KEY) throw new Error("ERRO: FOOTBALL_API_KEY em falta no GitHub Secrets.");
-  if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) throw new Error("ERRO: Chaves do Supabase em falta.");
-
-  console.log('🔍 A verificar status e credenciais da API...');
+  console.log('🔍 A verificar status da API...');
   const res = await fetch('https://v3.football.api-sports.io/status', {
     headers: {
       'x-apisports-key': FOOTBALL_API_KEY,
       'x-rapidapi-key': FOOTBALL_API_KEY
     }
   });
-  
   const data = await res.json();
-  
-  if (data.errors && Object.keys(data.errors).length > 0 && !Array.isArray(data.errors)) {
-     throw new Error(`Acesso negado pela API: ${JSON.stringify(data.errors)}`);
-  }
-  
-  const req = data.response.requests;
-  console.log(`📊 Cota Diária: ${req.current} requisições usadas de ${req.limit_day}.`);
-  
-  if (req.current >= req.limit_day) {
-     throw new Error("LIMITE DIÁRIO ATINGIDO! O processo não pode continuar.");
-  }
+  if (data.errors && Object.keys(data.errors).length > 0) throw new Error(`Erro API: ${JSON.stringify(data.errors)}`);
+  console.log(`📊 Cota Diária: ${data.response.requests.current} de ${data.response.requests.limit_day} usadas.`);
 }
 
 async function apiRequest(endpoint) {
@@ -62,14 +46,8 @@ async function apiRequest(endpoint) {
       'x-rapidapi-key': FOOTBALL_API_KEY
     }
   })
-  if (!res.ok) throw new Error(`Erro HTTP ao ligar à API: ${res.status}`)
-  
+  if (!res.ok) throw new Error(`HTTP ${res.status}`)
   const data = await res.json()
-  
-  if (data.errors && Object.keys(data.errors).length > 0 && !Array.isArray(data.errors)) {
-    throw new Error(`Erro devolvido no Endpoint ${endpoint}: ${JSON.stringify(data.errors)}`);
-  }
-  
   return data.response
 }
 
@@ -77,11 +55,6 @@ function mapStage(round) {
   if (!round) return 'Grupos'
   const r = round.toLowerCase()
   if (r.includes('group')) return 'Grupos'
-  if (r.includes('round of 32')) return 'R32'
-  if (r.includes('round of 16')) return 'R16'
-  if (r.includes('quarter')) return 'QF'
-  if (r.includes('semi')) return 'SF'
-  if (r.includes('3rd') || r.includes('third')) return 'THIRD'
   if (r.includes('final')) return 'F'
   return 'Grupos'
 }
@@ -90,98 +63,37 @@ async function syncMatches() {
   console.log('📅 A descarregar jogos...')
   const fixtures = await apiRequest(`/fixtures?league=${LEAGUE_ID}&season=${SEASON}`)
   
-  if (!fixtures || fixtures.length === 0) {
-      console.log('⚠️ AVISO: A API comunicou corretamente, mas não enviou nenhum jogo (Lista vazia).');
-      return;
-  }
+  if (!fixtures || fixtures.length === 0) throw new Error("API retornou lista vazia de jogos");
 
   for (const fixture of fixtures) {
     const f = fixture.fixture
     const h = fixture.teams.home
     const a = fixture.teams.away
-    const g = fixture.goals
-    const s = fixture.fixture.status.short
-
-    const stage = mapStage(fixture.league.round)
-    const groupMatch = fixture.league.round?.match(/Group ([A-Z])/i)
-    const groupName = groupMatch ? groupMatch[1].toUpperCase() : null
-
-    let status = 'upcoming'
-    if (['1H', '2H', 'HT', 'ET', 'P', 'LIVE'].includes(s)) status = 'live'
-    if (['FT', 'AET', 'PEN'].includes(s)) status = 'finished'
-
-    // Dentro da função syncMatches, substitua o bloco do supabase.from('matches') por este:
     
-    // Substitua o bloco do upsert dentro de syncMatches por este:
-const { error } = await supabase
-  .from('matches')
-  .upsert(
-    {
+    const { error } = await supabase.from('matches').upsert({
       external_id: String(f.id),
       home_team: h.name,
       away_team: a.name,
       home_flag: FLAG_MAP[h.name] || '🏳️',
       away_flag: FLAG_MAP[a.name] || '🏳️',
       match_date: new Date(f.date).toISOString(),
-      stage,
-      group_name: groupName,
-      status,
+      stage: mapStage(fixture.league.round),
+      status: 'upcoming',
       stream_url: 'https://www.youtube.com/@CazeTV',
-    },
-    { onConflict: 'external_id' }
-  );
+    }, { onConflict: 'external_id' })
 
-if (error) {
-  console.error("ERRO DO SUPABASE:", JSON.stringify(error, null, 2));
-  throw new Error(error.message);
-}
-  console.log(`✅ ${fixtures.length} jogos guardados no banco de dados!`)
-}
-
-async function syncStandings() {
-  console.log('📊 A descarregar grupos...')
-  const standings = await apiRequest(`/standings?league=${LEAGUE_ID}&season=${SEASON}`)
-  
-  if (!standings || standings.length === 0) return;
-
-  const rows = []
-  for (const league of standings) {
-    for (const groupData of league.league.standings) {
-      for (const team of groupData) {
-        rows.push({
-          group_name: team.group?.replace('Group ', '') || '?',
-          team_name: team.team.name,
-          flag_emoji: FLAG_MAP[team.team.name] || '🏳️',
-          played: team.all.played,
-          won: team.all.win,
-          drawn: team.all.draw,
-          lost: team.all.lose,
-          goals_for: team.all.goals.for,
-          goals_against: team.all.goals.against,
-          goal_diff: team.goalsDiff,
-          points: team.points,
-          updated_at: new Date().toISOString(),
-        })
-      }
-    }
+    if (error) throw new Error(`Supabase Upsert Erro: ${error.message}`);
   }
-
-  if (rows.length > 0) {
-    await supabase.from('group_standings').delete().neq('id', '00000000-0000-0000-0000-000000000000')
-    const { error } = await supabase.from('group_standings').insert(rows)
-    if (error) throw new Error(`Falha a guardar grupos no Supabase: ${error.message}`);
-  }
-  console.log(`✅ ${rows.length} seleções atualizadas nos grupos!`)
+  console.log(`✅ ${fixtures.length} jogos guardados!`)
 }
 
 async function main() {
   try {
     await checkApiStatus()
     await syncMatches()
-    await syncStandings()
-    console.log('🏆 Sincronização concluída com êxito e gravada no banco!')
+    console.log('🏆 Sincronização concluída!')
   } catch (err) {
-    console.error('❌ ERRO ENCONTRADO DURANTE A EXECUÇÃO:', err.message)
+    console.error('❌ ERRO:', err.message)
     process.exit(1)
   }
 }
