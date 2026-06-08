@@ -27,12 +27,20 @@ const FLAG_MAP = {
 async function apiRequest(endpoint) {
   const res = await fetch(`https://v3.football.api-sports.io${endpoint}`, {
     headers: {
-      'x-rapidapi-key': FOOTBALL_API_KEY,
-      'x-rapidapi-host': 'v3.football.api-sports.io'
+      // CORREÇÃO AQUI: Mudamos de x-rapidapi-key para x-apisports-key
+      'x-apisports-key': FOOTBALL_API_KEY 
     }
   })
+  
   if (!res.ok) throw new Error(`API error: ${res.status}`)
+  
   const data = await res.json()
+  
+  // TRAVA DE SEGURANÇA: Se a API negar acesso, o GitHub vai ficar vermelho e mostrar o porquê!
+  if (data.errors && Object.keys(data.errors).length > 0 && !Array.isArray(data.errors)) {
+    throw new Error(`A API negou o acesso: ${JSON.stringify(data.errors)}`);
+  }
+  
   return data.response
 }
 
