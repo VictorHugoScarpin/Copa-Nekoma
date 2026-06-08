@@ -154,16 +154,17 @@ function getPT(name) {
 }
 
 // Bolinha: brasão da seleção (fallback: bandeira)
-function TeamCircle({ name, size = 46 }) {
-  const shieldUrl = getShieldUrl(name)
+// shieldUrl = crest da football-data (banco), fallback = bandeira flagcdn
+function TeamCircle({ name, shieldUrl, size = 46 }) {
   const flagUrl = getFlagUrl(name)
-  const [useFallback, setUseFallback] = useState(false)
+  const [failed, setFailed] = useState(false)
 
-  const src = (!useFallback && shieldUrl) ? shieldUrl : flagUrl
+  const useShield = shieldUrl && !failed
+  const src = useShield ? shieldUrl : flagUrl
 
   return (
     <div style={{
-      position: 'relative', width: size, height: size,
+      width: size, height: size,
       borderRadius: '50%', overflow: 'hidden', flexShrink: 0,
       border: '2px solid rgba(255,255,255,0.18)',
       background: '#1a1f2e',
@@ -174,13 +175,11 @@ function TeamCircle({ name, size = 46 }) {
           src={src}
           alt={name}
           style={{
-            width: (!useFallback && shieldUrl) ? '82%' : '100%',
-            height: (!useFallback && shieldUrl) ? '82%' : '100%',
-            objectFit: (!useFallback && shieldUrl) ? 'contain' : 'cover',
+            width: useShield ? '80%' : '100%',
+            height: useShield ? '80%' : '100%',
+            objectFit: useShield ? 'contain' : 'cover',
           }}
-          onError={() => {
-            if (!useFallback && shieldUrl) setUseFallback(true)
-          }}
+          onError={() => { if (useShield) setFailed(true) }}
         />
       ) : (
         <div style={{ fontSize: size * 0.42 }}>🏳️</div>
@@ -257,7 +256,7 @@ function MatchCard({ match }) {
         {/* Times */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '7px' }}>
-            <TeamCircle name={match.home_team} size={46} />
+            <TeamCircle name={match.home_team} shieldUrl={match.home_shield} size={46} />
             <span style={{ fontSize: '11px', fontWeight: 600, textAlign: 'center', lineHeight: 1.2, color: 'var(--text-primary)', maxWidth: '80px' }}>
               {getPT(match.home_team)}
             </span>
@@ -283,7 +282,7 @@ function MatchCard({ match }) {
           </div>
 
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '7px' }}>
-            <TeamCircle name={match.away_team} size={46} />
+            <TeamCircle name={match.away_team} shieldUrl={match.away_shield} size={46} />
             <span style={{ fontSize: '11px', fontWeight: 600, textAlign: 'center', lineHeight: 1.2, color: 'var(--text-primary)', maxWidth: '80px' }}>
               {getPT(match.away_team)}
             </span>
