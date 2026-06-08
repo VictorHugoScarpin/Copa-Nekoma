@@ -80,17 +80,81 @@ const TEAM_PT = {
   'United Arab Emirates': 'Emirados Árabes', 'UAE': 'Emirados Árabes',
 }
 
+// Brasões fixos por seleção (Wikipedia)
+const TEAM_SHIELD = {
+  'United States': 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a9/United_States_Soccer_Federation_logo.svg/200px-United_States_Soccer_Federation_logo.svg.png',
+  'USA': 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a9/United_States_Soccer_Federation_logo.svg/200px-United_States_Soccer_Federation_logo.svg.png',
+  'Canada': 'https://upload.wikimedia.org/wikipedia/pt/thumb/4/4e/Logotipo_Sele%C3%A7%C3%A3o_Canad%C3%A1.png/200px-Logotipo_Sele%C3%A7%C3%A3o_Canad%C3%A1.png',
+  'Mexico': 'https://upload.wikimedia.org/wikipedia/pt/thumb/f/f7/Mexico_national_football_team_crest_%282022%29.png/200px-Mexico_national_football_team_crest_%282022%29.png',
+  'Argentina': 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/19/Afa_logo.svg/200px-Afa_logo.svg.png',
+  'Brazil': 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/42/Brazilian_Football_Confederation_logo.svg/200px-Brazilian_Football_Confederation_logo.svg.png',
+  'Colombia': 'https://upload.wikimedia.org/wikipedia/pt/thumb/a/a2/FCF-Logo-2023.svg/200px-FCF-Logo-2023.svg.png',
+  'Ecuador': 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/98/Logo_de_la_Federaci%C3%B3n_Ecuatoriana_de_F%C3%BAtbol_%282%29.svg/200px-Logo_de_la_Federaci%C3%B3n_Ecuatoriana_de_F%C3%BAtbol_%282%29.svg.png',
+  'Paraguay': 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/19/Asociaci%C3%B3n_Paraguaya_de_F%C3%BAtbol_logo.svg/200px-Asociaci%C3%B3n_Paraguaya_de_F%C3%BAtbol_logo.svg.png',
+  'Uruguay': 'https://upload.wikimedia.org/wikipedia/pt/thumb/1/1d/AUF.png/200px-AUF.png',
+  'Germany': 'https://upload.wikimedia.org/wikipedia/pt/thumb/0/05/DFBEagle.png/200px-DFBEagle.png',
+  'Austria': 'https://upload.wikimedia.org/wikipedia/pt/thumb/9/93/OFB.png/200px-OFB.png',
+  'Belgium': 'https://upload.wikimedia.org/wikipedia/pt/thumb/8/88/Royal_Belgian_FA_logo_2019.png/200px-Royal_Belgian_FA_logo_2019.png',
+  'Bosnia and Herzegovina': 'https://upload.wikimedia.org/wikipedia/pt/thumb/5/5a/Logo_of_the_Football_Association_of_Bosnia_and_Herzegovina_%282013-present%29.png/200px-Logo_of_the_Football_Association_of_Bosnia_and_Herzegovina_%282013-present%29.png',
+  'Bosnia & Herzegovina': 'https://upload.wikimedia.org/wikipedia/pt/thumb/5/5a/Logo_of_the_Football_Association_of_Bosnia_and_Herzegovina_%282013-present%29.png/200px-Logo_of_the_Football_Association_of_Bosnia_and_Herzegovina_%282013-present%29.png',
+  'Croatia': 'https://upload.wikimedia.org/wikipedia/pt/thumb/5/56/Croatia_football_federation.png/200px-Croatia_football_federation.png',
+  'Scotland': 'https://upload.wikimedia.org/wikipedia/pt/thumb/e/e4/Sele%C3%A7%C3%A3o_Escocesa_logo.png/200px-Sele%C3%A7%C3%A3o_Escocesa_logo.png',
+  'Spain': 'https://upload.wikimedia.org/wikipedia/pt/thumb/4/44/Spain_National_Football_Team_badge.png/200px-Spain_National_Football_Team_badge.png',
+  'France': 'https://upload.wikimedia.org/wikipedia/pt/thumb/9/92/France_national_football_team_seal.png/200px-France_national_football_team_seal.png',
+  'Netherlands': 'https://upload.wikimedia.org/wikipedia/pt/thumb/2/2d/Netherlands_national_football_team_logo_2017.png/200px-Netherlands_national_football_team_logo_2017.png',
+  'England': 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/Arms_of_The_Football_Association_%28include_star%29.svg/200px-Arms_of_The_Football_Association_%28include_star%29.svg.png',
+  'Norway': 'https://upload.wikimedia.org/wikipedia/pt/thumb/0/0f/Sele%C3%A7%C3%A3o_Norueguesa_de_Futebol_Logo.png/200px-Sele%C3%A7%C3%A3o_Norueguesa_de_Futebol_Logo.png',
+  'Portugal': 'https://upload.wikimedia.org/wikipedia/pt/thumb/7/77/Portugal_FPF.png/200px-Portugal_FPF.png',
+  'Czechia': 'https://upload.wikimedia.org/wikipedia/pt/thumb/9/96/FACR.png/200px-FACR.png',
+  'Czech Republic': 'https://upload.wikimedia.org/wikipedia/pt/thumb/9/96/FACR.png/200px-FACR.png',
+  'Sweden': 'https://upload.wikimedia.org/wikipedia/pt/thumb/4/4c/SFSverige.png/200px-SFSverige.png',
+  'Switzerland': 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f3/SFV_Logo.svg/200px-SFV_Logo.svg.png',
+  'Turkey': 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/27/Roundel_flag_of_Turkey.svg/200px-Roundel_flag_of_Turkey.svg.png',
+  'South Africa': 'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEglkJg-eh2-jUVDcg2ASv8jKkjGYRCWywKH_TdC1tqU4CO__UcPJU6TQdqumzfWoHwqXF_NAATeKxgd5XCOobFOs5xnYm0cBL0Nmaw2gnwRyaQ-Ge0s4YZ1V9XEeqbpM_PwiKlopOqPQas/s800/%C3%81frica+do+Sul+-+South+African+Football+Association.png',
+  'Algeria': 'https://upload.wikimedia.org/wikipedia/pt/thumb/0/02/Algeria_National_Football_Team_logo.png/200px-Algeria_National_Football_Team_logo.png',
+  'Cape Verde': 'https://upload.wikimedia.org/wikipedia/pt/thumb/5/59/Federa%C3%A7%C3%A3o_Cabo-Verdiana_de_Futebol.png/200px-Federa%C3%A7%C3%A3o_Cabo-Verdiana_de_Futebol.png',
+  'Cape Verde Islands': 'https://upload.wikimedia.org/wikipedia/pt/thumb/5/59/Federa%C3%A7%C3%A3o_Cabo-Verdiana_de_Futebol.png/200px-Federa%C3%A7%C3%A3o_Cabo-Verdiana_de_Futebol.png',
+  "Côte d'Ivoire": 'https://upload.wikimedia.org/wikipedia/pt/thumb/8/8e/F%C3%A9d%C3%A9ration_Ivorienne_de_Football.png/200px-F%C3%A9d%C3%A9ration_Ivorienne_de_Football.png',
+  'Ivory Coast': 'https://upload.wikimedia.org/wikipedia/pt/thumb/8/8e/F%C3%A9d%C3%A9ration_Ivorienne_de_Football.png/200px-F%C3%A9d%C3%A9ration_Ivorienne_de_Football.png',
+  'Egypt': 'https://upload.wikimedia.org/wikipedia/pt/thumb/9/95/Egyptian_Football_Association.png/200px-Egyptian_Football_Association.png',
+  'Ghana': 'https://upload.wikimedia.org/wikipedia/pt/thumb/0/0d/Ghana_Football_Association.png/200px-Ghana_Football_Association.png',
+  'Morocco': 'https://upload.wikimedia.org/wikipedia/pt/thumb/8/8c/F%C3%A9d%C3%A9ration_Royale_Marocaine_de_Football.png/200px-F%C3%A9d%C3%A9ration_Royale_Marocaine_de_Football.png',
+  'Congo DR': 'https://upload.wikimedia.org/wikipedia/pt/thumb/7/74/F%C3%A9d%C3%A9ration_Congolaise_de_Football_Association.png/200px-F%C3%A9d%C3%A9ration_Congolaise_de_Football_Association.png',
+  'DR Congo': 'https://upload.wikimedia.org/wikipedia/pt/thumb/7/74/F%C3%A9d%C3%A9ration_Congolaise_de_Football_Association.png/200px-F%C3%A9d%C3%A9ration_Congolaise_de_Football_Association.png',
+  'Senegal': 'https://upload.wikimedia.org/wikipedia/pt/thumb/8/8c/FSenegalaiseF.png/200px-FSenegalaiseF.png',
+  'Tunisia': 'https://upload.wikimedia.org/wikipedia/pt/thumb/5/5a/F%C3%A9d%C3%A9ration_Tunisienne_de_Football.png/200px-F%C3%A9d%C3%A9ration_Tunisienne_de_Football.png',
+  'Saudi Arabia': 'https://upload.wikimedia.org/wikipedia/pt/thumb/8/86/SAFF.png/200px-SAFF.png',
+  'Australia': 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/05/Australia_national_football_team_badge.svg/200px-Australia_national_football_team_badge.svg.png',
+  'Qatar': 'https://upload.wikimedia.org/wikipedia/pt/thumb/9/91/Associa%C3%A7%C3%A3o_do_Qatar_de_Futebol.png/200px-Associa%C3%A7%C3%A3o_do_Qatar_de_Futebol.png',
+  'South Korea': 'https://upload.wikimedia.org/wikipedia/pt/thumb/5/55/South_Korea_national_football_team_logo.png/200px-South_Korea_national_football_team_logo.png',
+  'Korea Republic': 'https://upload.wikimedia.org/wikipedia/pt/thumb/5/55/South_Korea_national_football_team_logo.png/200px-South_Korea_national_football_team_logo.png',
+  'Iran': 'https://upload.wikimedia.org/wikipedia/pt/thumb/2/2f/Football_Federation_Islamic_Republic_of_Iran.png/200px-Football_Federation_Islamic_Republic_of_Iran.png',
+  'IR Iran': 'https://upload.wikimedia.org/wikipedia/pt/thumb/2/2f/Football_Federation_Islamic_Republic_of_Iran.png/200px-Football_Federation_Islamic_Republic_of_Iran.png',
+  'Iraq': 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/Iraq_National_Team_Badge_2021_v2.svg/200px-Iraq_National_Team_Badge_2021_v2.svg.png',
+  'Japan': 'https://upload.wikimedia.org/wikipedia/pt/thumb/8/86/JapanFA.png/200px-JapanFA.png',
+  'Jordan': 'https://upload.wikimedia.org/wikipedia/pt/thumb/0/04/Jordan_Football_Association.png/200px-Jordan_Football_Association.png',
+  'Uzbekistan': 'https://upload.wikimedia.org/wikipedia/pt/thumb/3/3a/Uzbekistan_Football_Federation.png/200px-Uzbekistan_Football_Federation.png',
+  'Curaçao': 'https://upload.wikimedia.org/wikipedia/pt/thumb/5/56/Federashon_Futb%C3%B2l_K%C3%B2rsou.png/200px-Federashon_Futb%C3%B2l_K%C3%B2rsou.png',
+  'Curacao': 'https://upload.wikimedia.org/wikipedia/pt/thumb/5/56/Federashon_Futb%C3%B2l_K%C3%B2rsou.png/200px-Federashon_Futb%C3%B2l_K%C3%B2rsou.png',
+  'Haiti': 'https://upload.wikimedia.org/wikipedia/pt/thumb/a/a3/Federation_Haitienne_de_Football.png/200px-Federation_Haitienne_de_Football.png',
+  'Panama': 'https://upload.wikimedia.org/wikipedia/pt/thumb/6/6c/Panama_FA_2.svg.png/200px-Panama_FA_2.svg.png',
+}
+
 function getFlagUrl(name) {
   const iso = TEAM_ISO[name]
   return iso ? `https://flagcdn.com/w160/${iso}.png` : null
+}
+
+function getShieldUrl(name) {
+  return TEAM_SHIELD[name] || null
 }
 
 function getPT(name) {
   return TEAM_PT[name] || name
 }
 
-// Bolinha: bandeira na frente + escudo de fundo (do banco)
-function TeamCircle({ name, shieldUrl, size = 46 }) {
+// Bolinha: só a BANDEIRA
+function TeamCircle({ name, size = 46 }) {
   const flagUrl = getFlagUrl(name)
 
   return (
@@ -100,18 +164,10 @@ function TeamCircle({ name, shieldUrl, size = 46 }) {
       border: '1.5px solid rgba(255,255,255,0.12)',
       background: '#0d1117',
     }}>
-      {/* Escudo de fundo */}
-      {shieldUrl && (
-        <img src={shieldUrl} alt="" style={{
-          position: 'absolute', inset: 0, width: '100%', height: '100%',
-          objectFit: 'contain', opacity: 0.22, padding: '4px',
-        }} onError={e => { e.target.style.display = 'none' }} />
-      )}
-      {/* Bandeira na frente */}
       {flagUrl ? (
         <img src={flagUrl} alt={name} style={{
           position: 'absolute', inset: 0, width: '100%', height: '100%',
-          objectFit: 'cover', opacity: 0.9,
+          objectFit: 'cover',
         }} onError={e => { e.target.style.display = 'none' }} />
       ) : (
         <div style={{
@@ -123,27 +179,24 @@ function TeamCircle({ name, shieldUrl, size = 46 }) {
   )
 }
 
-// Fundo do card: escudo oficial (do banco) com opacidade
-function CardBg({ name, shieldUrl, flagUrl, side }) {
-  const url = shieldUrl || flagUrl
+// Fundo do card: só o BRASÃO com opacidade
+function CardBg({ name, side }) {
+  const shieldUrl = getShieldUrl(name)
+  if (!shieldUrl) return null
 
   return (
     <div style={{
       position: 'absolute', top: 0, bottom: 0, [side]: 0,
       width: '55%', overflow: 'hidden', pointerEvents: 'none',
     }}>
-      {url && (
-        <img src={url} alt="" style={{
-          position: 'absolute', top: '50%',
-          [side]: shieldUrl ? '8%' : '-5%',
-          transform: 'translateY(-50%)',
-          width: shieldUrl ? '65%' : '130%',
-          height: shieldUrl ? '65%' : '130%',
-          objectFit: shieldUrl ? 'contain' : 'cover',
-          opacity: shieldUrl ? 0.13 : 0.07,
-          filter: shieldUrl ? 'none' : 'saturate(1.5) blur(1px)',
-        }} onError={e => { e.target.style.display = 'none' }} />
-      )}
+      <img src={shieldUrl} alt="" style={{
+        position: 'absolute', top: '50%',
+        [side]: '8%',
+        transform: 'translateY(-50%)',
+        width: '65%', height: '65%',
+        objectFit: 'contain',
+        opacity: 0.13,
+      }} onError={e => { e.target.style.display = 'none' }} />
     </div>
   )
 }
@@ -151,9 +204,6 @@ function CardBg({ name, shieldUrl, flagUrl, side }) {
 function MatchCard({ match }) {
   const finished = match.status === 'finished'
   const live = match.status === 'live'
-
-  const homeFlagUrl = getFlagUrl(match.home_team)
-  const awayFlagUrl = getFlagUrl(match.away_team)
 
   return (
     <div style={{
@@ -163,8 +213,8 @@ function MatchCard({ match }) {
       borderRadius: '14px', overflow: 'hidden', padding: '0',
       transition: 'border-color 0.2s',
     }}>
-      <CardBg name={match.home_team} shieldUrl={match.home_shield} flagUrl={homeFlagUrl} side="left" />
-      <CardBg name={match.away_team} shieldUrl={match.away_shield} flagUrl={awayFlagUrl} side="right" />
+      <CardBg name={match.home_team} side="left" />
+      <CardBg name={match.away_team} side="right" />
 
       <div style={{ position: 'relative', zIndex: 1, padding: '14px 16px' }}>
         {/* Topo */}
@@ -186,7 +236,7 @@ function MatchCard({ match }) {
         {/* Times */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '7px' }}>
-            <TeamCircle name={match.home_team} shieldUrl={match.home_shield} size={46} />
+            <TeamCircle name={match.home_team} size={46} />
             <span style={{ fontSize: '11px', fontWeight: 600, textAlign: 'center', lineHeight: 1.2, color: 'var(--text-primary)', maxWidth: '80px' }}>
               {getPT(match.home_team)}
             </span>
@@ -212,7 +262,7 @@ function MatchCard({ match }) {
           </div>
 
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '7px' }}>
-            <TeamCircle name={match.away_team} shieldUrl={match.away_shield} size={46} />
+            <TeamCircle name={match.away_team} size={46} />
             <span style={{ fontSize: '11px', fontWeight: 600, textAlign: 'center', lineHeight: 1.2, color: 'var(--text-primary)', maxWidth: '80px' }}>
               {getPT(match.away_team)}
             </span>
