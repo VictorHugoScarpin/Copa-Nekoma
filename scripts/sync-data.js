@@ -5,7 +5,7 @@ const SUPABASE_URL = process.env.SUPABASE_URL
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY
 const FOOTBALL_API_KEY = process.env.FOOTBALL_API_KEY
 const LEAGUE_ID = 1
-const SEASON = 2022
+const SEASON = 2026
 
 // ✅ Passa o ws como transport — resolve o crash de WebSocket no Node 20
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
