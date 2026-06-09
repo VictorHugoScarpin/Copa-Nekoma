@@ -6,42 +6,155 @@ import { ptBR } from 'date-fns/locale'
 
 const LOCK_SECS = 60
 
-const TEAM_FLAGS = {
-  'Brasil':'https://flagcdn.com/w160/br.png','Brazil':'https://flagcdn.com/w160/br.png',
-  'Argentina':'https://flagcdn.com/w160/ar.png','França':'https://flagcdn.com/w160/fr.png',
-  'France':'https://flagcdn.com/w160/fr.png','Alemanha':'https://flagcdn.com/w160/de.png',
-  'Germany':'https://flagcdn.com/w160/de.png','Espanha':'https://flagcdn.com/w160/es.png',
-  'Spain':'https://flagcdn.com/w160/es.png','Portugal':'https://flagcdn.com/w160/pt.png',
-  'Inglaterra':'https://flagcdn.com/w160/gb-eng.png','England':'https://flagcdn.com/w160/gb-eng.png',
-  'Holanda':'https://flagcdn.com/w160/nl.png','Netherlands':'https://flagcdn.com/w160/nl.png',
-  'Suíça':'https://flagcdn.com/w160/ch.png','Switzerland':'https://flagcdn.com/w160/ch.png',
-  'Croácia':'https://flagcdn.com/w160/hr.png','Croatia':'https://flagcdn.com/w160/hr.png',
-  'Uruguai':'https://flagcdn.com/w160/uy.png','Uruguay':'https://flagcdn.com/w160/uy.png',
-  'México':'https://flagcdn.com/w160/mx.png','Mexico':'https://flagcdn.com/w160/mx.png',
-  'EUA':'https://flagcdn.com/w160/us.png','USA':'https://flagcdn.com/w160/us.png',
-  'Canadá':'https://flagcdn.com/w160/ca.png','Canada':'https://flagcdn.com/w160/ca.png',
-  'Japão':'https://flagcdn.com/w160/jp.png','Japan':'https://flagcdn.com/w160/jp.png',
-  'Marrocos':'https://flagcdn.com/w160/ma.png','Morocco':'https://flagcdn.com/w160/ma.png',
-  'Senegal':'https://flagcdn.com/w160/sn.png','Coreia do Sul':'https://flagcdn.com/w160/kr.png',
-  'South Korea':'https://flagcdn.com/w160/kr.png','Austrália':'https://flagcdn.com/w160/au.png',
-  'Australia':'https://flagcdn.com/w160/au.png','Sérvia':'https://flagcdn.com/w160/rs.png',
-  'Serbia':'https://flagcdn.com/w160/rs.png','Bélgica':'https://flagcdn.com/w160/be.png',
-  'Belgium':'https://flagcdn.com/w160/be.png','Dinamarca':'https://flagcdn.com/w160/dk.png',
-  'Denmark':'https://flagcdn.com/w160/dk.png','Polônia':'https://flagcdn.com/w160/pl.png',
-  'Poland':'https://flagcdn.com/w160/pl.png','Colômbia':'https://flagcdn.com/w160/co.png',
-  'Colombia':'https://flagcdn.com/w160/co.png','Equador':'https://flagcdn.com/w160/ec.png',
-  'Ecuador':'https://flagcdn.com/w160/ec.png','Gana':'https://flagcdn.com/w160/gh.png',
-  'Ghana':'https://flagcdn.com/w160/gh.png','Nigéria':'https://flagcdn.com/w160/ng.png',
-  'Nigeria':'https://flagcdn.com/w160/ng.png','Camarões':'https://flagcdn.com/w160/cm.png',
-  'Cameroon':'https://flagcdn.com/w160/cm.png','Itália':'https://flagcdn.com/w160/it.png',
-  'Italy':'https://flagcdn.com/w160/it.png','Chile':'https://flagcdn.com/w160/cl.png',
-  'Peru':'https://flagcdn.com/w160/pe.png','Qatar':'https://flagcdn.com/w160/qa.png',
-  'Arábia Saudita':'https://flagcdn.com/w160/sa.png','Saudi Arabia':'https://flagcdn.com/w160/sa.png',
-  'Irã':'https://flagcdn.com/w160/ir.png','Iran':'https://flagcdn.com/w160/ir.png',
-  'Tunísia':'https://flagcdn.com/w160/tn.png','Tunisia':'https://flagcdn.com/w160/tn.png',
-  'Costa Rica':'https://flagcdn.com/w160/cr.png','País de Gales':'https://flagcdn.com/w160/gb-wls.png',
-  'Wales':'https://flagcdn.com/w160/gb-wls.png',
+// ── Mapas idênticos ao MatchesPage ──────────────────────────────────────────
+
+const TEAM_ISO = {
+  'Brazil': 'br', 'Argentina': 'ar', 'France': 'fr', 'Germany': 'de',
+  'Spain': 'es', 'England': 'gb-eng', 'Portugal': 'pt', 'Netherlands': 'nl',
+  'Italy': 'it', 'Uruguay': 'uy', 'Colombia': 'co', 'Mexico': 'mx',
+  'United States': 'us', 'USA': 'us', 'Canada': 'ca', 'Japan': 'jp',
+  'South Korea': 'kr', 'Korea Republic': 'kr', 'Morocco': 'ma',
+  'Senegal': 'sn', 'Ghana': 'gh', 'Nigeria': 'ng', 'Australia': 'au',
+  'Saudi Arabia': 'sa', 'Iran': 'ir', 'IR Iran': 'ir', 'Qatar': 'qa',
+  'Croatia': 'hr', 'Serbia': 'rs', 'Switzerland': 'ch', 'Belgium': 'be',
+  'Denmark': 'dk', 'Poland': 'pl', 'Cameroon': 'cm', 'Ecuador': 'ec',
+  'Tunisia': 'tn', 'Costa Rica': 'cr', 'Wales': 'gb-wls',
+  'Chile': 'cl', 'Peru': 'pe', 'Paraguay': 'py', 'Venezuela': 've',
+  'Bolivia': 'bo', 'Austria': 'at', 'Turkey': 'tr', 'Ukraine': 'ua',
+  'Honduras': 'hn', 'Panama': 'pa', 'Jamaica': 'jm',
+  'Slovakia': 'sk', 'Romania': 'ro', 'Hungary': 'hu',
+  'Czechia': 'cz', 'Czech Republic': 'cz', 'Slovenia': 'si',
+  'Algeria': 'dz', 'Egypt': 'eg', 'New Zealand': 'nz',
+  "Côte d'Ivoire": 'ci', 'Ivory Coast': 'ci',
+  'Guatemala': 'gt', 'El Salvador': 'sv',
+  'South Africa': 'za',
+  'Bosnia and Herzegovina': 'ba', 'Bosnia & Herzegovina': 'ba',
+  'Bosnia Herzegovina': 'ba', 'Bosna i Hercegovina': 'ba', 'Bosnia-Herzegovina': 'ba',
+  'Haiti': 'ht', 'Curaçao': 'cw', 'Curacao': 'cw',
+  'Cape Verde': 'cv', 'Cape Verde Islands': 'cv',
+  'Congo DR': 'cd', 'DR Congo': 'cd',
+  'Scotland': 'gb-sct', 'Northern Ireland': 'gb-nir', 'Ireland': 'ie',
+  'Greece': 'gr', 'Norway': 'no', 'Sweden': 'se', 'Finland': 'fi',
+  'Albania': 'al', 'North Macedonia': 'mk', 'Montenegro': 'me',
+  'Georgia': 'ge', 'Kosovo': 'xk',
+  'Trinidad and Tobago': 'tt', 'Cuba': 'cu', 'Nicaragua': 'ni',
+  'Suriname': 'sr', 'Guyana': 'gy',
+  'Kenya': 'ke', 'Tanzania': 'tz', 'Uganda': 'ug', 'Mali': 'ml',
+  'Mozambique': 'mz', 'Angola': 'ao', 'Zambia': 'zm', 'Zimbabwe': 'zw',
+  'Togo': 'tg', 'Benin': 'bj', 'Guinea': 'gn', 'Burkina Faso': 'bf',
+  'Ethiopia': 'et', 'Namibia': 'na', 'Mauritania': 'mr',
+  'Thailand': 'th', 'Vietnam': 'vn', 'Indonesia': 'id',
+  'Philippines': 'ph', 'Malaysia': 'my', 'China': 'cn',
+  'India': 'in', 'Uzbekistan': 'uz', 'Kazakhstan': 'kz',
+  'Iraq': 'iq', 'Jordan': 'jo', 'United Arab Emirates': 'ae', 'UAE': 'ae',
+  'Oman': 'om', 'Kuwait': 'kw', 'Bahrain': 'bh',
 }
+
+const TEAM_PT = {
+  'Brazil': 'Brasil', 'Argentina': 'Argentina', 'France': 'França',
+  'Germany': 'Alemanha', 'Spain': 'Espanha', 'England': 'Inglaterra',
+  'Portugal': 'Portugal', 'Netherlands': 'Holanda', 'Italy': 'Itália',
+  'Uruguay': 'Uruguai', 'Colombia': 'Colômbia', 'Mexico': 'México',
+  'United States': 'EUA', 'USA': 'EUA', 'Canada': 'Canadá',
+  'Japan': 'Japão', 'South Korea': 'Coreia do Sul', 'Korea Republic': 'Coreia do Sul',
+  'Morocco': 'Marrocos', 'Senegal': 'Senegal', 'Ghana': 'Gana',
+  'Nigeria': 'Nigéria', 'Australia': 'Austrália', 'Saudi Arabia': 'Arábia Saudita',
+  'Iran': 'Irã', 'IR Iran': 'Irã', 'Qatar': 'Catar', 'Croatia': 'Croácia',
+  'Serbia': 'Sérvia', 'Switzerland': 'Suíça', 'Belgium': 'Bélgica',
+  'Denmark': 'Dinamarca', 'Poland': 'Polônia', 'Cameroon': 'Camarões',
+  'Ecuador': 'Equador', 'Tunisia': 'Tunísia', 'Costa Rica': 'Costa Rica',
+  'Wales': 'País de Gales', 'Chile': 'Chile', 'Peru': 'Peru',
+  'Paraguay': 'Paraguai', 'Venezuela': 'Venezuela', 'Bolivia': 'Bolívia',
+  'Austria': 'Áustria', 'Turkey': 'Turquia', 'Ukraine': 'Ucrânia',
+  'Honduras': 'Honduras', 'Panama': 'Panamá', 'Jamaica': 'Jamaica',
+  'Slovakia': 'Eslováquia', 'Romania': 'Romênia', 'Hungary': 'Hungria',
+  'Czechia': 'Rep. Tcheca', 'Czech Republic': 'Rep. Tcheca',
+  'Slovenia': 'Eslovênia', 'Algeria': 'Argélia', 'Egypt': 'Egito',
+  'New Zealand': 'Nova Zelândia', "Côte d'Ivoire": 'Costa do Marfim',
+  'Ivory Coast': 'Costa do Marfim', 'Guatemala': 'Guatemala',
+  'El Salvador': 'El Salvador', 'South Africa': 'África do Sul',
+  'Bosnia and Herzegovina': 'Bósnia e Herzegovina',
+  'Bosnia & Herzegovina': 'Bósnia e Herzegovina',
+  'Bosnia-Herzegovina': 'Bósnia e Herzegovina',
+  'Bosnia Herzegovina': 'Bósnia e Herzegovina',
+  'Bosna i Hercegovina': 'Bósnia e Herzegovina',
+  'Haiti': 'Haiti', 'Curaçao': 'Curaçao', 'Curacao': 'Curaçao',
+  'Cape Verde': 'Cabo Verde', 'Cape Verde Islands': 'Cabo Verde',
+  'Congo DR': 'Congo RD', 'DR Congo': 'Congo RD',
+  'Scotland': 'Escócia', 'Northern Ireland': 'Irlanda do Norte', 'Ireland': 'Irlanda',
+  'Greece': 'Grécia', 'Norway': 'Noruega', 'Sweden': 'Suécia',
+  'Finland': 'Finlândia', 'Albania': 'Albânia',
+  'North Macedonia': 'Macedônia do Norte', 'Montenegro': 'Montenegro',
+  'Georgia': 'Geórgia', 'Kosovo': 'Kosovo',
+  'Trinidad and Tobago': 'Trinidad e Tobago', 'Cuba': 'Cuba',
+  'United Arab Emirates': 'Emirados Árabes', 'UAE': 'Emirados Árabes',
+  'Uzbekistan': 'Uzbequistão', 'Jordan': 'Jordânia', 'Iraq': 'Iraque',
+}
+
+const FLAG_LOCAL = {
+  'Argentina': '/ar.png',
+  'Bosnia and Herzegovina': '/ba.png',
+  'Bosnia & Herzegovina': '/ba.png',
+  'Bosnia Herzegovina': '/ba.png',
+  'Bosna i Hercegovina': '/ba.png',
+  'Bosnia-Herzegovina': '/ba.png',
+  'Jordan': '/jor.png',
+  'Korea Republic': '/cor.png',
+  'South Korea': '/cor.png',
+  'Uzbekistan': '/uz.png',
+}
+
+function getFlagUrl(name) {
+  if (FLAG_LOCAL[name]) return FLAG_LOCAL[name]
+  const iso = TEAM_ISO[name]
+  return iso ? `https://flagcdn.com/w160/${iso}.png` : null
+}
+
+function getPT(name) {
+  return TEAM_PT[name] || name
+}
+
+// Bolinha: bandeira, cover 100%
+function TeamCircle({ name, size = 46 }) {
+  const flagUrl = getFlagUrl(name)
+  return (
+    <div style={{
+      width: size, height: size,
+      borderRadius: '50%', overflow: 'hidden', flexShrink: 0,
+      border: '2px solid rgba(255,255,255,0.18)',
+      background: '#1a1f2e',
+    }}>
+      {flagUrl
+        ? <img src={flagUrl} alt={name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: size * 0.42 }}>🏳️</div>
+      }
+    </div>
+  )
+}
+
+// Fundo do card: bandeira preenchendo cada lado com fade no centro
+function CardBg({ name, side }) {
+  const flagUrl = getFlagUrl(name)
+  if (!flagUrl) return null
+  const gradientDir = side === 'left' ? 'to right' : 'to left'
+  return (
+    <div style={{
+      position: 'absolute', top: 0, bottom: 0, [side]: 0,
+      width: '52%', overflow: 'hidden', pointerEvents: 'none',
+    }}>
+      <img src={flagUrl} alt="" style={{
+        position: 'absolute', inset: 0, width: '100%', height: '100%',
+        objectFit: 'cover', opacity: 0.18, filter: 'saturate(1.4)',
+      }} onError={e => { e.target.style.display = 'none' }} />
+      <div style={{
+        position: 'absolute', inset: 0,
+        background: `linear-gradient(${gradientDir}, transparent 20%, rgba(13,17,23,0.85) 100%)`,
+      }} />
+    </div>
+  )
+}
+
+// ── Utilitários ──────────────────────────────────────────────────────────────
 
 function isLocked(dateStr) { return differenceInSeconds(parseISO(dateStr), new Date()) <= LOCK_SECS }
 
@@ -50,28 +163,10 @@ function countdown(dateStr) {
   if (diff <= 0) return null
   if (diff > 3600) return format(parseISO(dateStr), "dd/MM 'às' HH:mm", { locale: ptBR })
   const m = Math.floor(diff / 60), s = diff % 60
-  return `${m}m ${s.toString().padStart(2,'0')}s`
+  return `${m}m ${s.toString().padStart(2, '0')}s`
 }
 
-function TeamFlag({ name, emoji, size = 48 }) {
-  const url = TEAM_FLAGS[name]
-  return (
-    <div style={{ width: size, height: size, borderRadius: '50%', overflow: 'hidden', border: '2px solid rgba(255,255,255,0.15)', flexShrink: 0, background: 'rgba(255,255,255,0.05)' }}>
-      {url ? <img src={url} alt={name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-           : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: size * 0.45 }}>{emoji || '🏳️'}</div>}
-    </div>
-  )
-}
-
-function FlagBg({ name, emoji, side }) {
-  const url = TEAM_FLAGS[name]
-  return (
-    <div style={{ position: 'absolute', top: 0, bottom: 0, [side]: 0, width: '50%', overflow: 'hidden', pointerEvents: 'none' }}>
-      {url ? <img src={url} alt="" style={{ position: 'absolute', top: '50%', [side]: '-5%', transform: 'translateY(-50%)', width: '130%', height: '130%', objectFit: 'cover', opacity: 0.09, filter: 'saturate(1.8) blur(1px)' }} />
-           : emoji && <div style={{ position: 'absolute', top: '50%', [side]: '-10px', transform: 'translateY(-50%)', fontSize: '100px', opacity: 0.06 }}>{emoji}</div>}
-    </div>
-  )
-}
+// ── ResenhaList ──────────────────────────────────────────────────────────────
 
 function ResenhaList({ matchId, matchHomeScore, matchAwayScore }) {
   const [guesses, setGuesses] = useState([])
@@ -100,11 +195,12 @@ function ResenhaList({ matchId, matchHomeScore, matchAwayScore }) {
   )
 }
 
+// ── GuessCard ────────────────────────────────────────────────────────────────
+
 function GuessCard({ match, myGuess, onSave }) {
   const finished = match.status === 'finished'
   const live = match.status === 'live'
 
-  // Encerrado = expandido por padrão; outros = minimizado
   const [expanded, setExpanded] = useState(finished)
   const [popoverOpen, setPopoverOpen] = useState(false)
   const [home, setHome] = useState(myGuess?.home_score ?? '')
@@ -140,53 +236,66 @@ function GuessCard({ match, myGuess, onSave }) {
     : live ? 'rgba(239,68,68,0.04)' : 'var(--bg-glass)'
 
   return (
-    <div style={{ position: 'relative', overflow: 'hidden', background: bgColor, border: `1px solid ${borderColor}`, borderRadius: 'var(--radius-lg)', marginBottom: '10px' }}>
-      <FlagBg name={match.home_team} emoji={match.home_flag} side="left" />
-      <FlagBg name={match.away_team} emoji={match.away_flag} side="right" />
+    <div style={{
+      position: 'relative', overflow: 'hidden',
+      background: bgColor, border: `1px solid ${borderColor}`,
+      borderRadius: '14px', marginBottom: '10px',
+    }}>
+      <CardBg name={match.home_team} side="left" />
+      <CardBg name={match.away_team} side="right" />
+      <div style={{
+        position: 'absolute', inset: 0, pointerEvents: 'none',
+        background: 'radial-gradient(ellipse 40% 80% at 50% 50%, rgba(13,17,23,0.55) 0%, transparent 100%)',
+      }} />
 
       <div style={{ position: 'relative', zIndex: 1 }}>
-        {/* Header clicável — sempre visível */}
+        {/* Header clicável */}
         <div
           onClick={() => !finished && setExpanded(e => !e)}
           style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', cursor: finished ? 'default' : 'pointer' }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            {/* Flags pequenas */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <TeamFlag name={match.home_team} emoji={match.home_flag} size={28} />
-              <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)', maxWidth: 60, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{match.home_team}</span>
+          {/* Times no header */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, minWidth: 0 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px' }}>
+              <TeamCircle name={match.home_team} size={28} />
+              <span style={{ fontSize: '9px', fontWeight: 600, color: 'var(--text-secondary)', maxWidth: 52, textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {getPT(match.home_team)}
+              </span>
             </div>
-            <span style={{ fontFamily: 'var(--font-display)', fontSize: finished ? '20px' : '13px', color: finished ? 'var(--text-primary)' : 'var(--accent-gold)', letterSpacing: '0.04em', flexShrink: 0 }}>
+
+            <span style={{ fontFamily: 'var(--font-display)', fontSize: finished ? '20px' : '13px', color: finished ? 'var(--text-primary)' : 'var(--accent-gold)', letterSpacing: '0.04em', flexShrink: 0, paddingBottom: finished ? 0 : '12px' }}>
               {finished ? `${match.home_score} × ${match.away_score}` : (live ? '🔴' : cd || '–')}
             </span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)', maxWidth: 60, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{match.away_team}</span>
-              <TeamFlag name={match.away_team} emoji={match.away_flag} size={28} />
+
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px' }}>
+              <TeamCircle name={match.away_team} size={28} />
+              <span style={{ fontSize: '9px', fontWeight: 600, color: 'var(--text-secondary)', maxWidth: 52, textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {getPT(match.away_team)}
+              </span>
             </div>
           </div>
 
+          {/* Badges + ações */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
             {finished
               ? <span className={`badge ${correct ? 'badge-green' : 'badge-red'}`}>{correct ? `✓ +${myGuess?.points_earned || 0}pts` : '✗ Erro'}</span>
-              : locked ? <span className="badge badge-muted" style={{fontSize:'9px'}}>🔒</span>
+              : locked ? <span className="badge badge-muted" style={{ fontSize: '9px' }}>🔒</span>
               : myGuess?.home_score !== undefined ? <span className="badge badge-gold">✓ {myGuess.home_score}×{myGuess.away_score}</span>
-              : <span className="badge badge-muted" style={{fontSize:'9px'}}>sem palpite</span>
+              : <span className="badge badge-muted" style={{ fontSize: '9px' }}>sem palpite</span>
             }
-            {/* 3 risquinhos — só pra ver quem palpitou */}
             <button
               onClick={e => { e.stopPropagation(); setPopoverOpen(o => !o) }}
               style={{ background: 'none', border: 'none', cursor: 'pointer', color: popoverOpen ? 'var(--accent-gold)' : 'var(--text-muted)', padding: '4px', display: 'flex', flexDirection: 'column', gap: '3px', alignItems: 'center' }}
             >
-              {[0,1,2].map(i => <span key={i} style={{ display: 'block', width: '14px', height: '2px', background: 'currentColor', borderRadius: '1px' }} />)}
+              {[0, 1, 2].map(i => <span key={i} style={{ display: 'block', width: '14px', height: '2px', background: 'currentColor', borderRadius: '1px' }} />)}
             </button>
-            {/* Seta expand (só em não-finalizados) */}
             {!finished && (
               <span style={{ color: 'var(--text-muted)', fontSize: '12px', transform: expanded ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform 0.2s', display: 'inline-block' }}>▼</span>
             )}
           </div>
         </div>
 
-        {/* Popover quem palpitou */}
+        {/* Popover palpites da galera */}
         {popoverOpen && (
           <div style={{ margin: '0 16px 12px', background: 'rgba(13,17,23,0.95)', border: '1px solid var(--border-glass-strong)', borderRadius: 'var(--radius-md)', padding: '10px 12px', animation: 'fadeUp 0.15s ease' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
@@ -200,11 +309,12 @@ function GuessCard({ match, myGuess, onSave }) {
         {/* Corpo expandido */}
         {expanded && (
           <div style={{ padding: '0 16px 14px', animation: 'fadeUp 0.2s ease' }}>
-            {/* Times grandes + input palpite */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '12px' }}>
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' }}>
-                <TeamFlag name={match.home_team} emoji={match.home_flag} size={44} />
-                <span style={{ fontSize: '11px', fontWeight: 600, textAlign: 'center', lineHeight: 1.2, color: 'var(--text-secondary)' }}>{match.home_team}</span>
+                <TeamCircle name={match.home_team} size={44} />
+                <span style={{ fontSize: '11px', fontWeight: 600, textAlign: 'center', lineHeight: 1.2, color: 'var(--text-secondary)' }}>
+                  {getPT(match.home_team)}
+                </span>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px', flexShrink: 0 }}>
                 <div style={{ display: 'flex', gap: '5px', alignItems: 'center' }}>
@@ -215,8 +325,10 @@ function GuessCard({ match, myGuess, onSave }) {
                 <div style={{ fontSize: '9px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 600 }}>palpite</div>
               </div>
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' }}>
-                <TeamFlag name={match.away_team} emoji={match.away_flag} size={44} />
-                <span style={{ fontSize: '11px', fontWeight: 600, textAlign: 'center', lineHeight: 1.2, color: 'var(--text-secondary)' }}>{match.away_team}</span>
+                <TeamCircle name={match.away_team} size={44} />
+                <span style={{ fontSize: '11px', fontWeight: 600, textAlign: 'center', lineHeight: 1.2, color: 'var(--text-secondary)' }}>
+                  {getPT(match.away_team)}
+                </span>
               </div>
             </div>
 
@@ -226,7 +338,6 @@ function GuessCard({ match, myGuess, onSave }) {
               </button>
             )}
 
-            {/* Resenha automática se encerrado */}
             {finished && (
               <div style={{ borderTop: '1px solid var(--border-glass)', paddingTop: '10px' }}>
                 <div style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 600, marginBottom: '6px' }}>Resenha</div>
@@ -239,6 +350,8 @@ function GuessCard({ match, myGuess, onSave }) {
     </div>
   )
 }
+
+// ── MasterGuess ──────────────────────────────────────────────────────────────
 
 function MasterGuess({ userId }) {
   const [t1, setT1] = useState('')
@@ -286,6 +399,8 @@ function MasterGuess({ userId }) {
   )
 }
 
+// ── RegrasTab ────────────────────────────────────────────────────────────────
+
 function RegrasTab() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -329,6 +444,8 @@ function RegrasTab() {
     </div>
   )
 }
+
+// ── GuessesPage ──────────────────────────────────────────────────────────────
 
 export default function GuessesPage() {
   const { user } = useAuth()
