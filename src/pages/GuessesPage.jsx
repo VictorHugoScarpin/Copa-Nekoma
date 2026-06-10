@@ -255,21 +255,26 @@ function GuessCard({ match, myGuess, onSave }) {
           style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', cursor: finished ? 'default' : 'pointer' }}
         >
           {/* Times no header */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, minWidth: 0 }}>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flex: 1, minWidth: 0 }}>
+            {/* Time casa — largura fixa para alinhar bolinha */}
+            <div style={{ width: 72, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', flexShrink: 0 }}>
               <TeamCircle name={match.home_team} size={28} />
-              <span style={{ fontSize: '9px', fontWeight: 600, color: 'var(--text-2)', maxWidth: 72, textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <span style={{ fontSize: '9px', fontWeight: 600, color: 'var(--text-2)', width: 72, textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {getPT(match.home_team)}
               </span>
             </div>
 
-            <span style={{ fontFamily: 'var(--font-display)', fontSize: finished ? '20px' : '13px', color: finished ? 'var(--text)' : 'var(--gold)', letterSpacing: '0.04em', flexShrink: 0, paddingBottom: finished ? 0 : '12px' }}>
-              {finished ? `${match.home_score} × ${match.away_score}` : (live ? '🔴' : cd || '–')}
-            </span>
+            {/* Horário/placar no centro */}
+            <div style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', paddingBottom: finished ? 0 : '12px' }}>
+              <span style={{ fontFamily: 'var(--font-display)', fontSize: finished ? '20px' : '13px', color: finished ? 'var(--text)' : 'var(--gold)', letterSpacing: '0.04em', flexShrink: 0 }}>
+                {finished ? `${match.home_score} × ${match.away_score}` : (live ? '🔴' : cd || '–')}
+              </span>
+            </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px' }}>
+            {/* Time fora — largura fixa para alinhar bolinha */}
+            <div style={{ width: 72, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', flexShrink: 0 }}>
               <TeamCircle name={match.away_team} size={28} />
-              <span style={{ fontSize: '9px', fontWeight: 600, color: 'var(--text-2)', maxWidth: 72, textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <span style={{ fontSize: '9px', fontWeight: 600, color: 'var(--text-2)', width: 72, textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {getPT(match.away_team)}
               </span>
             </div>
