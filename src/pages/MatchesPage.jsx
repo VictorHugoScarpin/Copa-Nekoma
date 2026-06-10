@@ -415,7 +415,16 @@ export default function MatchesPage() {
 
       {tab === 'stats' ? <StatsTab /> : (
         <>
-          <div style={{ display: 'flex', borderBottom: '1px solid rgba(255,255,255,0.08)', marginBottom: '20px', overflowX: 'auto', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none', msOverflowStyle: 'none', touchAction: 'pan-x' }}>
+          <div style={{ display: 'flex', borderBottom: '1px solid rgba(255,255,255,0.08)', marginBottom: '20px', overflowX: 'auto', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+            onTouchStart={e => { e._touchX = e.touches[0].clientX }}
+            onTouchEnd={e => {
+              const dx = e.changedTouches[0].clientX - (e._touchX || 0)
+              const tabs = ['ontem','hoje','proximos']
+              const cur = tabs.indexOf(dayTab)
+              if (dx < -40 && cur < tabs.length - 1) setDayTab(tabs[cur + 1])
+              if (dx > 40 && cur > 0) setDayTab(tabs[cur - 1])
+            }}
+          >
             {[['ontem', 'Ontem'], ['hoje', 'Hoje'], ['proximos', 'Próximos']].map(([key, label]) => (
               <button key={key} onClick={() => setDayTab(key)} style={{
                 flexShrink: 0, flex: 1, minWidth: '80px', padding: '10px 8px', border: 'none', cursor: 'pointer',
