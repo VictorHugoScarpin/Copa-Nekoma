@@ -109,6 +109,7 @@ async function syncMatches() {
     status: mapStatus(match.status),
     home_score: match.score?.fullTime?.home ?? null,
     away_score: match.score?.fullTime?.away ?? null,
+    venue: match.venue || null,              // 🏟️ cidade/estádio
     stream_url: 'https://www.youtube.com/@CazeTV',
   },
   { onConflict: 'external_id' }
