@@ -7,6 +7,7 @@ import RankingPage from './pages/RankingPage'
 import GroupsPage from './pages/GroupsPage'
 import BracketPage from './pages/BracketPage'
 import ProfilePage from './pages/ProfilePage'
+import FantasyPage from './pages/FantasyPage'
 import TopHeader from './components/TopHeader'
 import './index.css'
 
