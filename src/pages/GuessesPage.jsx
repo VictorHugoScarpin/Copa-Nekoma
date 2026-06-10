@@ -140,7 +140,7 @@ function CardBg({ name, side }) {
   return (
     <div style={{
       position: 'absolute', top: 0, bottom: 0, [side]: 0,
-      width: '58%', overflow: 'hidden', pointerEvents: 'none',
+      width: '56%', overflow: 'hidden', pointerEvents: 'none',
     }}>
       <img src={flagUrl} alt="" style={{
         position: 'absolute', inset: 0, width: '100%', height: '100%',
