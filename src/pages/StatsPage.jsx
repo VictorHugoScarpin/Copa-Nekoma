@@ -29,7 +29,16 @@ export default function StatsPage() {
     <div className="page">
       <div className="section-title">Estatísticas</div>
 
-      <div className="tab-bar" style={{ marginBottom: '24px' }}>
+      <div className="tab-bar" style={{ marginBottom: '24px' }}
+        onTouchStart={e => { e.currentTarget._sx = e.touches[0].clientX }}
+        onTouchEnd={e => {
+          const dx = e.changedTouches[0].clientX - (e.currentTarget._sx || 0)
+          const tabs = ['scorers','assists']
+          const cur = tabs.indexOf(tab)
+          if (dx < -40 && cur < tabs.length - 1) setTab(tabs[cur + 1])
+          if (dx > 40 && cur > 0) setTab(tabs[cur - 1])
+        }}
+      >
         {[['scorers', '⚽ Artilheiros'], ['assists', '👟 Assistências']].map(([key, label]) => (
           <button key={key} onClick={() => setTab(key)} className={`tab-btn ${tab === key ? 'active' : ''}`}>{label}</button>
         ))}
