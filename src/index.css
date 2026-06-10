@@ -12,20 +12,20 @@
   --border-strong:      rgba(255,255,255,0.16);
 
   /* Acentos */
-  --gold:               #e8b84b;
-  --gold-bright:        #ffd166;
-  --gold-dim:           rgba(232,184,75,0.18);
-  --gold-glow:          rgba(232,184,75,0.30);
-  --green:              #1db954;
-  --green-dim:          rgba(29,185,84,0.14);
+  --gold:               #f5c518;
+  --gold-bright:        #ffe566;
+  --gold-dim:           rgba(245,197,24,0.18);
+  --gold-glow:          rgba(245,197,24,0.30);
+  --green:              #00c853;
+  --green-dim:          rgba(0,200,83,0.14);
   --red:                #f03e3e;
   --red-dim:            rgba(240,62,62,0.14);
   --blue:               #4d8ef0;
 
   /* Texto */
-  --text:               #e8eef8;
-  --text-2:             rgba(232,238,248,0.60);
-  --text-3:             rgba(232,238,248,0.32);
+  --text:               #e6eeff;
+  --text-2:             rgba(230,238,255,0.60);
+  --text-3:             rgba(230,238,255,0.32);
 
   /* Tipografia */
   --font-display:       'Bebas Neue', sans-serif;
@@ -56,7 +56,7 @@ body::before {
   top: -50%; left: -30%;
   width: 90vw; height: 90vw;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(29,185,84,0.055) 0%, transparent 60%);
+  background: radial-gradient(circle, rgba(0,200,83,0.06) 0%, transparent 60%);
   pointer-events: none;
   animation: bgDrift1 18s ease-in-out infinite;
   z-index: 0;
@@ -67,7 +67,7 @@ body::after {
   bottom: -30%; right: -20%;
   width: 80vw; height: 80vw;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(232,184,75,0.06) 0%, transparent 60%);
+  background: radial-gradient(circle, rgba(245,197,24,0.06) 0%, transparent 60%);
   pointer-events: none;
   animation: bgDrift2 22s ease-in-out infinite;
   z-index: 0;
@@ -164,7 +164,7 @@ body::after {
   font-family: var(--font-body);
 }
 .nav-item svg { width: 22px; height: 22px; transition: transform 0.2s; }
-.nav-item.active { color: var(--gold); }
+.nav-item.active { color: var(--green); }
 .nav-item.active svg { transform: scale(1.1); }
 /* Pílula animada sob o ícone ativo */
 .nav-item.active::before {
@@ -175,7 +175,7 @@ body::after {
   transform: translateX(-50%);
   width: 32px;
   height: 32px;
-  background: var(--gold-dim);
+  background: rgba(0,200,83,0.15);
   border-radius: 10px;
   z-index: -1;
   animation: pillSlide 0.25s ease both;
@@ -236,7 +236,7 @@ body::after {
 }
 .side-nav-item svg { width: 18px; height: 18px; flex-shrink: 0; }
 .side-nav-item:hover { background: var(--surface); color: var(--text-2); }
-.side-nav-item.active { background: var(--gold-dim); color: var(--gold-bright); border: 1px solid rgba(232,184,75,0.15); }
+.side-nav-item.active { background: rgba(0,200,83,0.12); color: var(--green); border: 1px solid rgba(0,200,83,0.18); }
 
 /* ── Page ── */
 .page {
@@ -261,9 +261,9 @@ body::after {
 .btn-primary {
   background: linear-gradient(135deg, #c9921a 0%, var(--gold-bright) 50%, #d4a030 100%);
   border: none; color: #060b14; font-weight: 700; letter-spacing: 0.05em;
-  box-shadow: 0 4px 20px rgba(232,184,75,0.25);
+  box-shadow: 0 4px 20px rgba(245,197,24,0.25);
 }
-.btn-primary:hover { filter: brightness(1.08); box-shadow: 0 6px 28px rgba(232,184,75,0.35); }
+.btn-primary:hover { filter: brightness(1.08); box-shadow: 0 6px 28px rgba(245,197,24,0.35); }
 
 /* ── Inputs ── */
 .input-group { display: flex; flex-direction: column; gap: 6px; }
@@ -277,7 +277,7 @@ body::after {
   color: var(--text); font-family: var(--font-body); font-size: 15px;
   outline: none; transition: border-color 0.2s, box-shadow 0.2s;
 }
-.input:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(232,184,75,0.10); }
+.input:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(245,197,24,0.10); }
 .input::placeholder { color: var(--text-3); }
 
 /* Score input */
@@ -289,7 +289,7 @@ body::after {
   outline: none; transition: border-color 0.2s, box-shadow 0.2s;
   font-variant-numeric: tabular-nums;
 }
-.score-input:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(232,184,75,0.10); }
+.score-input:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(245,197,24,0.10); }
 .score-input:disabled { opacity: 0.30; cursor: not-allowed; }
 
 /* ── Badges ── */
