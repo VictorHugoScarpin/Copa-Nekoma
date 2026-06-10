@@ -271,11 +271,16 @@ function GuessCard({ match, myGuess, onSave }) {
               </span>
             </div>
           </div>
-            {/* Horário/placar — centralizado no card */}
-            <div style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', top: '50%', marginTop: '-10px' }}>
-              <span style={{ fontFamily: 'var(--font-display)', fontSize: finished ? '18px' : '13px', color: finished ? 'var(--text)' : 'var(--gold)', letterSpacing: '0.04em', whiteSpace: 'nowrap' }}>
+            {/* Horário/placar + venue — centralizado no card */}
+            <div style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', top: '50%', transform: 'translate(-50%, -50%)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}>
+              <span style={{ fontFamily: 'var(--font-display)', fontSize: finished ? '18px' : '14px', color: finished ? 'var(--text)' : 'var(--gold)', letterSpacing: '0.04em', whiteSpace: 'nowrap' }}>
                 {finished ? `${match.home_score} × ${match.away_score}` : (live ? '🔴' : cd || '–')}
               </span>
+              {match.venue && (
+                <span style={{ fontSize: '9px', color: 'var(--text-3)', whiteSpace: 'nowrap', letterSpacing: '0.03em' }}>
+                  {match.venue}
+                </span>
+              )}
             </div>
 
           {/* Badges + ações */}
