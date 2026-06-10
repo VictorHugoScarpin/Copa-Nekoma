@@ -140,7 +140,7 @@ function CardBg({ name, side }) {
   return (
     <div style={{
       position: 'absolute', top: 0, bottom: 0, [side]: 0,
-      width: '50%', overflow: 'hidden', pointerEvents: 'none',
+      width: '55%', overflow: 'hidden', pointerEvents: 'none',
     }}>
       <img src={flagUrl} alt="" style={{
         position: 'absolute', inset: 0, width: '100%', height: '100%',
@@ -258,7 +258,7 @@ function GuessCard({ match, myGuess, onSave }) {
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, minWidth: 0 }}>
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px' }}>
               <TeamCircle name={match.home_team} size={28} />
-              <span style={{ fontSize: '9px', fontWeight: 600, color: 'var(--text-2)', maxWidth: 52, textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <span style={{ fontSize: '9px', fontWeight: 600, color: 'var(--text-2)', maxWidth: 72, textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {getPT(match.home_team)}
               </span>
             </div>
@@ -269,7 +269,7 @@ function GuessCard({ match, myGuess, onSave }) {
 
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px' }}>
               <TeamCircle name={match.away_team} size={28} />
-              <span style={{ fontSize: '9px', fontWeight: 600, color: 'var(--text-2)', maxWidth: 52, textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <span style={{ fontSize: '9px', fontWeight: 600, color: 'var(--text-2)', maxWidth: 72, textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {getPT(match.away_team)}
               </span>
             </div>
