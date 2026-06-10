@@ -209,7 +209,7 @@ function CardBg({ name, side }) {
   return (
     <div style={{
       position: 'absolute', top: 0, bottom: 0, [side]: 0,
-      width: '55%', overflow: 'hidden', pointerEvents: 'none',
+      width: '50%', overflow: 'hidden', pointerEvents: 'none',
     }}>
       <img src={flagUrl} alt="" style={{
         position: 'absolute', inset: 0,
@@ -415,7 +415,7 @@ export default function MatchesPage() {
 
       {tab === 'stats' ? <StatsTab /> : (
         <>
-          <div style={{ display: 'flex', borderBottom: '1px solid rgba(255,255,255,0.08)', marginBottom: '20px', overflowX: 'auto', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none' }}>
+          <div style={{ display: 'flex', borderBottom: '1px solid rgba(255,255,255,0.08)', marginBottom: '20px', overflowX: 'auto', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none', msOverflowStyle: 'none', touchAction: 'pan-x' }}>
             {[['ontem', 'Ontem'], ['hoje', 'Hoje'], ['proximos', 'Próximos']].map(([key, label]) => (
               <button key={key} onClick={() => setDayTab(key)} style={{
                 flexShrink: 0, flex: 1, minWidth: '80px', padding: '10px 8px', border: 'none', cursor: 'pointer',
