@@ -161,7 +161,7 @@ function isLocked(dateStr) { return differenceInSeconds(parseISO(dateStr), new D
 function countdown(dateStr) {
   const diff = differenceInSeconds(parseISO(dateStr), new Date())
   if (diff <= 0) return null
-  if (diff > 3600) return format(parseISO(dateStr), "dd/MM 'às' HH:mm", { locale: ptBR })
+  if (diff > 3600) return format(parseISO(dateStr), "HH:mm", { locale: ptBR })
   const m = Math.floor(diff / 60), s = diff % 60
   return `${m}m ${s.toString().padStart(2, '0')}s`
 }
@@ -318,9 +318,9 @@ function GuessCard({ match, myGuess, onSave }) {
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px', flexShrink: 0 }}>
                 <div style={{ display: 'flex', gap: '5px', alignItems: 'center' }}>
-                  <input className="score-input" type="number" min="0" max="20" value={home} onChange={e => setHome(e.target.value)} disabled={locked} style={{ width: '44px', fontSize: '22px' }} />
+                  <input className="score-input" type="number" inputMode="numeric" pattern="[0-9]*" min="0" max="20" value={home} onChange={e => setHome(e.target.value)} disabled={locked} style={{ width: '44px', fontSize: '22px' }} />
                   <span style={{ color: 'var(--text-3)', fontSize: '16px' }}>×</span>
-                  <input className="score-input" type="number" min="0" max="20" value={away} onChange={e => setAway(e.target.value)} disabled={locked} style={{ width: '44px', fontSize: '22px' }} />
+                  <input className="score-input" type="number" inputMode="numeric" pattern="[0-9]*" min="0" max="20" value={away} onChange={e => setAway(e.target.value)} disabled={locked} style={{ width: '44px', fontSize: '22px' }} />
                 </div>
                 <div style={{ fontSize: '9px', color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 600 }}>palpite</div>
               </div>
@@ -485,7 +485,16 @@ export default function GuessesPage() {
     <div className="page">
       <div className="section-title">Palpites</div>
 
-      <div style={{ display: 'flex', background: 'var(--surface)', borderRadius: 'var(--r-md)', padding: '4px', marginBottom: '16px', gap: '4px' }}>
+      <div style={{ display: 'flex', background: 'var(--surface)', borderRadius: 'var(--r-md)', padding: '4px', marginBottom: '16px', gap: '4px' }}
+        onTouchStart={e => { e.currentTarget._sx = e.touches[0].clientX }}
+        onTouchEnd={e => {
+          const dx = e.changedTouches[0].clientX - (e.currentTarget._sx || 0)
+          const tabs = ['palpites','regras']
+          const cur = tabs.indexOf(tab)
+          if (dx < -40 && cur < tabs.length - 1) setTab(tabs[cur + 1])
+          if (dx > 40 && cur > 0) setTab(tabs[cur - 1])
+        }}
+      >
         {[['palpites', '⚽ Palpites'], ['regras', '📋 Regras']].map(([key, label]) => (
           <button key={key} onClick={() => setTab(key)} style={{ flex: 1, padding: '9px', borderRadius: '10px', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: '13px', fontWeight: 600, transition: 'all 0.2s', background: tab === key ? 'rgba(255,255,255,0.1)' : 'transparent', color: tab === key ? 'var(--text)' : 'var(--text-3)' }}>
             {label}
