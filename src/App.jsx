@@ -120,7 +120,7 @@ function BottomNav() {
         </div>
       )}
 
-      {/* Jogos */}
+      {/* Jogoss */}
       <button className={`nav-item ${pathname === '/' ? 'active' : ''}`} onClick={() => { navigate('/'); setClassOpen(false) }}>
         <HomeIcon /><span>Jogos</span>
       </button>
