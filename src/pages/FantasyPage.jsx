@@ -16,7 +16,7 @@ export default function FantasyPage() {
   return (
     <div className="page" style={{ paddingBottom: 100 }}>
 
-      {/* Hero */}
+      {/* Heroo */}
       <div style={{
         position: 'relative', borderRadius: 'var(--r-lg)', overflow: 'hidden',
         marginBottom: 20, padding: '28px 20px 24px',
