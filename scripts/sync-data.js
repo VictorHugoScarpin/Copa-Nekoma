@@ -79,7 +79,8 @@ async function syncMatches() {
   for (const match of matches) {
     if (!match.homeTeam?.name || !match.awayTeam?.name) { pulados++; continue }
 
-    const { error } = await supabase.from('matches').upsert({
+    // Montar objeto base — nunca sobrescrever placar manual com null
+    const matchData = {
       external_id: String(match.id),
       home_team: match.homeTeam.name,
       away_team: match.awayTeam.name,
@@ -91,10 +92,15 @@ async function syncMatches() {
       stage: mapStage(match.stage),
       group_name: mapGroup(match.group),
       status: mapStatus(match.status),
-      home_score: match.score?.fullTime?.home ?? null,
-      away_score: match.score?.fullTime?.away ?? null,
       stream_url: 'https://www.youtube.com/@CazeTV',
-    }, { onConflict: 'external_id' })
+    }
+    // Só atualiza placar se a API retornou valor real
+    const apiHomeScore = match.score?.fullTime?.home
+    const apiAwayScore = match.score?.fullTime?.away
+    if (apiHomeScore !== null && apiHomeScore !== undefined) matchData.home_score = apiHomeScore
+    if (apiAwayScore !== null && apiAwayScore !== undefined) matchData.away_score = apiAwayScore
+
+    const { error } = await supabase.from('matches').upsert(matchData, { onConflict: 'external_id' })
 
     if (error) { console.error(`⚠️ Jogo ${match.id}: ${error.message}`); erros++ }
     else salvos++
@@ -109,6 +115,13 @@ async function syncStandings() {
   const standings = data.standings || []
 
   if (standings.length === 0) { console.log('⚠️ Sem standings ainda.'); return }
+
+  // Verificar se a API já retornou grupos separados (GROUP_A, GROUP_B...)
+  const temGruposSeparados = standings.some(s => s.group && s.group.match(/GROUP_[A-Z]/))
+  if (!temGruposSeparados) {
+    console.log('⚠️ API ainda não separou por grupos — pulando standings.')
+    return
+  }
 
   let salvos = 0, erros = 0
 
