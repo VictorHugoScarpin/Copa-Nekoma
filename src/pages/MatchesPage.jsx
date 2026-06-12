@@ -227,9 +227,19 @@ function CardBg({ name, side }) {
   )
 }
 
+const CAZETV_URL = 'https://cazetv.com.br/ao-vivo'
+const MATCH_DURATION_MS = 100 * 60 * 1000 // 1h40min
+
+function isMatchLive(match) {
+  if (match.status === 'finished') return false
+  const start = parseISO(match.match_date).getTime()
+  const now = Date.now()
+  return now >= start && now <= start + MATCH_DURATION_MS
+}
+
 function MatchCard({ match }) {
   const finished = match.status === 'finished'
-  const live = match.status === 'live'
+  const live = isMatchLive(match)
 
   return (
     <div style={{
@@ -300,8 +310,8 @@ function MatchCard({ match }) {
           </div>
         </div>
 
-        {live && match.stream_url && (
-          <a href={match.stream_url} target="_blank" rel="noreferrer" style={{
+        {live && (
+          <a href={match.stream_url || CAZETV_URL} target="_blank" rel="noreferrer" style={{
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
             marginTop: '12px', padding: '8px', borderRadius: '10px',
             background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.25)',
@@ -407,6 +417,15 @@ export default function MatchesPage() {
 
   return (
     <div className="page">
+      {/* Aviso de API */}
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: '8px',
+        background: 'rgba(232,184,75,0.08)', border: '1px solid rgba(232,184,75,0.2)',
+        borderRadius: '10px', padding: '9px 12px', marginBottom: '14px',
+        fontSize: '11px', color: 'rgba(232,184,75,0.75)', lineHeight: 1.4,
+      }}>
+        <span style={{ flexShrink: 0 }}>⏱️</span>
+        <span>Os resultados dependem de uma API externa e podem demorar alguns minutos para atualizar.</span>
       <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', padding: '4px', marginBottom: '16px', gap: '4px' }}>
         {[['jogos', '⚽ Jogos'], ['stats', '📊 Artilheiros']].map(([key, label]) => (
           <button key={key} onClick={() => setTab(key)} style={{ flex: 1, padding: '9px', borderRadius: '9px', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: '13px', fontWeight: 600, transition: 'all 0.2s', background: tab === key ? 'rgba(255,255,255,0.1)' : 'transparent', color: tab === key ? 'var(--text)' : 'var(--text-3)' }}>{label}</button>
