@@ -19,7 +19,7 @@ function StatCard({ icon, title, subtitle, player, value, unit, color, rank }) {
   if (!player) return (
     <div className="glass-card" style={{ padding: '16px', opacity: 0.5 }}>
       <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 10 }}>
-        <div style={{ width: 36, height: 36, borderRadius: 10, background: `${color}1a`, border: `1px solid ${color}33`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>{icon}</div>
+        <div style={{ width: 36, height: 36, borderRadius: 10, background: `${color}1a`, border: `1px solid ${color}33`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0, color }}>{icon}</div>
         <div>
           <div style={{ fontFamily: 'var(--font-display)', fontSize: 16, letterSpacing: '0.06em', color: 'var(--text)', lineHeight: 1 }}>{title}</div>
           <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 2 }}>{subtitle}</div>
@@ -32,7 +32,7 @@ function StatCard({ icon, title, subtitle, player, value, unit, color, rank }) {
   return (
     <div className="glass-card" style={{ padding: '16px', border: `1px solid ${color}22` }}>
       <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 14 }}>
-        <div style={{ width: 36, height: 36, borderRadius: 10, background: `${color}1a`, border: `1px solid ${color}33`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>{icon}</div>
+        <div style={{ width: 36, height: 36, borderRadius: 10, background: `${color}1a`, border: `1px solid ${color}33`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0, color }}>{icon}</div>
         <div>
           <div style={{ fontFamily: 'var(--font-display)', fontSize: 16, letterSpacing: '0.06em', color: 'var(--text)', lineHeight: 1 }}>{title}</div>
           <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 2 }}>{subtitle}</div>
@@ -111,6 +111,15 @@ function ComoFunciona() {
     </div>
   )
 }
+
+
+function FlameIcon()  { return <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2c0 0-6 5.686-6 10a6 6 0 0 0 12 0c0-1.312-.546-2.481-1-3.5C16 10 14 12 14 12s1-4-2-10z"/></svg> }
+function TargetIcon() { return <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg> }
+function ZebraIcon()  { return <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg> }
+function ChartIcon()  { return <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg> }
+function BoltIcon()   { return <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> }
+function HandIcon()   { return <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M18 11V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v0"/><path d="M14 10V4a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v2"/><path d="M10 10.5V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/></svg> }
+function SkullIcon()  { return <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><path d="M8 20v2h8v-2"/><path d="m12.5 17-.5-1-.5 1h1z"/><path d="M16 20a2 2 0 0 0 1.956-2.4l-1.536-7.68A5 5 0 0 0 7.58 9.92L6.044 17.6A2 2 0 0 0 8 20Z"/></svg> }
 
 export default function HallPage() {
   const [profiles, setProfiles] = useState([])
@@ -208,13 +217,13 @@ export default function HallPage() {
   }).sort((a, b) => b._value - a._value)
 
   const stats = [
-    { icon: '🔥', title: 'EM CHAMAS', subtitle: 'Maior sequência de acertos consecutivos', data: emChamas, unit: 'seguidos', color: '#f97316' },
-    { icon: '🎯', title: 'PÉ QUENTE', subtitle: 'Mais placares exatos', data: peQuente, unit: 'exatos', color: 'var(--gold)' },
-    { icon: '🦓', title: 'ZEBRA', subtitle: 'Acertou quando a maioria errou', data: zebra, unit: 'zebras', color: '#a855f7' },
-    { icon: '📊', title: 'CONSISTENTE', subtitle: 'Melhor % de acertos (mín. 3 jogos)', data: consistente, unit: '%', color: 'var(--green)' },
-    { icon: '⚡', title: 'MAIS ATIVO', subtitle: 'Mais palpites registrados', data: maisAtivo, unit: 'palp.', color: 'var(--blue)' },
-    { icon: '🤝', title: 'DIPLOMATA', subtitle: 'Quem mais apostou em empate', data: diplomata, unit: 'empates', color: '#06b6d4' },
-    { icon: '💀', title: 'AZARÃO', subtitle: 'Mais palpites sem ponto', data: azarao, unit: 'zeros', color: 'var(--red)' },
+    { icon: <FlameIcon />, title: 'EM CHAMAS', subtitle: 'Maior sequência de acertos consecutivos', data: emChamas, unit: 'seguidos', color: '#f97316' },
+    { icon: <TargetIcon />, title: 'PÉ QUENTE', subtitle: 'Mais placares exatos', data: peQuente, unit: 'exatos', color: 'var(--gold)' },
+    { icon: <ZebraIcon />, title: 'ZEBRA', subtitle: 'Acertou quando a maioria errou', data: zebra, unit: 'zebras', color: '#a855f7' },
+    { icon: <ChartIcon />, title: 'CONSISTENTE', subtitle: 'Melhor % de acertos (mín. 3 jogos)', data: consistente, unit: '%', color: 'var(--green)' },
+    { icon: <BoltIcon />, title: 'MAIS ATIVO', subtitle: 'Mais palpites registrados', data: maisAtivo, unit: 'palp.', color: 'var(--blue)' },
+    { icon: <HandIcon />, title: 'DIPLOMATA', subtitle: 'Quem mais apostou em empate', data: diplomata, unit: 'empates', color: '#06b6d4' },
+    { icon: <SkullIcon />, title: 'AZARÃO', subtitle: 'Mais palpites sem ponto', data: azarao, unit: 'zeros', color: 'var(--red)' },
   ]
 
   return (
