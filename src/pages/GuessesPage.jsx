@@ -157,7 +157,15 @@ function CardBg({ name, side }) {
 
 // ── Utilitários ──────────────────────────────────────────────────────────────
 
+const MATCH_DURATION_MS = 100 * 60 * 1000 // 1h40min
+
 function isLocked(dateStr) { return differenceInSeconds(parseISO(dateStr), new Date()) <= LOCK_SECS }
+function isMatchLive(match) {
+  if (match.status === 'finished') return false
+  const start = parseISO(match.match_date).getTime()
+  const now = Date.now()
+  return now >= start && now <= start + MATCH_DURATION_MS
+}
 
 function countdown(dateStr) {
   const diff = differenceInSeconds(parseISO(dateStr), new Date())
@@ -200,7 +208,7 @@ function ResenhaList({ matchId, matchHomeScore, matchAwayScore }) {
 
 function GuessCard({ match, myGuess, onSave }) {
   const finished = match.status === 'finished'
-  const live = match.status === 'live'
+  const live = isMatchLive(match)
 
   const [expanded, setExpanded] = useState(finished)
   const [popoverOpen, setPopoverOpen] = useState(false)
@@ -345,13 +353,6 @@ function GuessCard({ match, myGuess, onSave }) {
               <button className={`btn ${saved ? 'btn-primary' : ''}`} style={{ padding: '9px', fontSize: '13px' }} onClick={save} disabled={saving || home === '' || away === ''}>
                 {saving ? 'Salvando...' : saved ? '✓ Salvo!' : 'Salvar Palpite'}
               </button>
-            )}
-
-            {finished && (
-              <div style={{ borderTop: '1px solid var(--border)', paddingTop: '10px' }}>
-                <div style={{ fontSize: '10px', color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 600, marginBottom: '6px' }}>Resenha</div>
-                <ResenhaList matchId={match.id} matchHomeScore={match.home_score} matchAwayScore={match.away_score} />
-              </div>
             )}
           </div>
         )}
