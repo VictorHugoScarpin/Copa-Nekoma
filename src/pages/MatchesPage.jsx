@@ -426,6 +426,7 @@ export default function MatchesPage() {
       }}>
         <span style={{ flexShrink: 0 }}>⏱️</span>
         <span>Os resultados dependem de uma API externa e podem demorar alguns minutos para atualizar.</span>
+      </div>
       <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', padding: '4px', marginBottom: '16px', gap: '4px' }}>
         {[['jogos', '⚽ Jogos'], ['stats', '📊 Artilheiros']].map(([key, label]) => (
           <button key={key} onClick={() => setTab(key)} style={{ flex: 1, padding: '9px', borderRadius: '9px', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: '13px', fontWeight: 600, transition: 'all 0.2s', background: tab === key ? 'rgba(255,255,255,0.1)' : 'transparent', color: tab === key ? 'var(--text)' : 'var(--text-3)' }}>{label}</button>
