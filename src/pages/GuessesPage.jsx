@@ -322,20 +322,22 @@ function GuessCard({ match, myGuess, onSave }) {
               : myGuess?.home_score !== undefined ? <span className="badge badge-gold">✓ {myGuess.home_score}×{myGuess.away_score}</span>
               : <span className="badge badge-muted" style={{ fontSize: '9px' }}>sem palpite</span>
             }
-            <button
-              onClick={e => { e.stopPropagation(); setPopoverOpen(o => !o) }}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', color: popoverOpen ? 'var(--gold)' : 'var(--text-3)', padding: '4px', display: 'flex', flexDirection: 'column', gap: '3px', alignItems: 'center' }}
-            >
-              {[0, 1, 2].map(i => <span key={i} style={{ display: 'block', width: '14px', height: '2px', background: 'currentColor', borderRadius: '1px' }} />)}
-            </button>
+            {locked && (
+              <button
+                onClick={e => { e.stopPropagation(); setPopoverOpen(o => !o) }}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: popoverOpen ? 'var(--gold)' : 'var(--text-3)', padding: '4px', display: 'flex', flexDirection: 'column', gap: '3px', alignItems: 'center' }}
+              >
+                {[0, 1, 2].map(i => <span key={i} style={{ display: 'block', width: '14px', height: '2px', background: 'currentColor', borderRadius: '1px' }} />)}
+              </button>
+            )}
             {!finished && (
               <span style={{ color: 'var(--text-3)', fontSize: '12px', transform: expanded ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform 0.2s', display: 'inline-block' }}>▼</span>
             )}
           </div>
         </div>
 
-        {/* Popover palpites da galera */}
-        {popoverOpen && (
+        {/* Popover palpites da galera — só aparece quando jogo travado/iniciado */}
+        {popoverOpen && locked && (
           <div style={{ margin: '0 16px 12px', background: 'rgba(6,11,20,0.95)', border: '1px solid var(--border-strong)', borderRadius: 'var(--r-md)', padding: '10px 12px', animation: 'fadeUp 0.15s ease' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
               <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--gold)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Palpites da galera</span>
