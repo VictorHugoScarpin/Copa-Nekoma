@@ -6,7 +6,7 @@ import { ptBR } from 'date-fns/locale'
 
 const LOCK_SECS = 60
 
-// ── Mapas idênticos ao MatgchesPage ──────────────────────────────────────────
+// ── Mapas idênticos ao MatchesPage ──────────────────────────────────────────
 
 
 const TEAM_ISO = {
@@ -384,21 +384,6 @@ function GuessCard({ match, myGuess, onSave }) {
 }
 
 // ── MasterGuess ──────────────────────────────────────────────────────────────
-
-const FLAG_LOCAL = {
-  'Argentina': '/ar.png',
-  'Bosnia and Herzegovina': '/ba.png', 'Bosnia & Herzegovina': '/ba.png',
-  'Bosnia Herzegovina': '/ba.png', 'Bosna i Hercegovina': '/ba.png',
-  'Bosnia-Herzegovina': '/ba.png', 'Jordan': '/jor.png',
-  'Korea Republic': '/cor.png', 'South Korea': '/cor.png',
-  'Uzbekistan': '/uz.png',
-}
-
-function getFlagUrl(name) {
-  if (FLAG_LOCAL[name]) return FLAG_LOCAL[name]
-  const iso = TEAM_ISO[name]
-  return iso ? `https://flagcdn.com/w160/${iso}.png` : null
-}
 
 function FlagCircle({ name, size = 28 }) {
   const url = getFlagUrl(name)
