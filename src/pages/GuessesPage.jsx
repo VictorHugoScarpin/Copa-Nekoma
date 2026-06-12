@@ -157,7 +157,7 @@ function CardBg({ name, side }) {
 
 // ── Utilitários ──────────────────────────────────────────────────────────────
 
-const MATCH_DURATION_MS = 100 * 60 * 1000 // 1h40min
+const MATCH_DURATION_MS = 130 * 60 * 1000 // 2h10min
 
 function isLocked(dateStr) { return differenceInSeconds(parseISO(dateStr), new Date()) <= LOCK_SECS }
 function isMatchLive(match) {
