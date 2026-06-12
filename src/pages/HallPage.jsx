@@ -173,6 +173,52 @@ export default function HallPage() {
           />
         ))}
       </div>
+
+      <ComoFunciona />
+    </div>
+  )
+}
+
+function ComoFunciona() {
+  const [open, setOpen] = useState(false)
+
+  const regras = [
+    { icon: '🎯', title: 'Maior Pé Quente', desc: 'Quem acertou mais placares exatos ao longo da Copa. Placar exato = 3 pontos.' },
+    { icon: '📊', title: 'Mais Consistente', desc: 'Melhor porcentagem de acertos (placar exato + resultado certo) em relação ao total de jogos palpitados. Mínimo de 3 jogos para entrar.' },
+    { icon: '💀', title: 'Azarão', desc: 'Quem zerou mais vezes — palpites em jogos finalizados que não renderam nenhum ponto. Não é desonra, é azar mesmo!' },
+    { icon: '⚡', title: 'Mais Ativo', desc: 'Quem mais registrou palpites no total, independente de acertos. Participação é tudo!' },
+  ]
+
+  return (
+    <div className="glass-card" style={{ marginTop: 16, overflow: 'hidden' }}>
+      <button
+        onClick={() => setOpen(o => !o)}
+        style={{
+          width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          padding: '14px 16px', background: 'none', border: 'none', cursor: 'pointer',
+          fontFamily: 'var(--font-body)',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: 16 }}>❓</span>
+          <span style={{ fontWeight: 700, fontSize: 13, color: 'var(--text)' }}>Como cada categoria é calculada?</span>
+        </div>
+        <span style={{ color: 'var(--text-3)', fontSize: 12, transform: open ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform 0.2s', display: 'inline-block' }}>▼</span>
+      </button>
+
+      {open && (
+        <div style={{ borderTop: '1px solid var(--border)', padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 14, animation: 'fadeUp 0.2s ease' }}>
+          {regras.map(({ icon, title, desc }) => (
+            <div key={title} style={{ display: 'flex', gap: 12 }}>
+              <span style={{ fontSize: 18, flexShrink: 0, marginTop: 1 }}>{icon}</span>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: 13, color: 'var(--text)', marginBottom: 3 }}>{title}</div>
+                <div style={{ fontSize: 12, color: 'var(--text-3)', lineHeight: 1.55 }}>{desc}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
