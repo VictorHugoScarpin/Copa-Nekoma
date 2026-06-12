@@ -4,6 +4,7 @@ import { createClient } from '@supabase/supabase-js'
 const SUPABASE_URL = process.env.SUPABASE_URL
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY
 const FOOTBALL_API_KEY = process.env.FOOTBALL_API_KEY
+const RAPIDAPI_KEY = process.env.RAPIDAPI_KEY
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
   auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
@@ -152,25 +153,37 @@ async function syncStandings() {
 // ── 3. ARTILHEIROS ──────────────────────────────────────────────────────────
 async function syncScorers() {
   console.log('⚽ Sincronizando artilheiros...')
-  const data = await apiRequest('/competitions/WC/scorers?season=2026&limit=20')
-  const scorers = data.scorers || []
+  const res = await fetch('https://free-api-live-football-data.p.rapidapi.com/football-get-top-players-by-goals?leagueid=47', {
+    headers: {
+      'x-rapidapi-key': RAPIDAPI_KEY,
+      'x-rapidapi-host': 'free-api-live-football-data.p.rapidapi.com',
+      'Content-Type': 'application/json',
+    }
+  })
+  const json = await res.json()
+  const scorers = json?.response?.players || json?.response || []
 
-  if (scorers.length === 0) { console.log('⚠️ Sem artilheiros ainda.'); return }
+  if (!scorers.length) { console.log('⚠️ Sem artilheiros ainda.'); return }
 
-  // Limpar e reinserir
   await supabase.from('top_scorers').delete().neq('id', '00000000-0000-0000-0000-000000000000')
 
   let salvos = 0
-  for (const s of scorers) {
+  for (const s of scorers.slice(0, 20)) {
+    const player = s.player || s
+    const team = s.team || s.statistics?.[0]?.team || {}
+    const goals = s.goals?.total || s.statistics?.[0]?.goals?.total || s.goals || 0
+    const assists = s.goals?.assists || s.statistics?.[0]?.goals?.assists || s.assists || 0
+
     const { error } = await supabase.from('top_scorers').insert({
-      player_name: s.player.name,
-      team_name: s.team.name,
-      flag_emoji: FLAG_MAP[s.team.name] || '🏳️',
-      goals: s.goals || 0,
-      assists: s.assists || 0,
-      photo_url: s.player.photo || null,
+      player_name: player.name || player.firstname + ' ' + player.lastname,
+      team_name: team.name || '',
+      flag_emoji: FLAG_MAP[team.name] || '🏳️',
+      goals,
+      assists,
+      photo_url: player.photo || null,
     })
     if (!error) salvos++
+    else console.error('scorer error:', error.message)
   }
   console.log(`✅ Artilheiros: ${salvos} salvos`)
 }
@@ -178,28 +191,42 @@ async function syncScorers() {
 // ── 4. ASSISTÊNCIAS ─────────────────────────────────────────────────────────
 async function syncAssists() {
   console.log('👟 Sincronizando assistências...')
-  const data = await apiRequest('/competitions/WC/scorers?season=2026&limit=20')
-  const scorers = data.scorers || []
+  const res = await fetch('https://free-api-live-football-data.p.rapidapi.com/football-get-top-players-by-assists?leagueid=47', {
+    headers: {
+      'x-rapidapi-key': RAPIDAPI_KEY,
+      'x-rapidapi-host': 'free-api-live-football-data.p.rapidapi.com',
+      'Content-Type': 'application/json',
+    }
+  })
+  const json = await res.json()
+  const players = json?.response?.players || json?.response || []
 
-  if (scorers.length === 0) { console.log('⚠️ Sem dados ainda.'); return }
+  const withAssists = players.filter(s => {
+    const a = s.goals?.assists || s.statistics?.[0]?.goals?.assists || s.assists || 0
+    return a > 0
+  }).slice(0, 20)
 
-  // Filtrar só quem tem assistências
-  const withAssists = scorers.filter(s => (s.assists || 0) > 0)
-    .sort((a, b) => (b.assists || 0) - (a.assists || 0))
+  if (!withAssists.length) { console.log('⚠️ Sem assistências ainda.'); return }
 
   await supabase.from('top_assists').delete().neq('id', '00000000-0000-0000-0000-000000000000')
 
   let salvos = 0
   for (const s of withAssists) {
+    const player = s.player || s
+    const team = s.team || s.statistics?.[0]?.team || {}
+    const assists = s.goals?.assists || s.statistics?.[0]?.goals?.assists || s.assists || 0
+    const goals = s.goals?.total || s.statistics?.[0]?.goals?.total || s.goals || 0
+
     const { error } = await supabase.from('top_assists').insert({
-      player_name: s.player.name,
-      team_name: s.team.name,
-      flag_emoji: FLAG_MAP[s.team.name] || '🏳️',
-      assists: s.assists || 0,
-      goals: s.goals || 0,
-      photo_url: s.player.photo || null,
+      player_name: player.name || player.firstname + ' ' + player.lastname,
+      team_name: team.name || '',
+      flag_emoji: FLAG_MAP[team.name] || '🏳️',
+      assists,
+      goals,
+      photo_url: player.photo || null,
     })
     if (!error) salvos++
+    else console.error('assist error:', error.message)
   }
   console.log(`✅ Assistências: ${salvos} salvos`)
 }
