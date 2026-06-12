@@ -6,7 +6,7 @@ import { ptBR } from 'date-fns/locale'
 
 const LOCK_SECS = 60
 
-// ── Mapas idsênticos ao MatchesPage ──────────────────────────────────────────
+// ── Mapas idênticos ao MatchesPage ──────────────────────────────────────────
 
 
 const TEAM_ISO = {
