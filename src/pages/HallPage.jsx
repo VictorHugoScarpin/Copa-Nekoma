@@ -217,13 +217,13 @@ export default function HallPage() {
   }).sort((a, b) => b._value - a._value)
 
   const stats = [
-    { icon: <FlameIcon />, title: 'EM CHAMAS', subtitle: 'Maior sequência de acertos consecutivos', data: emChamas, unit: 'seguidos', color: '#f97316' },
-    { icon: <TargetIcon />, title: 'PÉ QUENTE', subtitle: 'Mais placares exatos', data: peQuente, unit: 'exatos', color: '#f5c518' },
-    { icon: <ZebraIcon />, title: 'ZEBRA', subtitle: 'Acertou quando a maioria errou', data: zebra, unit: 'zebras', color: '#a855f7' },
-    { icon: <ChartIcon />, title: 'CONSISTENTE', subtitle: 'Melhor % de acertos (mín. 3 jogos)', data: consistente, unit: '%', color: '#00c853' },
-    { icon: <BoltIcon />, title: 'MAIS ATIVO', subtitle: 'Mais palpites registrados', data: maisAtivo, unit: 'palp.', color: '#4d8ef0' },
-    { icon: <HandIcon />, title: 'DIPLOMATA', subtitle: 'Quem mais apostou em empate', data: diplomata, unit: 'empates', color: '#06b6d4' },
-    { icon: <SkullIcon />, title: 'AZARÃO', subtitle: 'Mais palpites sem ponto', data: azarao, unit: 'zeros', color: '#f03e3e' },
+    { icon: '🔥', title: 'EM CHAMAS', subtitle: 'Maior sequência de acertos consecutivos', data: emChamas, unit: 'seguidos', color: '#f97316' },
+    { icon: '🎯', title: 'PÉ QUENTE', subtitle: 'Mais placares exatos', data: peQuente, unit: 'exatos', color: '#f5c518' },
+    { icon: '🦓', title: 'ZEBRA', subtitle: 'Acertou quando a maioria errou', data: zebra, unit: 'zebras', color: '#a855f7' },
+    { icon: '📊', title: 'CONSISTENTE', subtitle: 'Melhor % de acertos (mín. 3 jogos)', data: consistente, unit: '%', color: '#00c853' },
+    { icon: '⚡', title: 'MAIS ATIVO', subtitle: 'Mais palpites registrados', data: maisAtivo, unit: 'palp.', color: '#4d8ef0' },
+    { icon: '🤝', title: 'DIPLOMATA', subtitle: 'Quem mais apostou em empate', data: diplomata, unit: 'empates', color: '#06b6d4' },
+    { icon: '💀', title: 'AZARÃO', subtitle: 'Mais palpites sem ponto', data: azarao, unit: 'zeros', color: '#f03e3e' },
   ]
 
   return (
