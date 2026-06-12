@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
-import { format, differenceInSeconds, parseISO } from 'date-fns'
+import { format, differenceInSeconds, parseISO, startOfDay } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 
 const LOCK_SECS = 60
@@ -473,6 +473,7 @@ export default function GuessesPage() {
   const [myGuesses, setMyGuesses] = useState({})
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState('palpites')
+  const [dayTab, setDayTab] = useState('hoje')
 
   const fetchData = useCallback(async () => {
     const [{ data: mData }, { data: myData }] = await Promise.all([
@@ -494,8 +495,17 @@ export default function GuessesPage() {
     await fetchData()
   }
 
+  const filteredMatches = (() => {
+    const todayStart = startOfDay(new Date())
+    const todayEnd = new Date(todayStart.getTime() + 86400000)
+    const yesterdayStart = new Date(todayStart.getTime() - 86400000)
+    if (dayTab === 'ontem') return matches.filter(m => { const d = parseISO(m.match_date); return d >= yesterdayStart && d < todayStart })
+    if (dayTab === 'hoje') return matches.filter(m => { const d = parseISO(m.match_date); return d >= todayStart && d < todayEnd })
+    return matches
+  })()
+
   const grouped = {}
-  matches.forEach(m => {
+  filteredMatches.forEach(m => {
     const d = format(parseISO(m.match_date), "EEEE, dd 'de' MMMM", { locale: ptBR })
     if (!grouped[d]) grouped[d] = []
     grouped[d].push(m)
@@ -525,10 +535,27 @@ export default function GuessesPage() {
       {tab === 'regras' ? <RegrasTab /> : (
         <>
           <MasterGuess userId={user.id} />
+
+          {/* Tabs Ontem / Todos / Hoje */}
+          <div style={{ display: 'flex', borderBottom: '1px solid rgba(255,255,255,0.08)', marginBottom: '16px' }}>
+            {[['ontem', 'Ontem'], ['todos', 'Todos'], ['hoje', 'Hoje']].map(([key, label]) => (
+              <button key={key} onClick={() => setDayTab(key)} style={{
+                flex: 1, padding: '9px 8px', border: 'none', cursor: 'pointer',
+                fontFamily: 'var(--font-body)', fontSize: '13px', fontWeight: 600,
+                background: 'transparent',
+                color: dayTab === key ? 'var(--text)' : 'var(--text-3)',
+                borderBottom: `2px solid ${dayTab === key ? 'var(--gold)' : 'transparent'}`,
+                transition: 'all 0.2s',
+              }}>{label}</button>
+            ))}
+          </div>
+
           {loading
             ? Array.from({ length: 4 }).map((_, i) => <div key={i} className="skeleton" style={{ height: 56, marginBottom: 8, borderRadius: 12 }} />)
-            : matches.length === 0
-              ? <div style={{ textAlign: 'center', color: 'var(--text-3)', padding: '40px 0' }}>Nenhum jogo cadastrado ainda.</div>
+            : filteredMatches.length === 0
+              ? <div style={{ textAlign: 'center', color: 'var(--text-3)', padding: '40px 0' }}>
+                  {dayTab === 'ontem' ? 'Nenhum jogo ontem.' : 'Nenhum jogo hoje.'}
+                </div>
               : Object.entries(grouped).map(([date, dayMatches]) => (
                 <div key={date}>
                   <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--gold)', textTransform: 'capitalize', letterSpacing: '0.08em', marginBottom: '8px', marginTop: '16px' }}>{date}</div>
