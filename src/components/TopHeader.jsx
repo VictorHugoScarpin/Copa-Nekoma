@@ -1,19 +1,6 @@
 import { useLocation } from 'react-router-dom'
 
-const TITLES = {
-  '/': 'JOGOS',
-  '/palpites': 'PALPITES',
-  '/ranking': 'RANKING',
-  '/grupos': 'GRUPOS',
-  '/mata-mata': 'CHAVES',
-  '/stats': 'STATS',
-  '/perfil': 'PERFIL',
-}
-
 export default function TopHeader() {
-  const { pathname } = useLocation()
-  const title = TITLES[pathname] || 'BOLÃO'
-
   return (
     <header className="top-header">
       <div style={{
@@ -25,7 +12,7 @@ export default function TopHeader() {
         WebkitTextFillColor: 'transparent',
         lineHeight: 1,
       }}>
-        {title}
+        NEKOMA
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
