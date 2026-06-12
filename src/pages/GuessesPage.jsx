@@ -225,7 +225,13 @@ function GuessCard({ match, myGuess, onSave }) {
 
   const locked = isLocked(match.match_date)
   const correct = finished && myGuess && myGuess.home_score === match.home_score && myGuess.away_score === match.away_score
-  const wrong = finished && myGuess && !correct
+  const partialCorrect = finished && myGuess && !correct && (() => {
+    if (match.home_score == null || match.away_score == null) return false
+    const realWinner = match.home_score > match.away_score ? 'home' : match.away_score > match.home_score ? 'away' : 'draw'
+    const guessWinner = myGuess.home_score > myGuess.away_score ? 'home' : myGuess.away_score > myGuess.home_score ? 'away' : 'draw'
+    return realWinner === guessWinner
+  })()
+  const wrong = finished && myGuess && !correct && !partialCorrect
   const cd = countdown(match.match_date)
 
   async function save() {
@@ -237,11 +243,11 @@ function GuessCard({ match, myGuess, onSave }) {
   }
 
   const borderColor = finished
-    ? correct ? 'rgba(34,197,94,0.4)' : wrong ? 'rgba(239,68,68,0.35)' : 'var(--border)'
+    ? correct ? 'rgba(34,197,94,0.4)' : partialCorrect ? 'rgba(232,184,75,0.4)' : wrong ? 'rgba(239,68,68,0.35)' : 'var(--border)'
     : live ? 'rgba(239,68,68,0.3)' : 'var(--border)'
 
   const bgColor = finished
-    ? correct ? 'rgba(34,197,94,0.06)' : wrong ? 'rgba(239,68,68,0.06)' : 'var(--surface)'
+    ? correct ? 'rgba(34,197,94,0.06)' : partialCorrect ? 'rgba(232,184,75,0.06)' : wrong ? 'rgba(239,68,68,0.06)' : 'var(--surface)'
     : live ? 'rgba(239,68,68,0.04)' : 'var(--surface)'
 
   return (
@@ -295,7 +301,11 @@ function GuessCard({ match, myGuess, onSave }) {
           {/* Badges + ações */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
             {finished
-              ? <span className={`badge ${correct ? 'badge-green' : 'badge-red'}`}>{correct ? `✓ +${myGuess?.points_earned || 0}pts` : '✗ Erro'}</span>
+              ? correct
+                ? <span className="badge badge-green">✓ +{myGuess?.points_earned || 3}pts</span>
+                : partialCorrect
+                  ? <span className="badge badge-gold">✓ +1pt</span>
+                  : <span className="badge badge-red">✗ Erro</span>
               : locked ? <span className="badge badge-muted" style={{ fontSize: '9px' }}>🔒</span>
               : myGuess?.home_score !== undefined ? <span className="badge badge-gold">✓ {myGuess.home_score}×{myGuess.away_score}</span>
               : <span className="badge badge-muted" style={{ fontSize: '9px' }}>sem palpite</span>
