@@ -69,8 +69,8 @@ function ScoredGuesses({ userId }) {
         const m = g.matches
         const result = getGuessResult(g, m.home_score, m.away_score)
         const isExact = result === 'exact'
-        const color = isExact ? 'var(--gold)' : 'var(--green)'
-        const bg = isExact ? 'rgba(232,184,75,0.08)' : 'var(--green-dim)'
+        const color = isExact ? 'var(--green)' : 'var(--gold)'
+        const bg = isExact ? 'var(--green-dim)' : 'rgba(232,184,75,0.08)'
         return (
           <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 10px', borderRadius: '8px', background: bg }}>
             <FlagCircle name={m.home_team} size={22} />
