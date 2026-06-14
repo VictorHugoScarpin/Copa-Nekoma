@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
+import { FlagCircle, getPT, getGuessResult } from '../lib/teams'
 
 const MEDALS = ['🥇', '🥈', '🥉']
 
@@ -18,10 +19,84 @@ function Avatar({ profile, size = 36 }) {
   )
 }
 
+// ── Lista de jogos em que o usuário pontuou (placar exato ou resultado certo) ──
+
+function ScoredGuesses({ userId }) {
+  const [items, setItems] = useState(null)
+
+  useEffect(() => {
+    let active = true
+    supabase
+      .from('guesses')
+      .select('home_score, away_score, matches(home_team, away_team, home_score, away_score, status, match_date)')
+      .eq('user_id', userId)
+      .then(({ data }) => {
+        if (!active) return
+        const scored = (data || [])
+          .filter(g => {
+            const m = g.matches
+            if (!m || m.status !== 'finished') return false
+            const result = getGuessResult(g, m.home_score, m.away_score)
+            return result === 'exact' || result === 'partial'
+          })
+          .sort((a, b) => new Date(a.matches.match_date) - new Date(b.matches.match_date))
+        setItems(scored)
+      })
+    return () => { active = false }
+  }, [userId])
+
+  if (items === null) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+        {Array.from({ length: 3 }).map((_, i) => (
+          <div key={i} className="skeleton" style={{ height: 34, borderRadius: 8 }} />
+        ))}
+      </div>
+    )
+  }
+
+  if (items.length === 0) {
+    return (
+      <div style={{ fontSize: '12px', color: 'var(--text-3)', textAlign: 'center', padding: '10px 0' }}>
+        Nenhuma pontuação ainda.
+      </div>
+    )
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+      {items.map((g, i) => {
+        const m = g.matches
+        const result = getGuessResult(g, m.home_score, m.away_score)
+        const isExact = result === 'exact'
+        const color = isExact ? 'var(--gold)' : 'var(--green)'
+        const bg = isExact ? 'rgba(232,184,75,0.08)' : 'var(--green-dim)'
+        return (
+          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 10px', borderRadius: '8px', background: bg }}>
+            <FlagCircle name={m.home_team} size={22} />
+            <span style={{ fontSize: '10px', color: 'var(--text-3)', flexShrink: 0 }}>×</span>
+            <FlagCircle name={m.away_team} size={22} />
+            <span style={{ fontSize: '11px', color: 'var(--text-2)', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {getPT(m.home_team)} × {getPT(m.away_team)}
+            </span>
+            <span style={{ fontFamily: 'var(--font-display)', fontSize: '15px', color, letterSpacing: '0.04em', flexShrink: 0 }}>
+              {g.home_score} × {g.away_score}
+            </span>
+            <span style={{ fontFamily: 'var(--font-display)', fontSize: '12px', fontWeight: 700, color, flexShrink: 0, minWidth: '22px', textAlign: 'right' }}>
+              +{isExact ? 3 : 1}
+            </span>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
 export default function RankingPage() {
   const { user } = useAuth()
   const [ranking, setRanking] = useState([])
   const [loading, setLoading] = useState(true)
+  const [expandedId, setExpandedId] = useState(null)
 
   useEffect(() => {
     async function fetchRanking() {
@@ -86,6 +161,7 @@ export default function RankingPage() {
             {ranking.map((p, i) => {
               const isMe = p.id === user.id
               const bar = (p.points / topScore) * 100
+              const isExpanded = expandedId === p.id
               return (
                 <div key={p.id} className="glass-card" style={{ padding: '12px 16px', border: isMe ? '1px solid rgba(232,184,75,0.28)' : undefined, background: isMe ? 'rgba(232,184,75,0.04)' : undefined }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -107,7 +183,25 @@ export default function RankingPage() {
                         <div style={{ height: '100%', width: `${bar}%`, background: i === 0 ? 'linear-gradient(90deg, var(--gold), var(--gold-bright))' : 'rgba(232,238,248,0.22)', borderRadius: 2, transition: 'width 0.7s ease' }} />
                       </div>
                     </div>
+
+                    {/* Botão "três risquinhos" — abre os jogos pontuados */}
+                    <button
+                      onClick={() => setExpandedId(isExpanded ? null : p.id)}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: isExpanded ? 'var(--gold)' : 'var(--text-3)', padding: '4px', display: 'flex', flexDirection: 'column', gap: '3px', alignItems: 'center', flexShrink: 0 }}
+                    >
+                      {[0, 1, 2].map(n => <span key={n} style={{ display: 'block', width: '14px', height: '2px', background: 'currentColor', borderRadius: '1px' }} />)}
+                    </button>
                   </div>
+
+                  {/* Jogos que pontuou */}
+                  {isExpanded && (
+                    <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid var(--border)', animation: 'fadeUp 0.15s ease' }}>
+                      <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--gold)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '8px' }}>
+                        Jogos que pontuou
+                      </div>
+                      <ScoredGuesses userId={p.id} />
+                    </div>
+                  )}
                 </div>
               )
             })}
