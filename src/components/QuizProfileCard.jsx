@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { getQuizStatus } from '../lib/quiz'
 
-// IMPORTANTE: troque pelo link de presente real do Spotify
-const SPOTIFY_GIFT_LINK = 'https://www.spotify.com/seu-link-de-presente-aqui'
+// Link de presente do Spotify (3 meses Premium) — usar apenas para o vencedor
+const SPOTIFY_GIFT_LINK = 'https://open.spotify.com/referral/003988681f532c39c9bf64c9183464892d50c687452732e0c12a34?si=_rT4rYZESOux_tTx_pqrZg&locale=pt'
 
 export default function QuizProfileCard({ userId }) {
   const navigate = useNavigate()
