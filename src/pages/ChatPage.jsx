@@ -136,7 +136,7 @@ export default function ChatPage() {
         borderRadius: 'var(--r-md)', padding: '10px 12px', marginBottom: 14,
         fontSize: 12, color: 'var(--text-2)', lineHeight: 1.5,
       }}>
-        🧹 <strong style={{ color: 'var(--gold-bright)' }}>Esse chat zera todo dia às 3h30.</strong> Zoa, provoca, comemora — só sem palavrão pesado e sem brigas de verdade. É bolão entre amigos!
+        🧹 <strong style={{ color: 'var(--gold-bright)' }}>Esse chat zera todo dia.</strong> Zoa, provoca, comemora — só sem palavrão pesado e sem brigas de verdade. É bolão entre amigos!
       </div>
 
       {/* Lista de mensagens */}
