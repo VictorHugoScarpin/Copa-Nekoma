@@ -172,6 +172,26 @@ async function syncStandings() {
   console.log(`✅ Standings: ${salvos} salvos | ❌ ${erros} erros`)
 }
 
+// ── FOTO DO JOGADOR VIA GOOGLE ───────────────────────────────────────────────
+const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY
+const GOOGLE_CX = process.env.GOOGLE_CX
+const photoCache = {}
+
+async function fetchPlayerPhoto(playerName) {
+  if (photoCache[playerName]) return photoCache[playerName]
+  try {
+    const q = encodeURIComponent(`${playerName} footballer face`)
+    const url = `https://www.googleapis.com/customsearch/v1?key=${GOOGLE_API_KEY}&cx=${GOOGLE_CX}&q=${q}&searchType=image&num=1&imgType=face&imgSize=medium&safe=active`
+    const res = await fetch(url)
+    const json = await res.json()
+    const photo = json?.items?.[0]?.link || null
+    photoCache[playerName] = photo
+    return photo
+  } catch {
+    return null
+  }
+}
+
 // ── 3. ARTILHEIROS ──────────────────────────────────────────────────────────
 async function syncScorers() {
   console.log('⚽ Sincronizando artilheiros...')
@@ -184,12 +204,13 @@ async function syncScorers() {
 
   let salvos = 0
   for (const s of scorers) {
+    const photo = await fetchPlayerPhoto(s.player.name)
     const { error } = await supabase.from('top_scorers').insert({
       player_name: s.player.name,
       team_name: s.team.name,
       flag_emoji: FLAG_MAP[s.team.name] || '🏳️',
       goals: s.goals ?? 0,
-      photo_url: null,
+      photo_url: photo,
     })
     if (!error) salvos++
     else console.error('scorer error:', error.message)
@@ -213,12 +234,13 @@ async function syncAssists() {
 
   let salvos = 0
   for (const s of withAssists) {
+    const photo = await fetchPlayerPhoto(s.player.name)
     const { error } = await supabase.from('top_assists').insert({
       player_name: s.player.name,
       team_name: s.team.name,
       flag_emoji: FLAG_MAP[s.team.name] || '🏳️',
       assists: s.assists ?? 0,
-      photo_url: null,
+      photo_url: photo,
     })
     if (!error) salvos++
     else console.error('assist error:', error.message)
