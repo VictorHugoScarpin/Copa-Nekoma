@@ -47,7 +47,10 @@ export default function QuizInviteModal({ userId }) {
         onClick={e => e.stopPropagation()}
         style={{ maxWidth: 360, width: '100%', padding: 28, textAlign: 'center', border: '1px solid rgba(232,184,75,0.3)' }}
       >
-        <div style={{ fontSize: 48, marginBottom: 14 }}>⚽🎵</div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginBottom: 14 }}>
+          <img src="/taca.png" alt="Copa" style={{ width: 56, height: 56, objectFit: 'contain' }} />
+          <img src="/spot.png" alt="Spotify" style={{ width: 48, height: 48, objectFit: 'contain' }} />
+        </div>
         <div style={{ fontFamily: 'var(--font-display)', fontSize: 20, color: 'var(--gold)', letterSpacing: '0.04em', marginBottom: 10 }}>
           QUIZ DA COPA
         </div>
