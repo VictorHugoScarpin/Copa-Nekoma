@@ -656,7 +656,7 @@ export default function GuessesPage() {
 
           {/* Tabs Ontem / Todos / Hoje */}
           <div style={{ display: 'flex', borderBottom: '1px solid rgba(255,255,255,0.08)', marginBottom: '16px' }}>
-            {[['todos', 'Todos'], ['hoje', 'Hoje']].map(([key, label]) => (
+            {[['ontem', 'Ontem'], ['todos', 'Todos'], ['hoje', 'Hoje']].map(([key, label]) => (
               <button key={key} onClick={() => setDayTab(key)} style={{
                 flex: 1, padding: '9px 8px', border: 'none', cursor: 'pointer',
                 fontFamily: 'var(--font-body)', fontSize: '13px', fontWeight: 600,
@@ -672,7 +672,7 @@ export default function GuessesPage() {
             ? Array.from({ length: 4 }).map((_, i) => <div key={i} className="skeleton" style={{ height: 56, marginBottom: 8, borderRadius: 12 }} />)
             : filteredMatches.length === 0
               ? <div style={{ textAlign: 'center', color: 'var(--text-3)', padding: '40px 0' }}>
-                  {dayTab === 'ontem' ? 'Nenhum jogo ontem.' : 'Nenhum jogo hoje.'}
+                  {dayTab === 'ontem' ? 'Nenhum jogo ontem.' : dayTab === 'hoje' ? 'Nenhum jogo hoje.' : 'Nenhum jogo cadastrado.'}
                 </div>
               : Object.entries(grouped).map(([date, dayMatches]) => (
                 <div key={date}>
