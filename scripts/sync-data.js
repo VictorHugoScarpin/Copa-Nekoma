@@ -175,33 +175,21 @@ async function syncStandings() {
 // ── 3. ARTILHEIROS ──────────────────────────────────────────────────────────
 async function syncScorers() {
   console.log('⚽ Sincronizando artilheiros...')
-  const res = await fetch('https://free-api-live-football-data.p.rapidapi.com/football-get-top-players-by-goals?leagueid=77', {
-    headers: {
-      'x-rapidapi-key': RAPIDAPI_KEY,
-      'x-rapidapi-host': 'free-api-live-football-data.p.rapidapi.com',
-    }
-  })
-  const json = await res.json()
-  console.log('SCORERS RAW:', JSON.stringify(json).substring(0, 500))
-  const players = json?.response?.topPlayers || json?.response?.players || json?.response || []
+  const data = await apiRequest('/competitions/WC/scorers?season=2026&limit=20')
+  const scorers = data.scorers || []
 
-  if (!players.length) { console.log('⚠️ Sem artilheiros ainda.'); return }
+  if (scorers.length === 0) { console.log('⚠️ Sem artilheiros ainda.'); return }
 
   await supabase.from('top_scorers').delete().neq('id', '00000000-0000-0000-0000-000000000000')
 
   let salvos = 0
-  for (const p of players.slice(0, 20)) {
-    const name = p.name || p.shortName || p.playerName || ''
-    const teamName = p.teamName || p.team?.name || ''
-    const goals = p.goals || p.goal || p.stat || 0
-    const photo = p.imageUrl || p.photo || p.playerImage || null
-
+  for (const s of scorers) {
     const { error } = await supabase.from('top_scorers').insert({
-      player_name: name,
-      team_name: TEAM_PT[teamName] || teamName,
-      flag_emoji: FLAG_MAP[teamName] || '🏳️',
-      goals,
-      photo_url: photo,
+      player_name: s.player.name,
+      team_name: TEAM_PT[s.team.name] || s.team.name,
+      flag_emoji: FLAG_MAP[s.team.name] || '🏳️',
+      goals: s.goals ?? 0,
+      photo_url: s.team.crest || null,
     })
     if (!error) salvos++
     else console.error('scorer error:', error.message)
@@ -212,33 +200,25 @@ async function syncScorers() {
 // ── 4. ASSISTÊNCIAS ─────────────────────────────────────────────────────────
 async function syncAssists() {
   console.log('👟 Sincronizando assistências...')
-  const res = await fetch('https://free-api-live-football-data.p.rapidapi.com/football-get-top-players-by-assists?leagueid=77', {
-    headers: {
-      'x-rapidapi-key': RAPIDAPI_KEY,
-      'x-rapidapi-host': 'free-api-live-football-data.p.rapidapi.com',
-    }
-  })
-  const json = await res.json()
-  console.log('ASSISTS RAW:', JSON.stringify(json).substring(0, 500))
-  const players = json?.response?.topPlayers || json?.response?.players || json?.response || []
+  const data = await apiRequest('/competitions/WC/scorers?season=2026&limit=20')
+  const scorers = data.scorers || []
 
-  if (!players.length) { console.log('⚠️ Sem assistências ainda.'); return }
+  if (scorers.length === 0) { console.log('⚠️ Sem dados ainda.'); return }
+
+  const withAssists = scorers
+    .filter(s => (s.assists ?? 0) > 0)
+    .sort((a, b) => (b.assists ?? 0) - (a.assists ?? 0))
 
   await supabase.from('top_assists').delete().neq('id', '00000000-0000-0000-0000-000000000000')
 
   let salvos = 0
-  for (const p of players.slice(0, 20)) {
-    const name = p.name || p.shortName || p.playerName || ''
-    const teamName = p.teamName || p.team?.name || ''
-    const assists = p.assists || p.assist || p.stat || 0
-    const photo = p.imageUrl || p.photo || p.playerImage || null
-
+  for (const s of withAssists) {
     const { error } = await supabase.from('top_assists').insert({
-      player_name: name,
-      team_name: TEAM_PT[teamName] || teamName,
-      flag_emoji: FLAG_MAP[teamName] || '🏳️',
-      assists,
-      photo_url: photo,
+      player_name: s.player.name,
+      team_name: TEAM_PT[s.team.name] || s.team.name,
+      flag_emoji: FLAG_MAP[s.team.name] || '🏳️',
+      assists: s.assists ?? 0,
+      photo_url: s.team.crest || null,
     })
     if (!error) salvos++
     else console.error('assist error:', error.message)
