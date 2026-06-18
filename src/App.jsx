@@ -9,6 +9,7 @@ import BracketPage from './pages/BracketPage'
 import ProfilePage from './pages/ProfilePage'
 import HallPage from './pages/HallPage'
 import ChatPage from './pages/ChatPage'
+import QuizPage from './pages/QuizPage'
 import TopHeader from './components/TopHeader'
 import './index.css'
 
@@ -74,6 +75,7 @@ function AppRoutes() {
           {/* Rotas ocultas da nav mas ainda acessíveis */}
           <Route path="/grupos"    element={<GroupsPage />} />
           <Route path="/mata-mata" element={<BracketPage />} />
+          <Route path="/quiz"      element={<QuizPage />} />
           <Route path="*"          element={<Navigate to="/" />} />
         </Routes>
       </main>
