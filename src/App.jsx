@@ -10,6 +10,7 @@ import ProfilePage from './pages/ProfilePage'
 import HallPage from './pages/HallPage'
 import ChatPage from './pages/ChatPage'
 import QuizPage from './pages/QuizPage'
+import QuizInviteModal from './components/QuizInviteModal'
 import TopHeader from './components/TopHeader'
 import './index.css'
 
@@ -64,6 +65,7 @@ function AppRoutes() {
     <div className="app-shell">
       <TopHeader />
       <SideNav />
+      <QuizInviteModal userId={user.id} />
       <main style={{ overflowY: 'auto' }}>
         <Routes>
           <Route path="/"          element={<MatchesPage />} />
