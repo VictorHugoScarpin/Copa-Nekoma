@@ -172,24 +172,60 @@ async function syncStandings() {
   console.log(`✅ Standings: ${salvos} salvos | ❌ ${erros} erros`)
 }
 
-// ── FOTO DO JOGADOR VIA GOOGLE ───────────────────────────────────────────────
-const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY
-const GOOGLE_CX = process.env.GOOGLE_CX
+// ── FOTO DO JOGADOR VIA WIKIPEDIA ───────────────────────────────────────────
 const photoCache = {}
 
-async function fetchPlayerPhoto(playerName) {
-  if (photoCache[playerName]) return photoCache[playerName]
+// Busca o resumo da página (que inclui thumbnail) direto pelo título
+async function wikiSummary(lang, title) {
   try {
-    const q = encodeURIComponent(`${playerName} footballer face`)
-    const url = `https://www.googleapis.com/customsearch/v1?key=${GOOGLE_API_KEY}&cx=${GOOGLE_CX}&q=${q}&searchType=image&num=1&imgType=face&imgSize=medium&safe=active`
-    const res = await fetch(url)
+    const url = `https://${lang}.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}`
+    const res = await fetch(url, { headers: { 'User-Agent': 'WorldCupSync/1.0 (contato@example.com)' } })
+    if (!res.ok) return null
     const json = await res.json()
-    const photo = json?.items?.[0]?.link || null
-    photoCache[playerName] = photo
-    return photo
+    return json?.thumbnail?.source || json?.originalimage?.source || null
   } catch {
     return null
   }
+}
+
+// Quando o título exato não existe, procura a página mais provável
+async function wikiSearchTitle(lang, query) {
+  try {
+    const url = `https://${lang}.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(query + ' footballer')}&format=json&srlimit=1&origin=*`
+    const res = await fetch(url, { headers: { 'User-Agent': 'WorldCupSync/1.0 (contato@example.com)' } })
+    if (!res.ok) return null
+    const json = await res.json()
+    return json?.query?.search?.[0]?.title || null
+  } catch {
+    return null
+  }
+}
+
+async function fetchPlayerPhoto(playerName) {
+  if (photoCache[playerName] !== undefined) return photoCache[playerName]
+
+  // 1. Tenta título exato em inglês
+  let photo = await wikiSummary('en', playerName)
+
+  // 2. Busca o título correto em inglês e tenta de novo
+  if (!photo) {
+    const title = await wikiSearchTitle('en', playerName)
+    if (title) photo = await wikiSummary('en', title)
+  }
+
+  // 3. Fallback: título exato em português
+  if (!photo) {
+    photo = await wikiSummary('pt', playerName)
+  }
+
+  // 4. Fallback: busca em português
+  if (!photo) {
+    const titlePt = await wikiSearchTitle('pt', playerName)
+    if (titlePt) photo = await wikiSummary('pt', titlePt)
+  }
+
+  photoCache[playerName] = photo
+  return photo
 }
 
 // ── 3. ARTILHEIROS ──────────────────────────────────────────────────────────
