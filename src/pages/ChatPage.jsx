@@ -127,7 +127,7 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="page" style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 88px)', paddingBottom: 0 }}>
+    <div className="page" style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - var(--header-h) - var(--nav-h))', paddingBottom: 0 }}>
       <div className="section-title" style={{ marginBottom: 10 }}>Chat da Galera</div>
 
       {/* Aviso das regras */}
@@ -161,6 +161,7 @@ export default function ChatPage() {
       <div style={{
         display: 'flex', gap: 8, alignItems: 'flex-end',
         padding: '10px 0', borderTop: '1px solid var(--border)', marginTop: 8,
+        paddingBottom: 'max(10px, env(safe-area-inset-bottom, 10px))',
       }}>
         <div style={{ flex: 1, position: 'relative' }}>
           <textarea
