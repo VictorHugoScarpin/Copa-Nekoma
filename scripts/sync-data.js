@@ -209,6 +209,12 @@ async function main() {
   try {
     await syncMatches()
     await syncStandings()
+
+
+    
+    await debugScorers()
+
+    
     await syncScorers()
     await syncAssists()
     console.log('🏆 Sincronização completa!')
@@ -219,3 +225,8 @@ async function main() {
 }
 
 main()
+
+async function debugScorers() {
+  const data = await apiRequest('/competitions/WC/scorers?season=2026&limit=20')
+  console.log('DEBUG SCORERS:', JSON.stringify(data).substring(0, 2000))
+}
