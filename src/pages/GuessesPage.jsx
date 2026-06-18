@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
 import { format, differenceInSeconds, parseISO, startOfDay } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
+import { QuizBanner } from '../lib/quizBanner'
 
 const LOCK_SECS = 60
 
@@ -632,6 +633,8 @@ export default function GuessesPage() {
   return (
     <div className="page">
       <div className="section-title">{tab === 'regras' ? 'Regras' : 'Palpites'}</div>
+
+      <QuizBanner />
 
       <div style={{ display: 'flex', background: 'var(--surface)', borderRadius: 'var(--r-md)', padding: '4px', marginBottom: '16px', gap: '4px' }}
         onTouchStart={e => { e.currentTarget._sx = e.touches[0].clientX }}
