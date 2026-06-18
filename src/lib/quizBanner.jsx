@@ -67,7 +67,7 @@ export function QuizBanner() {
       onClick={() => navigate('/quiz')}
       style={{ padding: '14px 16px', marginBottom: 16, border: '1px solid rgba(232,184,75,0.25)', background: 'rgba(232,184,75,0.05)', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}
     >
-      <span style={{ fontSize: 26, flexShrink: 0 }}>⚽🎵</span>
+      <img src="/taca.png" alt="Quiz" style={{ width: 32, height: 32, objectFit: 'contain', flexShrink: 0 }} />
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontWeight: 700, fontSize: 13, color: 'var(--text)' }}>
           {myAttempt ? 'Você já participou do Quiz da Copa' : 'Quiz da Copa — ganhe 3 meses de Spotify!'}
