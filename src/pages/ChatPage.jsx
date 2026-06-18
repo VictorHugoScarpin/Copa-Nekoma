@@ -34,12 +34,33 @@ function MessageBubble({ msg, profile, isMe }) {
           <span style={{ fontSize: 10, color: 'var(--text-3)' }}>{time}</span>
         </div>
         <div style={{
-          padding: '9px 13px', borderRadius: isMe ? '14px 14px 4px 14px' : '14px 14px 14px 4px',
+          padding: msg.media_url && !msg.content ? 0 : '9px 13px',
+          borderRadius: isMe ? '14px 14px 4px 14px' : '14px 14px 14px 4px',
           background: isMe ? 'var(--gold-dim)' : 'var(--surface)',
           border: `1px solid ${isMe ? 'rgba(245,197,24,0.25)' : 'var(--border)'}`,
           color: 'var(--text)', fontSize: 14, lineHeight: 1.4, wordBreak: 'break-word',
+          overflow: 'hidden',
         }}>
-          {msg.content}
+          {msg.media_url && msg.media_type === 'image' && (
+            <img
+              src={msg.media_url}
+              alt=""
+              style={{ display: 'block', maxWidth: '100%', maxHeight: 280, objectFit: 'cover', borderRadius: isMe ? '14px 14px 4px 14px' : '14px 14px 14px 4px', cursor: 'pointer' }}
+              onClick={() => window.open(msg.media_url, '_blank')}
+            />
+          )}
+          {msg.media_url && msg.media_type === 'video' && (
+            <video
+              src={msg.media_url}
+              controls
+              style={{ display: 'block', maxWidth: '100%', maxHeight: 280, borderRadius: isMe ? '14px 14px 4px 14px' : '14px 14px 14px 4px' }}
+            />
+          )}
+          {msg.content && (
+            <span style={{ display: 'block', padding: msg.media_url ? '8px 13px' : 0 }}>
+              {msg.content}
+            </span>
+          )}
         </div>
       </div>
     </div>
@@ -54,6 +75,8 @@ export default function ChatPage() {
   const [text, setText] = useState('')
   const [sending, setSending] = useState(false)
   const [cooldown, setCooldown] = useState(0)
+  const [mediaPreview, setMediaPreview] = useState(null) // { url, type, file }
+  const fileRef = useRef()
   const bottomRef = useRef(null)
   const cooldownRef = useRef(null)
 
@@ -104,13 +127,44 @@ export default function ChatPage() {
     return () => clearInterval(cooldownRef.current)
   }, [cooldown])
 
+  function handleFileChange(e) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const type = file.type.startsWith('video') ? 'video' : 'image'
+    const url = URL.createObjectURL(file)
+    setMediaPreview({ url, type, file })
+    e.target.value = ''
+  }
+
   async function handleSend() {
     const trimmed = text.trim()
-    if (!trimmed || sending || cooldown > 0) return
+    if (!trimmed && !mediaPreview) return
+    if (sending || cooldown > 0) return
     setSending(true)
+
+    let media_url = null
+    let media_type = null
+
+    if (mediaPreview) {
+      const ext = mediaPreview.file.name.split('.').pop()
+      const path = `${user.id}/${Date.now()}.${ext}`
+      const { error: uploadError } = await supabase.storage
+        .from('chat-media')
+        .upload(path, mediaPreview.file, { upsert: false })
+      if (!uploadError) {
+        const { data } = supabase.storage.from('chat-media').getPublicUrl(path)
+        media_url = data.publicUrl
+        media_type = mediaPreview.type
+      }
+      URL.revokeObjectURL(mediaPreview.url)
+      setMediaPreview(null)
+    }
+
     const { error } = await supabase.from('chat_messages').insert({
       user_id: user.id,
-      content: trimmed.slice(0, MAX_CHARS),
+      content: trimmed.slice(0, MAX_CHARS) || null,
+      media_url,
+      media_type,
     })
     setSending(false)
     if (!error) {
@@ -157,12 +211,35 @@ export default function ChatPage() {
         <div ref={bottomRef} />
       </div>
 
+      {/* Preview de mídia antes de enviar */}
+      {mediaPreview && (
+        <div style={{ position: 'relative', marginBottom: 8, display: 'inline-block' }}>
+          {mediaPreview.type === 'image'
+            ? <img src={mediaPreview.url} alt="" style={{ maxHeight: 140, maxWidth: '100%', borderRadius: 10, display: 'block' }} />
+            : <video src={mediaPreview.url} style={{ maxHeight: 140, maxWidth: '100%', borderRadius: 10, display: 'block' }} />
+          }
+          <button
+            onClick={() => { URL.revokeObjectURL(mediaPreview.url); setMediaPreview(null) }}
+            style={{ position: 'absolute', top: 4, right: 4, width: 22, height: 22, borderRadius: '50%', background: 'rgba(0,0,0,0.6)', border: 'none', cursor: 'pointer', color: '#fff', fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          >✕</button>
+        </div>
+      )}
+
       {/* Input fixo */}
       <div style={{
         display: 'flex', gap: 8, alignItems: 'flex-end',
         padding: '10px 0', borderTop: '1px solid var(--border)', marginTop: 8,
         paddingBottom: 'max(10px, env(safe-area-inset-bottom, 10px))',
       }}>
+        {/* Botão de clipe */}
+        <input ref={fileRef} type="file" accept="image/*,video/*" style={{ display: 'none' }} onChange={handleFileChange} />
+        <button
+          onClick={() => fileRef.current?.click()}
+          style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--r-md)', width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0, color: 'var(--text-3)', fontSize: 18 }}
+        >
+          📎
+        </button>
+
         <div style={{ flex: 1, position: 'relative' }}>
           <textarea
             value={text}
@@ -183,7 +260,7 @@ export default function ChatPage() {
         </div>
         <button
           onClick={handleSend}
-          disabled={!text.trim() || sending || cooldown > 0}
+          disabled={(!text.trim() && !mediaPreview) || sending || cooldown > 0}
           className="btn btn-primary"
           style={{ width: 'auto', padding: '10px 16px', flexShrink: 0, opacity: cooldown > 0 ? 0.5 : 1 }}
         >
