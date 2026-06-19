@@ -227,7 +227,7 @@ export default function ChatPage() {
 
       {/* Input fixo */}
       <div style={{
-        display: 'flex', gap: 8, alignItems: 'flex-end',
+        display: 'flex', gap: 8, alignItems: 'center',
         padding: '10px 0', borderTop: '1px solid var(--border)', marginTop: 8,
         paddingBottom: 'max(10px, env(safe-area-inset-bottom, 10px))',
       }}>
@@ -240,7 +240,7 @@ export default function ChatPage() {
           📎
         </button>
 
-        <div style={{ flex: 1, position: 'relative' }}>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
           <textarea
             value={text}
             onChange={e => setText(e.target.value.slice(0, MAX_CHARS))}
@@ -251,10 +251,10 @@ export default function ChatPage() {
               width: '100%', resize: 'none', background: 'var(--surface)',
               border: '1px solid var(--border)', borderRadius: 'var(--r-md)',
               padding: '10px 12px', color: 'var(--text)', fontFamily: 'var(--font-body)',
-              fontSize: 14, outline: 'none', maxHeight: 80,
+              fontSize: 14, outline: 'none', maxHeight: 80, boxSizing: 'border-box',
             }}
           />
-          <span style={{ position: 'absolute', bottom: -16, right: 4, fontSize: 9, color: 'var(--text-3)' }}>
+          <span style={{ fontSize: 9, color: 'var(--text-3)', textAlign: 'right', paddingRight: 2 }}>
             {text.length}/{MAX_CHARS}
           </span>
         </div>
