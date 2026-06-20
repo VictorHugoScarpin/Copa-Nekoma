@@ -679,28 +679,30 @@ export default function GuessesPage() {
                   {dayTab === 'hoje' ? 'Nenhum jogo hoje.' : dayTab === 'amanha' ? 'Nenhum jogo amanhã.' : 'Nenhum jogo cadastrado.'}
                 </div>
               : Object.entries(grouped).map(([date, dayMatches]) => {
-                  // Auto-expand today's group; others default collapsed in 'todos' tab
-                  const isExpanded = expandedDays[date] !== undefined
-                    ? expandedDays[date]
-                    : (dayTab !== 'todos' || date === format(new Date(), "EEEE, dd 'de' MMMM", { locale: ptBR }))
+                  const isTodos = dayTab === 'todos'
+                  const isExpanded = isTodos
+                    ? (expandedDays[date] !== undefined ? expandedDays[date] : date === format(new Date(), "EEEE, dd 'de' MMMM", { locale: ptBR }))
+                    : true
 
                   return (
                     <div key={date}>
                       <div
-                        onClick={() => setExpandedDays(prev => ({ ...prev, [date]: !isExpanded }))}
+                        onClick={isTodos ? () => setExpandedDays(prev => ({ ...prev, [date]: !isExpanded })) : undefined}
                         style={{
                           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                           fontSize: '11px', fontWeight: 700, color: 'var(--gold)',
                           textTransform: 'capitalize', letterSpacing: '0.08em',
-                          marginBottom: isExpanded ? '8px' : '4px', marginTop: '16px',
-                          cursor: 'pointer', userSelect: 'none',
+                          marginBottom: '8px', marginTop: '16px',
+                          cursor: isTodos ? 'pointer' : 'default', userSelect: 'none',
                           padding: '4px 0',
                         }}
                       >
                         <span>{date}</span>
-                        <span style={{ fontSize: '10px', color: 'var(--text-3)', marginLeft: '8px' }}>
-                          {isExpanded ? '▲' : `▼ ${dayMatches.length} jogo${dayMatches.length > 1 ? 's' : ''}`}
-                        </span>
+                        {isTodos && (
+                          <span style={{ fontSize: '10px', color: 'var(--text-3)', marginLeft: '8px' }}>
+                            {isExpanded ? '▲' : `▼ ${dayMatches.length} jogo${dayMatches.length > 1 ? 's' : ''}`}
+                          </span>
+                        )}
                       </div>
                       {isExpanded && dayMatches.map(m => (
                         <GuessCard key={m.id} match={m} myGuess={myGuesses[m.id]} onSave={handleSave} />
