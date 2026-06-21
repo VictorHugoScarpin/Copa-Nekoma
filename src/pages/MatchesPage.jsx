@@ -421,11 +421,92 @@ function StatsTab() {
   )
 }
 
+// Bottom sheet para escolher seleções a filtrar
+function TeamFilterSheet({ allTeams, selected, onToggle, onClose, onClear }) {
+  return (
+    <div
+      onClick={onClose}
+      style={{
+        position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)',
+        zIndex: 200, display: 'flex', alignItems: 'flex-end',
+        animation: 'fadeUp 0.2s ease',
+      }}
+    >
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{
+          background: 'var(--deep)', borderRadius: '20px 20px 0 0',
+          width: '100%', maxHeight: '75vh', display: 'flex', flexDirection: 'column',
+          border: '1px solid var(--border)', borderBottom: 'none',
+        }}
+      >
+        {/* Handle */}
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '10px 0 4px' }}>
+          <div style={{ width: 36, height: 4, borderRadius: 2, background: 'var(--border-strong)' }} />
+        </div>
+
+        {/* Header */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 18px 14px' }}>
+          <div style={{ fontFamily: 'var(--font-display)', fontSize: '20px', letterSpacing: '0.06em', color: 'var(--text)' }}>
+            Filtrar Seleções
+          </div>
+          {selected.length > 0 && (
+            <button onClick={onClear} style={{ background: 'none', border: 'none', color: 'var(--gold)', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>
+              Limpar ({selected.length})
+            </button>
+          )}
+        </div>
+
+        {/* Lista de seleções */}
+        <div style={{ overflowY: 'auto', padding: '0 12px 12px' }}>
+          {allTeams.map(team => {
+            const isSelected = selected.includes(team)
+            return (
+              <button
+                key={team}
+                onClick={() => onToggle(team)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '12px', width: '100%',
+                  padding: '10px 10px', borderRadius: '12px', border: 'none', cursor: 'pointer',
+                  background: isSelected ? 'rgba(232,184,75,0.10)' : 'transparent',
+                  marginBottom: '2px', textAlign: 'left',
+                }}
+              >
+                <TeamCircle name={team} size={32} />
+                <span style={{ flex: 1, fontSize: '14px', fontWeight: isSelected ? 700 : 500, color: isSelected ? 'var(--gold-bright)' : 'var(--text)' }}>
+                  {getPT(team)}
+                </span>
+                <div style={{
+                  width: 20, height: 20, borderRadius: '6px', flexShrink: 0,
+                  border: `2px solid ${isSelected ? 'var(--gold)' : 'var(--border-strong)'}`,
+                  background: isSelected ? 'var(--gold)' : 'transparent',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  {isSelected && <span style={{ color: 'var(--void)', fontSize: '13px', fontWeight: 900, lineHeight: 1 }}>✓</span>}
+                </div>
+              </button>
+            )
+          })}
+        </div>
+
+        {/* Botão aplicar */}
+        <div style={{ padding: '12px 18px', paddingBottom: 'max(12px, env(safe-area-inset-bottom, 12px))', borderTop: '1px solid var(--border)' }}>
+          <button className="btn btn-primary" onClick={onClose}>
+            Ver jogos {selected.length > 0 ? `(${selected.length} seleções)` : ''}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function MatchesPage() {
   const [matches, setMatches] = useState([])
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState('jogos')
   const [dayTab, setDayTab] = useState('hoje')
+  const [filterOpen, setFilterOpen] = useState(false)
+  const [filterTeams, setFilterTeams] = useState([])
 
   useEffect(() => {
     supabase.from('matches').select('*').order('match_date').then(({ data }) => {
@@ -436,7 +517,26 @@ export default function MatchesPage() {
     })
   }, [])
 
-  const tabMatches = useMemo(() => getTabMatches(matches, dayTab), [matches, dayTab])
+  const allTeams = useMemo(() => {
+    const set = new Set()
+    matches.forEach(m => { set.add(m.home_team); set.add(m.away_team) })
+    return [...set].sort((a, b) => getPT(a).localeCompare(getPT(b), 'pt-BR'))
+  }, [matches])
+
+  const isFiltering = filterTeams.length > 0
+
+  function toggleFilterTeam(team) {
+    setFilterTeams(prev => prev.includes(team) ? prev.filter(t => t !== team) : [...prev, team])
+  }
+
+  const tabMatches = useMemo(() => {
+    if (isFiltering) {
+      return matches
+        .filter(m => filterTeams.includes(m.home_team) || filterTeams.includes(m.away_team))
+        .sort((a, b) => new Date(a.match_date) - new Date(b.match_date))
+    }
+    return getTabMatches(matches, dayTab)
+  }, [matches, dayTab, isFiltering, filterTeams])
 
   const grouped = useMemo(() => {
     const g = {}
@@ -468,36 +568,77 @@ export default function MatchesPage() {
 
       {tab === 'stats' ? <StatsTab /> : (
         <>
-          <div style={{ display: 'flex', borderBottom: '1px solid rgba(255,255,255,0.08)', marginBottom: '20px', overflowX: 'auto', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-            onTouchStart={e => { e._touchX = e.touches[0].clientX }}
-            onTouchEnd={e => {
-              const dx = e.changedTouches[0].clientX - (e._touchX || 0)
-              const tabs = ['ontem','hoje','proximos']
-              const cur = tabs.indexOf(dayTab)
-              if (dx < -40 && cur < tabs.length - 1) setDayTab(tabs[cur + 1])
-              if (dx > 40 && cur > 0) setDayTab(tabs[cur - 1])
-            }}
-          >
-            {[['ontem', 'Ontem'], ['hoje', 'Hoje'], ['proximos', 'Próximos']].map(([key, label]) => (
-              <button key={key} onClick={() => setDayTab(key)} style={{
-                flexShrink: 0, flex: 1, minWidth: '80px', padding: '10px 8px', border: 'none', cursor: 'pointer',
-                fontFamily: 'var(--font-body)', fontSize: '13px', fontWeight: 600,
-                background: 'transparent',
-                color: dayTab === key ? 'var(--text)' : 'var(--text-3)',
-                borderBottom: `2px solid ${dayTab === key ? 'var(--gold)' : 'transparent'}`,
-                transition: 'all 0.2s', letterSpacing: '0.02em',
-              }}>{label}</button>
-            ))}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+            <div style={{ display: 'flex', flex: 1, overflowX: 'auto', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+              onTouchStart={e => { e._touchX = e.touches[0].clientX }}
+              onTouchEnd={e => {
+                if (isFiltering) return
+                const dx = e.changedTouches[0].clientX - (e._touchX || 0)
+                const tabs = ['ontem','hoje','proximos']
+                const cur = tabs.indexOf(dayTab)
+                if (dx < -40 && cur < tabs.length - 1) setDayTab(tabs[cur + 1])
+                if (dx > 40 && cur > 0) setDayTab(tabs[cur - 1])
+              }}
+            >
+              {[['ontem', 'Ontem'], ['hoje', 'Hoje'], ['proximos', 'Próximos']].map(([key, label]) => (
+                <button key={key} onClick={() => { setDayTab(key); setFilterTeams([]) }} style={{
+                  flexShrink: 0, flex: 1, minWidth: '80px', padding: '10px 8px', border: 'none', cursor: 'pointer',
+                  fontFamily: 'var(--font-body)', fontSize: '13px', fontWeight: 600,
+                  background: 'transparent',
+                  color: !isFiltering && dayTab === key ? 'var(--text)' : 'var(--text-3)',
+                  borderBottom: `2px solid ${!isFiltering && dayTab === key ? 'var(--gold)' : 'transparent'}`,
+                  transition: 'all 0.2s', letterSpacing: '0.02em',
+                  opacity: isFiltering ? 0.4 : 1,
+                }}>{label}</button>
+              ))}
+            </div>
+
+            {/* Botão de filtro por seleção */}
+            <button
+              onClick={() => setFilterOpen(true)}
+              style={{
+                flexShrink: 0, padding: '10px 12px', border: 'none', cursor: 'pointer',
+                background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: isFiltering ? 'var(--gold)' : 'var(--text-3)',
+                borderBottom: `2px solid ${isFiltering ? 'var(--gold)' : 'transparent'}`,
+                transition: 'all 0.2s',
+              }}
+            >
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+              </svg>
+            </button>
           </div>
 
+          {/* Bolinhas das seleções filtradas */}
+          {isFiltering && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', padding: '12px 2px 4px' }}>
+              {filterTeams.map(team => (
+                <button
+                  key={team}
+                  onClick={() => toggleFilterTeam(team)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '6px',
+                    background: 'rgba(232,184,75,0.10)', border: '1px solid rgba(232,184,75,0.25)',
+                    borderRadius: '99px', padding: '4px 10px 4px 4px', cursor: 'pointer',
+                  }}
+                >
+                  <TeamCircle name={team} size={22} />
+                  <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--gold-bright)' }}>{getPT(team)}</span>
+                  <span style={{ fontSize: '12px', color: 'var(--text-3)', marginLeft: '2px' }}>✕</span>
+                </button>
+              ))}
+            </div>
+          )}
+
           {loading
-            ? Array.from({ length: 4 }).map((_, i) => <div key={i} className="skeleton" style={{ height: 130, marginBottom: 10, borderRadius: 14 }} />)
+            ? Array.from({ length: 4 }).map((_, i) => <div key={i} className="skeleton" style={{ height: 130, marginBottom: 10, borderRadius: 14, marginTop: i === 0 ? '8px' : 0 }} />)
             : tabMatches.length === 0
               ? <div style={{ textAlign: 'center', color: 'var(--text-3)', padding: '60px 0', fontSize: '14px' }}>
-                  {dayTab === 'ontem' ? 'Nenhum jogo ontem.' : dayTab === 'hoje' ? 'Nenhum jogo hoje.' : 'Nenhum jogo futuro cadastrado.'}
+                  {isFiltering ? 'Nenhum jogo dessas seleções.' : dayTab === 'ontem' ? 'Nenhum jogo ontem.' : dayTab === 'hoje' ? 'Nenhum jogo hoje.' : 'Nenhum jogo futuro cadastrado.'}
                 </div>
               : Object.entries(grouped).map(([date, dayMatches]) => (
-                <div key={date} style={{ marginBottom: '24px' }}>
+                <div key={date} style={{ marginBottom: '24px', marginTop: '8px' }}>
                   <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--gold)', textTransform: 'capitalize', letterSpacing: '0.08em', marginBottom: '10px', paddingLeft: '2px' }}>
                     {date}
                   </div>
@@ -508,6 +649,16 @@ export default function MatchesPage() {
               ))
           }
         </>
+      )}
+
+      {filterOpen && (
+        <TeamFilterSheet
+          allTeams={allTeams}
+          selected={filterTeams}
+          onToggle={toggleFilterTeam}
+          onClose={() => setFilterOpen(false)}
+          onClear={() => setFilterTeams([])}
+        />
       )}
     </div>
   )
