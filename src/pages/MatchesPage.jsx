@@ -441,7 +441,7 @@ export default function MatchesPage() {
   const grouped = useMemo(() => {
     const g = {}
     tabMatches.forEach(m => {
-      const d = format(parseISO(m.match_date), "EEE., dd 'de' MMM.", { locale: ptBR })
+      const d = format(parseISO(m.match_date), "EEEE, dd 'de' MMMM", { locale: ptBR })
       if (!g[d]) g[d] = []
       g[d].push(m)
     })
@@ -498,7 +498,7 @@ export default function MatchesPage() {
                 </div>
               : Object.entries(grouped).map(([date, dayMatches]) => (
                 <div key={date} style={{ marginBottom: '24px' }}>
-                  <div style={{ fontSize: '11px', fontWeight: 700, color: 'rgba(212,168,50,0.7)', textTransform: 'capitalize', letterSpacing: '0.08em', marginBottom: '10px', paddingLeft: '2px' }}>
+                  <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--gold)', textTransform: 'capitalize', letterSpacing: '0.08em', marginBottom: '10px', paddingLeft: '2px' }}>
                     {date}
                   </div>
                   <div className="matches-grid">
