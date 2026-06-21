@@ -423,6 +423,14 @@ function StatsTab() {
 
 // Bottom sheet para escolher seleções a filtrar
 function TeamFilterSheet({ allTeams, selected, onToggle, onClose, onClear }) {
+  // Trava o scroll do body enquanto o sheet está aberto — evita que a página
+  // de fundo "pule" e arraste o modal junto quando o conteúdo atrás muda
+  useEffect(() => {
+    const original = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = original }
+  }, [])
+
   return (
     <div
       onClick={onClose}
@@ -442,6 +450,7 @@ function TeamFilterSheet({ allTeams, selected, onToggle, onClose, onClear }) {
           display: 'flex', flexDirection: 'column',
           border: '1px solid var(--border)', borderBottom: 'none',
           overflow: 'hidden',
+          position: 'relative',
         }}
       >
         {/* Handle */}
@@ -615,7 +624,7 @@ export default function MatchesPage() {
           </div>
 
           {/* Bolinhas das seleções filtradas */}
-          {isFiltering && (
+          {isFiltering && !filterOpen && (
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', padding: '12px 2px 4px' }}>
               {filterTeams.map(team => (
                 <button
