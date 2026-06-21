@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo } from 'react'
+import { createPortal } from 'react-dom'
 import { supabase } from '../lib/supabase'
 import { format, parseISO, startOfDay } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
@@ -431,7 +432,7 @@ function TeamFilterSheet({ allTeams, selected, onToggle, onClose, onClear }) {
     return () => { document.body.style.overflow = original }
   }, [])
 
-  return (
+  return createPortal(
     <div
       onClick={onClose}
       style={{
@@ -508,7 +509,8 @@ function TeamFilterSheet({ allTeams, selected, onToggle, onClose, onClear }) {
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 
