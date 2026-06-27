@@ -3,11 +3,11 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from './supabase'
 import { getQuizStatus } from './quiz'
 
-// Banner que aparece em Guesses — convite pro quiz, depois mostra o vencedor
 export function QuizBanner() {
   const navigate = useNavigate()
   const [config, setConfig] = useState(null)
-  const [history, setHistory] = useState([]) // [{position, display_name, nick}]
+  const [history, setHistory] = useState([])
+  const [currentWinner, setCurrentWinner] = useState(null)
   const [myAttempt, setMyAttempt] = useState(null)
 
   useEffect(() => {
@@ -25,25 +25,47 @@ export function QuizBanner() {
   }, [])
 
   useEffect(() => {
-    async function loadHistory() {
+    async function loadWinner() {
       if (!config?.start_date) return
       const st = getQuizStatus(config.start_date)
       if (st.status !== 'result' && st.status !== 'archived') return
 
-      // Busca o histórico de posições com os perfis
-      const { data: rows } = await supabase
-        .from('quiz_winner_history')
-        .select('position, profiles(display_name, nick)')
-        .order('position', { ascending: true })
+      // Pega o winner atual
+      const { data: winnerId } = await supabase.rpc('get_quiz_winner')
+      if (!winnerId) return
 
-      if (rows?.length) {
-        setHistory(rows.map(r => ({
+      // Pega o perfil do winner atual
+      const { data: winnerProfile } = await supabase
+        .from('profiles')
+        .select('id, display_name, nick')
+        .eq('id', winnerId)
+        .maybeSingle()
+      setCurrentWinner(winnerProfile || null)
+
+      // Pega a posição do winner atual no histórico
+      const { data: winnerRow } = await supabase
+        .from('quiz_winner_history')
+        .select('position')
+        .eq('user_id', winnerId)
+        .maybeSingle()
+
+      if (winnerRow?.position && winnerRow.position > 1) {
+        // Busca todos que passaram antes (posições 1 até position-1)
+        const { data: passedRows } = await supabase
+          .from('quiz_winner_history')
+          .select('position, profiles(display_name, nick)')
+          .lt('position', winnerRow.position)
+          .order('position', { ascending: true })
+
+        setHistory(passedRows?.map(r => ({
           position: r.position,
           name: r.profiles?.display_name || r.profiles?.nick || '?',
-        })))
+        })) || [])
+      } else {
+        setHistory([])
       }
     }
-    loadHistory()
+    loadWinner()
   }, [config])
 
   if (!config?.start_date) return null
@@ -52,13 +74,17 @@ export function QuizBanner() {
   if (st.status === 'archived') return null
 
   if (st.status === 'result') {
-    if (!history.length) return null
+    if (!currentWinner) return null
 
-    // Descobre quem é o vencedor atual (último da cadeia que não passou)
-    // A lógica: o winner atual é o último inserido no histórico que ainda está ativo
-    // i.e., o de maior position que existe
-    const currentWinner = history[history.length - 1]
-    const passed = history.slice(0, -1) // quem passou o prêmio
+    const winnerName = currentWinner.display_name || currentWinner.nick
+
+    // Monta texto da cadeia: "Hugo passou para Liliu, Liliu passou para X"
+    const chainParts = []
+    for (let i = 0; i < history.length; i++) {
+      const from = history[i].name
+      const to = i + 1 < history.length ? history[i + 1].name : winnerName
+      chainParts.push(`${from} passou para ${to}`)
+    }
 
     return (
       <div className="glass-card" style={{ padding: '14px 16px', marginBottom: 16, border: '1px solid rgba(232,184,75,0.3)', background: 'rgba(232,184,75,0.06)' }}>
@@ -66,17 +92,11 @@ export function QuizBanner() {
           <span style={{ fontSize: 26, flexShrink: 0 }}>🎉</span>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontWeight: 700, fontSize: 13, color: 'var(--gold-bright)' }}>
-              {currentWinner.name} ganhou o Quiz da Copa!
+              {winnerName} ganhou o Quiz da Copa!
             </div>
-            {passed.length > 0 && (
+            {chainParts.length > 0 && (
               <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 3, lineHeight: 1.5 }}>
-                {passed.map((p, i) => (
-                  <span key={p.position}>
-                    {p.name} passou para{' '}
-                    {i + 1 < passed.length ? passed[i + 1].name : currentWinner.name}
-                    {i < passed.length - 1 ? ', ' : ''}
-                  </span>
-                ))}
+                {chainParts.join(', ')}
               </div>
             )}
             <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 2 }}>
