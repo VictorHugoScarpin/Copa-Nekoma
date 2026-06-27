@@ -88,7 +88,7 @@ export default function QuizProfileCard({ userId }) {
             Lembrando: o prêmio só vale se você nunca teve Spotify Premium antes.
           </div>
           
-            href={SPOTIFY_GIFT_LINK}
+           href={SPOTIFY_GIFT_LINK}
             target="_blank"
             rel="noopener noreferrer"
             className="btn btn-primary"
