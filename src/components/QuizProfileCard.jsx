@@ -29,7 +29,6 @@ export default function QuizProfileCard({ userId }) {
           const { data: winnerId } = await supabase.rpc('get_quiz_winner')
           setIsWinner(winnerId === userId)
 
-          // Pega minha posição no histórico
           const { data: myRow } = await supabase
             .from('quiz_winner_history')
             .select('position')
@@ -37,7 +36,6 @@ export default function QuizProfileCard({ userId }) {
             .maybeSingle()
           setMyPosition(myRow?.position || null)
 
-          // Pega o próximo da fila (minha posição + 1)
           if (myRow?.position) {
             const { data: nextRow } = await supabase
               .from('quiz_winner_history')
@@ -55,30 +53,27 @@ export default function QuizProfileCard({ userId }) {
   }, [userId])
 
   async function passToNext() {
-  if (!nextName) return
-  if (!confirm(`Tem certeza? O prêmio vai para ${nextName} e não dá pra desfazer.`)) return
-  setPassing(true)
+    if (!nextName) return
+    if (!confirm(`Tem certeza? O prêmio vai para ${nextName} e não dá pra desfazer.`)) return
+    setPassing(true)
 
-  const { data: nextRow, error: nextError } = await supabase
-    .from('quiz_winner_history')
-    .select('user_id')
-    .eq('position', myPosition + 1)
-    .maybeSingle()
+    const { data: nextRow } = await supabase
+      .from('quiz_winner_history')
+      .select('user_id')
+      .eq('position', myPosition + 1)
+      .maybeSingle()
 
-  console.log('nextRow:', nextRow, 'error:', nextError)
-
-  if (nextRow?.user_id) {
-    const { data, error } = await supabase
-      .from('quiz_config')
-      .update({ winner_id: nextRow.user_id })
-      .eq('id', 1)
-      .select()
-    
-    console.log('update result:', data, 'error:', error)
+    if (nextRow?.user_id) {
+      await supabase
+        .from('quiz_config')
+        .update({ winner_id: nextRow.user_id })
+        .eq('id', 1)
+        .select()
+      setIsWinner(false)
+      setPassed(true)
+    }
+    setPassing(false)
   }
-
-  setPassing(false)
-}
 
   if (!config?.start_date) return null
   const st = getQuizStatus(config.start_date)
