@@ -10,8 +10,10 @@ export default function QuizProfileCard({ userId }) {
   const [config, setConfig] = useState(null)
   const [myAttempt, setMyAttempt] = useState(null)
   const [isWinner, setIsWinner] = useState(false)
+  const [myPosition, setMyPosition] = useState(null)
   const [passing, setPassing] = useState(false)
   const [passed, setPassed] = useState(false)
+  const [nextName, setNextName] = useState(null)
 
   useEffect(() => {
     async function load() {
@@ -26,6 +28,26 @@ export default function QuizProfileCard({ userId }) {
         if (st.status === 'result' || st.status === 'archived') {
           const { data: winnerId } = await supabase.rpc('get_quiz_winner')
           setIsWinner(winnerId === userId)
+
+          // Pega minha posição no histórico
+          const { data: myRow } = await supabase
+            .from('quiz_winner_history')
+            .select('position')
+            .eq('user_id', userId)
+            .maybeSingle()
+          setMyPosition(myRow?.position || null)
+
+          // Pega o próximo da fila (minha posição + 1)
+          if (myRow?.position) {
+            const { data: nextRow } = await supabase
+              .from('quiz_winner_history')
+              .select('position, profiles(display_name, nick)')
+              .eq('position', myRow.position + 1)
+              .maybeSingle()
+            if (nextRow) {
+              setNextName(nextRow.profiles?.display_name || nextRow.profiles?.nick || '?')
+            }
+          }
         }
       }
     }
@@ -33,18 +55,18 @@ export default function QuizProfileCard({ userId }) {
   }, [userId])
 
   async function passToNext() {
-    if (!confirm('Tem certeza? O prêmio vai para o segundo colocado e não dá pra desfazer.')) return
+    if (!nextName) return
+    if (!confirm(`Tem certeza? O prêmio vai para ${nextName} e não dá pra desfazer.`)) return
     setPassing(true)
-    const { data: second } = await supabase
-      .from('quiz_attempts')
+
+    const { data: nextRow } = await supabase
+      .from('quiz_winner_history')
       .select('user_id')
-      .order('score', { ascending: false })
-      .order('completed_at', { ascending: true })
-      .range(1, 1)
+      .eq('position', myPosition + 1)
       .maybeSingle()
 
-    if (second?.user_id) {
-      await supabase.from('quiz_config').update({ winner_id: second.user_id }).eq('id', 1)
+    if (nextRow?.user_id) {
+      await supabase.from('quiz_config').update({ winner_id: nextRow.user_id }).eq('id', 1)
       setIsWinner(false)
       setPassed(true)
     }
@@ -73,7 +95,7 @@ export default function QuizProfileCard({ userId }) {
 
       {passed && (
         <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 'var(--r-md)', padding: '14px', textAlign: 'center' }}>
-          <div style={{ fontSize: 13, color: 'var(--text-3)' }}>✓ Prêmio passado para o próximo colocado.</div>
+          <div style={{ fontSize: 13, color: 'var(--text-3)' }}>✓ Prêmio passado para {nextName}.</div>
         </div>
       )}
 
@@ -96,13 +118,15 @@ export default function QuizProfileCard({ userId }) {
             <img src="/spot.png" alt="" style={{ width: 18, height: 18, objectFit: 'contain' }} />
             Resgatar 3 meses de Spotify
           </a>
-          <button
-            onClick={passToNext}
-            disabled={passing}
-            style={{ width: '100%', background: 'transparent', border: 'none', fontSize: 11, color: 'var(--text-3)', cursor: 'pointer', textDecoration: 'underline', padding: '4px 0' }}
-          >
-            {passing ? 'Passando...' : 'Já tenho Premium — passar para o próximo'}
-          </button>
+          {nextName && (
+            <button
+              onClick={passToNext}
+              disabled={passing}
+              style={{ width: '100%', background: 'transparent', border: 'none', fontSize: 11, color: 'var(--text-3)', cursor: 'pointer', textDecoration: 'underline', padding: '4px 0' }}
+            >
+              {passing ? 'Passando...' : `Já tenho Premium — passar para ${nextName}`}
+            </button>
+          )}
         </div>
       )}
     </div>
