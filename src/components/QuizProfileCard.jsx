@@ -55,23 +55,30 @@ export default function QuizProfileCard({ userId }) {
   }, [userId])
 
   async function passToNext() {
-    if (!nextName) return
-    if (!confirm(`Tem certeza? O prêmio vai para ${nextName} e não dá pra desfazer.`)) return
-    setPassing(true)
+  if (!nextName) return
+  if (!confirm(`Tem certeza? O prêmio vai para ${nextName} e não dá pra desfazer.`)) return
+  setPassing(true)
 
-    const { data: nextRow } = await supabase
-      .from('quiz_winner_history')
-      .select('user_id')
-      .eq('position', myPosition + 1)
-      .maybeSingle()
+  const { data: nextRow, error: nextError } = await supabase
+    .from('quiz_winner_history')
+    .select('user_id')
+    .eq('position', myPosition + 1)
+    .maybeSingle()
 
-    if (nextRow?.user_id) {
-      await supabase.from('quiz_config').update({ winner_id: nextRow.user_id }).eq('id', 1)
-      setIsWinner(false)
-      setPassed(true)
-    }
-    setPassing(false)
+  console.log('nextRow:', nextRow, 'error:', nextError)
+
+  if (nextRow?.user_id) {
+    const { data, error } = await supabase
+      .from('quiz_config')
+      .update({ winner_id: nextRow.user_id })
+      .eq('id', 1)
+      .select()
+    
+    console.log('update result:', data, 'error:', error)
   }
+
+  setPassing(false)
+}
 
   if (!config?.start_date) return null
   const st = getQuizStatus(config.start_date)
