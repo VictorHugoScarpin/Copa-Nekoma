@@ -7,7 +7,7 @@ import { getQuizStatus } from './quiz'
 export function QuizBanner() {
   const navigate = useNavigate()
   const [config, setConfig] = useState(null)
-  const [winner, setWinner] = useState(null)
+  const [history, setHistory] = useState([]) // [{position, display_name, nick}]
   const [myAttempt, setMyAttempt] = useState(null)
 
   useEffect(() => {
@@ -25,17 +25,25 @@ export function QuizBanner() {
   }, [])
 
   useEffect(() => {
-    async function loadWinner() {
+    async function loadHistory() {
       if (!config?.start_date) return
       const st = getQuizStatus(config.start_date)
       if (st.status !== 'result' && st.status !== 'archived') return
 
-      const { data: winnerId } = await supabase.rpc('get_quiz_winner')
-      if (!winnerId) return
-      const { data: profile } = await supabase.from('profiles').select('id, display_name, nick, avatar_url').eq('id', winnerId).maybeSingle()
-      setWinner(profile || null)
+      // Busca o histórico de posições com os perfis
+      const { data: rows } = await supabase
+        .from('quiz_winner_history')
+        .select('position, profiles(display_name, nick)')
+        .order('position', { ascending: true })
+
+      if (rows?.length) {
+        setHistory(rows.map(r => ({
+          position: r.position,
+          name: r.profiles?.display_name || r.profiles?.nick || '?',
+        })))
+      }
     }
-    loadWinner()
+    loadHistory()
   }, [config])
 
   if (!config?.start_date) return null
@@ -44,16 +52,36 @@ export function QuizBanner() {
   if (st.status === 'archived') return null
 
   if (st.status === 'result') {
-    if (!winner) return null
+    if (!history.length) return null
+
+    // Descobre quem é o vencedor atual (último da cadeia que não passou)
+    // A lógica: o winner atual é o último inserido no histórico que ainda está ativo
+    // i.e., o de maior position que existe
+    const currentWinner = history[history.length - 1]
+    const passed = history.slice(0, -1) // quem passou o prêmio
+
     return (
-      <div className="glass-card" style={{ padding: '14px 16px', marginBottom: 16, border: '1px solid rgba(232,184,75,0.3)', background: 'rgba(232,184,75,0.06)', display: 'flex', alignItems: 'center', gap: 12 }}>
-        <span style={{ fontSize: 26, flexShrink: 0 }}>🎉</span>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontWeight: 700, fontSize: 13, color: 'var(--gold-bright)' }}>
-            {winner.display_name || winner.nick} ganhou o Quiz da Copa!
-          </div>
-          <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 2 }}>
-            Confira em Perfil
+      <div className="glass-card" style={{ padding: '14px 16px', marginBottom: 16, border: '1px solid rgba(232,184,75,0.3)', background: 'rgba(232,184,75,0.06)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <span style={{ fontSize: 26, flexShrink: 0 }}>🎉</span>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontWeight: 700, fontSize: 13, color: 'var(--gold-bright)' }}>
+              {currentWinner.name} ganhou o Quiz da Copa!
+            </div>
+            {passed.length > 0 && (
+              <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 3, lineHeight: 1.5 }}>
+                {passed.map((p, i) => (
+                  <span key={p.position}>
+                    {p.name} passou para{' '}
+                    {i + 1 < passed.length ? passed[i + 1].name : currentWinner.name}
+                    {i < passed.length - 1 ? ', ' : ''}
+                  </span>
+                ))}
+              </div>
+            )}
+            <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 2 }}>
+              Confira em Perfil
+            </div>
           </div>
         </div>
       </div>
