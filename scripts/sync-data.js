@@ -443,19 +443,63 @@ async function seedNextPhase(currentPhase, nextPhase) {
   else console.log(`✅ ${rows.length} confrontos de ${nextPhase.label} criados`)
 }
 
-// ── 1. JOGOS ────────────────────────────────────────────────────────────────
+// ── REPARO PONTUAL: recalcula jogos finished com qualifier_result cujos pontos podem estar errados ──
+async function repairQualifierPoints() {
+  console.log('🔧 Verificando jogos knockout com qualifier_result para reparo...')
+
+  const { data: matches } = await supabase
+    .from('matches')
+    .select('id, home_score, away_score, qualifier_result, match_date')
+    .eq('status', 'finished')
+    .not('qualifier_result', 'is', null)
+    .gte('match_date', KNOCKOUT_START.toISOString())
+
+  if (!matches?.length) { console.log('  ↳ Nenhum jogo knockout finalizado com qualifier ainda.'); return }
+
+  for (const m of matches) {
+    // Verifica se algum guess acertou o qualifier mas tem points_earned sem o bônus
+    const { data: guesses } = await supabase
+      .from('guesses')
+      .select('id, user_id, home_score, away_score, qualifier_guess, points_earned')
+      .eq('match_id', m.id)
+      .eq('qualifier_guess', m.qualifier_result)
+
+    if (!guesses?.length) continue
+
+    const needsRepair = guesses.some(g => {
+      const exactScore = g.home_score === m.home_score && g.away_score === m.away_score
+      const expectedBase = exactScore ? 3 : (() => {
+        const rw = m.home_score > m.away_score ? 'home' : m.away_score > m.home_score ? 'away' : 'draw'
+        const gw = g.home_score > g.away_score ? 'home' : g.away_score > g.home_score ? 'away' : 'draw'
+        return rw === gw ? 1 : 0
+      })()
+      const expected = expectedBase + 2 // +2 pelo qualifier
+      return (g.points_earned ?? 0) !== expected
+    })
+
+    if (needsRepair) {
+      console.log(`  🔧 Reparando qualifier points do jogo ${m.id} (${m.qualifier_result})...`)
+      await recalcMatchPoints(m.id, m.home_score, m.away_score, m.qualifier_result, m.match_date)
+    }
+  }
+  console.log('  ↳ Reparo de qualifier concluído.')
+}
+
+
 async function syncMatches() {
   console.log('📅 Sincronizando jogos...')
   const data = await apiRequest('/competitions/WC/matches?season=2026')
   const matches = data.matches || []
 
-  // Busca status atual de todos os jogos no banco de uma vez
+  // Busca status e qualifier_result atual de todos os jogos no banco de uma vez
   const { data: existingMatches } = await supabase
     .from('matches')
-    .select('external_id, status')
+    .select('external_id, status, qualifier_result')
   const existingStatusMap = {}
+  const existingQualifierMap = {}
   for (const m of (existingMatches || [])) {
     existingStatusMap[m.external_id] = m.status
+    existingQualifierMap[m.external_id] = m.qualifier_result
   }
 
   let salvos = 0, pulados = 0, erros = 0
@@ -466,6 +510,7 @@ async function syncMatches() {
     const status = mapStatus(match.status)
     const externalId = String(match.id)
     const statusAntes = existingStatusMap[externalId] // status que estava no banco
+    const qualifierAntes = existingQualifierMap[externalId] // qualifier_result que estava no banco
 
     const ftHome = match.score?.fullTime?.home
     const ftAway = match.score?.fullTime?.away
@@ -516,8 +561,12 @@ async function syncMatches() {
     if (error) { console.error(`⚠️ Jogo ${match.id}: ${error.message}`); erros++; continue }
     salvos++
 
-    // Só recalcula se o jogo acabou de terminar (mudou de não-finished para finished)
-    if (status === 'finished' && statusAntes !== 'finished' && finalHome != null && finalAway != null && upserted?.id) {
+    // Recalcula pontos se:
+    // (a) jogo acabou de terminar (mudou de não-finished para finished), OU
+    // (b) jogo já estava finished mas qualifier_result chegou agora (pênaltis com dado atrasado)
+    const recémTerminou = status === 'finished' && statusAntes !== 'finished'
+    const qualifierChegouAgora = status === 'finished' && statusAntes === 'finished' && qualifierResult && !qualifierAntes
+    if ((recémTerminou || qualifierChegouAgora) && finalHome != null && finalAway != null && upserted?.id) {
       await recalcMatchPoints(upserted.id, finalHome, finalAway, qualifierResult, match.utcDate)
     }
   }
@@ -672,6 +721,7 @@ async function syncAssists() {
 // ── MAIN ────────────────────────────────────────────────────────────────────
 async function main() {
   try {
+    await repairQualifierPoints()
     await syncMatches()
     await syncStandings()
     await syncScorers()
