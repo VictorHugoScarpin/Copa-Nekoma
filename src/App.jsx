@@ -15,7 +15,7 @@ import TopHeader from './components/TopHeader'
 import './index.css'
 
 const NAV_ITEMS = [
-  { path: '/',         label: 'Jogos',    icon: HomeIcon },
+  { path: '/',         label: 'Partidas', icon: HomeIcon },
   { path: '/palpites', label: 'Jogar',    icon: GameIcon },
   { path: '/ranking',  label: 'Ranking',  icon: TrophyIcon },
   { path: '/chat',     label: 'Chat',     icon: ChatIcon },
