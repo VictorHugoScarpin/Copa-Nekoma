@@ -85,6 +85,24 @@ const TEAM_PT = {
   'Bosna i Hercegovina': 'Bósnia e Herzegovina',
 }
 
+const STAGE_PT = {
+  'LAST_32':        'Fase de 32',
+  'LAST_16':        'Oitavas de final',
+  'QUARTER_FINAL':  'Quartas de final',
+  'SEMI_FINAL':     'Semifinal',
+  'FINAL':          'Final',
+  // variações possíveis da API
+  'Round of 32':    'Fase de 32',
+  'Round of 16':    'Oitavas de final',
+  'Quarter-final':  'Quartas de final',
+  'Semi-final':     'Semifinal',
+  'Final':          'Final',
+}
+
+function getStagePT(stage) {
+  return STAGE_PT[stage] || stage
+}
+
 // Brasões fixos por seleção (Wikipedia)
 const TEAM_SHIELD = {
   'United States': 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a9/United_States_Soccer_Federation_logo.svg/200px-United_States_Soccer_Federation_logo.svg.png',
@@ -296,7 +314,7 @@ function MatchCard({ match }) {
             color: 'rgba(240,244,255,0.35)',
             letterSpacing: '0.08em', textTransform: 'uppercase',
           }}>
-            {match.stage}{match.group_name ? ` · ${match.group_name}` : ''}
+            {getStagePT(match.stage)}{match.group_name ? ` · ${match.group_name}` : ''}
           </span>
           {live && (
             <span style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '10px', color: '#ef4444', fontWeight: 700, letterSpacing: '0.06em' }}>
