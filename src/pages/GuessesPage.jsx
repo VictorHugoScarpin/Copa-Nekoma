@@ -300,10 +300,29 @@ function GuessCard({ match, myGuess, onSave }) {
             </div>
           </div>
             {/* Horário/placar + venue — centralizado no card */}
-            <div style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', top: '50%', transform: 'translate(-50%, -50%)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}>
-              <span style={{ fontFamily: 'var(--font-display)', fontSize: finished ? '18px' : '14px', color: finished ? 'var(--text)' : 'var(--gold)', letterSpacing: '0.04em', whiteSpace: 'nowrap' }}>
-                {finished ? `${match.home_score} × ${match.away_score}` : (live ? '🔴' : cd || '–')}
-              </span>
+            <div style={{ position: 'absolute', left: '50%', transform: 'translate(-50%, -50%)', top: '50%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}>
+              {finished ? (
+                match.penalty_home != null && match.penalty_away != null ? (
+                  <span style={{ fontFamily: 'var(--font-display)', fontSize: '14px', color: 'var(--text)', letterSpacing: '0.03em', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '1px' }}>
+                    {match.home_score}
+                    <span style={{ fontSize: '11px', color: 'rgba(240,244,255,0.5)', margin: '0 1px' }}>({match.penalty_home})</span>
+                    <span style={{ color: 'rgba(240,244,255,0.3)', margin: '0 2px' }}>×</span>
+                    <span style={{ fontSize: '11px', color: 'rgba(240,244,255,0.5)', margin: '0 1px' }}>({match.penalty_away})</span>
+                    {match.away_score}
+                  </span>
+                ) : (
+                  <span style={{ fontFamily: 'var(--font-display)', fontSize: '18px', color: 'var(--text)', letterSpacing: '0.04em', whiteSpace: 'nowrap' }}>
+                    {match.home_score} × {match.away_score}
+                  </span>
+                )
+              ) : (
+                <span style={{ fontFamily: 'var(--font-display)', fontSize: '14px', color: 'var(--gold)', letterSpacing: '0.04em', whiteSpace: 'nowrap' }}>
+                  {live ? '🔴' : cd || '–'}
+                </span>
+              )}
+              {match.penalty_home != null && finished && (
+                <span style={{ fontSize: '8px', color: 'rgba(240,244,255,0.3)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Pênaltis</span>
+              )}
               {match.venue && (
                 <span style={{ fontSize: '9px', color: 'var(--text-3)', whiteSpace: 'nowrap', letterSpacing: '0.03em' }}>
                   {match.venue}
