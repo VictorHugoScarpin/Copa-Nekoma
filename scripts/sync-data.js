@@ -129,7 +129,6 @@ async function recalcMatchPoints(matchId, homeScore, awayScore, qualifierResult,
     affectedUsers.add(g.user_id)
   }
 
-  // Recalcula totais de cada usuário afetado do zero
   for (const userId of affectedUsers) {
     const { data: allGuesses } = await supabase
       .from('guesses')
@@ -170,27 +169,34 @@ async function syncMatches() {
   const data = await apiRequest('/competitions/WC/matches?season=2026')
   const matches = data.matches || []
 
+  // Busca status atual de todos os jogos no banco de uma vez
+  const { data: existingMatches } = await supabase
+    .from('matches')
+    .select('external_id, status')
+  const existingStatusMap = {}
+  for (const m of (existingMatches || [])) {
+    existingStatusMap[m.external_id] = m.status
+  }
+
   let salvos = 0, pulados = 0, erros = 0
 
   for (const match of matches) {
     if (!match.homeTeam?.name || !match.awayTeam?.name) { pulados++; continue }
 
     const status = mapStatus(match.status)
+    const externalId = String(match.id)
+    const statusAntes = existingStatusMap[externalId] // status que estava no banco
 
-    // Placar: usa extratime se houver, senão fulltime
-    // Pênaltis NÃO entram no placar do bolão — só servem para saber quem classifica
     const ftHome = match.score?.fullTime?.home
     const ftAway = match.score?.fullTime?.away
-    const etHome = match.score?.extraTime?.home   // null se não teve prorrogação
+    const etHome = match.score?.extraTime?.home
     const etAway = match.score?.extraTime?.away
-    const penHome = match.score?.penalties?.home  // null se não teve pênaltis
+    const penHome = match.score?.penalties?.home
     const penAway = match.score?.penalties?.away
 
-    // Placar oficial do jogo (sem pênaltis)
     const finalHome = (etHome != null) ? etHome : ftHome
     const finalAway = (etAway != null) ? etAway : ftAway
 
-    // Quem se classificou (só mata-mata)
     let qualifierResult = null
     if (status === 'finished' && new Date(match.utcDate) >= KNOCKOUT_START) {
       if (penHome != null && penAway != null) {
@@ -201,7 +207,7 @@ async function syncMatches() {
     }
 
     const matchData = {
-      external_id: String(match.id),
+      external_id: externalId,
       home_team: match.homeTeam.name,
       away_team: match.awayTeam.name,
       home_flag: FLAG_MAP[match.homeTeam.name] || '🏳️',
@@ -215,15 +221,10 @@ async function syncMatches() {
       stream_url: 'https://www.youtube.com/@CazeTV',
     }
 
-    // Só atualiza placar se a API retornou valor real
     if (finalHome != null) matchData.home_score = finalHome
     if (finalAway != null) matchData.away_score = finalAway
-
-    // Pênaltis para exibição no card (Brasil 0 (5) × (4) 0 Argentina)
     if (penHome != null) matchData.penalty_home = penHome
     if (penAway != null) matchData.penalty_away = penAway
-
-    // Quem se classificou
     if (qualifierResult) matchData.qualifier_result = qualifierResult
 
     const { data: upserted, error } = await supabase
@@ -235,8 +236,8 @@ async function syncMatches() {
     if (error) { console.error(`⚠️ Jogo ${match.id}: ${error.message}`); erros++; continue }
     salvos++
 
-    // Recalcula pontos do bolão quando jogo terminou
-    if (status === 'finished' && finalHome != null && finalAway != null && upserted?.id) {
+    // Só recalcula se o jogo acabou de terminar (mudou de não-finished para finished)
+    if (status === 'finished' && statusAntes !== 'finished' && finalHome != null && finalAway != null && upserted?.id) {
       await recalcMatchPoints(upserted.id, finalHome, finalAway, qualifierResult, match.utcDate)
     }
   }
@@ -251,7 +252,6 @@ async function syncStandings() {
 
   if (standings.length === 0) { console.log('⚠️ Sem standings ainda.'); return }
 
-  // Verificar se a API já retornou grupos separados (GROUP_A, GROUP_B...)
   const temGruposSeparados = standings.some(s => s.group && s.group.match(/GROUP_[A-Z]/))
   if (!temGruposSeparados) {
     console.log('⚠️ API ainda não separou por grupos — pulando standings.')
@@ -287,7 +287,6 @@ async function syncStandings() {
 // ── FOTO DO JOGADOR VIA WIKIPEDIA ───────────────────────────────────────────
 const photoCache = {}
 
-// Busca o resumo da página (que inclui thumbnail) direto pelo título
 async function wikiSummary(lang, title) {
   try {
     const url = `https://${lang}.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}`
@@ -300,7 +299,6 @@ async function wikiSummary(lang, title) {
   }
 }
 
-// Quando o título exato não existe, procura a página mais provável
 async function wikiSearchTitle(lang, query) {
   try {
     const url = `https://${lang}.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(query + ' footballer')}&format=json&srlimit=1&origin=*`
@@ -315,27 +313,16 @@ async function wikiSearchTitle(lang, query) {
 
 async function fetchPlayerPhoto(playerName) {
   if (photoCache[playerName] !== undefined) return photoCache[playerName]
-
-  // 1. Tenta título exato em inglês
   let photo = await wikiSummary('en', playerName)
-
-  // 2. Busca o título correto em inglês e tenta de novo
   if (!photo) {
     const title = await wikiSearchTitle('en', playerName)
     if (title) photo = await wikiSummary('en', title)
   }
-
-  // 3. Fallback: título exato em português
-  if (!photo) {
-    photo = await wikiSummary('pt', playerName)
-  }
-
-  // 4. Fallback: busca em português
+  if (!photo) photo = await wikiSummary('pt', playerName)
   if (!photo) {
     const titlePt = await wikiSearchTitle('pt', playerName)
     if (titlePt) photo = await wikiSummary('pt', titlePt)
   }
-
   photoCache[playerName] = photo
   return photo
 }
