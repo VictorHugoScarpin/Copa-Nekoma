@@ -96,7 +96,7 @@ const KNOCKOUT_START = new Date('2026-06-28T00:00:00Z')
 
 function calcPoints(guess, matchHomeScore, matchAwayScore, qualifierResult, matchDate) {
   if (matchHomeScore == null || matchAwayScore == null) return 0
-  const isKnockout = new Date(matchDate) >= KNOCKOUT_START
+  const isKnockout = new Date(String(matchDate).replace(' ', 'T')) >= KNOCKOUT_START
 
   const exactScore = guess.home_score === matchHomeScore && guess.away_score === matchAwayScore
   const realWinner = matchHomeScore > matchAwayScore ? 'home' : matchAwayScore > matchHomeScore ? 'away' : 'draw'
@@ -148,7 +148,7 @@ async function recalcMatchPoints(matchId, homeScore, awayScore, qualifierResult,
         const gw = ag.home_score > ag.away_score ? 'home' : ag.away_score > ag.home_score ? 'away' : 'draw'
         if (rw === gw) totalPartial++
       }
-      const isKo = new Date(m.match_date) >= KNOCKOUT_START
+      const isKo = new Date(String(m.match_date).replace(' ', 'T')) >= KNOCKOUT_START
       if (isKo && m.qualifier_result && ag.qualifier_guess === m.qualifier_result) totalQualifier++
     }
 
@@ -175,7 +175,7 @@ const TOURNAMENT_PHASES = [
 ]
 
 function getPhaseForDate(dateStr) {
-  const d = new Date(dateStr)
+  const d = new Date(String(dateStr).replace(' ', 'T'))
   return TOURNAMENT_PHASES.find(ph => {
     return d >= new Date(ph.start + 'T00:00:00Z') && d <= new Date(ph.end + 'T23:59:59Z')
   }) || null
