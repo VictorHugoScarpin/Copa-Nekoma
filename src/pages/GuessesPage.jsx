@@ -504,11 +504,7 @@ function GuessCard({ match, myGuess, onSave }) {
           </div>
         )}
       </div>
-      <div className="glass-card" style={{ padding: '12px 16px' }}>
-        <div style={{ fontSize: '12px', color: 'var(--text-3)', lineHeight: 1.7 }}>
-          🔒 <strong style={{ color: 'var(--text-2)' }}>Trava de 1 minuto:</strong> palpites bloqueados automaticamente 1 minuto antes do apito inicial.
-        </div>
-      </div>
+      <div className="glass-card" style={{ padding: '16px 20px', border: '1px solid rgba(59,130,246,0.3)' }}>
     </div>
   )
 }
