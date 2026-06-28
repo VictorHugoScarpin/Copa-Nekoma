@@ -1094,7 +1094,7 @@ function ChaveamentoTab({ bracket, loading, currentPhaseIdx, myId }) {
 
           {/* Legenda */}
           <div style={{ marginTop: '16px', padding: '10px 14px', borderRadius: '8px', background: 'rgba(168,85,247,0.06)', border: '1px solid rgba(168,85,247,0.15)', fontSize: '11px', color: 'var(--text-3)', lineHeight: 1.7 }}>
-            💡 Quem fizer <strong style={{ color: '#c084fc' }}>mais pontos no Nekomão</strong> dentro da janela da fase avança. Em caso de empate, valem os critérios de desempate do bolão (placares exatos → parciais → data de cadastro).
+            💡 Quem fizer <strong style={{ color: '#c084fc' }}>mais pontos no Nekomão</strong> dentro da janela da fase avança. Em caso de empate, valem os critérios de desempate do bolão (placares exatos → parciais → data de cadastro) (PLACARES E PARCIAIS DENTRO DA JANELA DA FASE).
           </div>
         </>
       )}
