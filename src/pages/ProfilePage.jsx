@@ -5,7 +5,7 @@ import QuizProfileCard from '../components/QuizProfileCard'
 
 function RegrasSection() {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '12px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '24px' }}>
       <div className="section-title" style={{ marginBottom: '4px' }}>Regras</div>
 
       {/* Pontuação */}
@@ -195,7 +195,9 @@ export default function ProfilePage() {
       <RegrasSection />
 
       <button
-        style={{ color: 'var(--red)', borderColor: 'rgba(240,62,62,0.25)', background: 'var(--red-dim)' }}
+        className="btn"
+        onClick={signOut}
+        style={{ color: 'var(--red)', borderColor: 'rgba(240,62,62,0.25)', background: 'var(--red-dim)', marginBottom: '32px' }}
       >
         Sair da conta
       </button>
