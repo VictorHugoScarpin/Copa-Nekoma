@@ -219,14 +219,23 @@ function ResenhaList({ matchId, matchHomeScore, matchAwayScore }) {
 
 // ── GuessCard ────────────────────────────────────────────────────────────────
 
+// Mata-mata começa em 28/06/2026
+const KNOCKOUT_START = new Date('2026-06-28T00:00:00')
+
+function isKnockout(match) {
+  return parseISO(match.match_date) >= KNOCKOUT_START
+}
+
 function GuessCard({ match, myGuess, onSave }) {
   const finished = match.status === 'finished'
   const live = isMatchLive(match)
+  const knockout = isKnockout(match)
 
   const [expanded, setExpanded] = useState(finished)
   const [popoverOpen, setPopoverOpen] = useState(false)
   const [home, setHome] = useState(myGuess?.home_score ?? '')
   const [away, setAway] = useState(myGuess?.away_score ?? '')
+  const [qualifier, setQualifier] = useState(myGuess?.qualifier_guess ?? '')
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [, tick] = useState(0)
@@ -245,12 +254,26 @@ function GuessCard({ match, myGuess, onSave }) {
     return realWinner === guessWinner
   })()
   const wrong = finished && myGuess && !correct && !partialCorrect
+
+  // Qualifier (mata-mata)
+  const qualifierResult = match.qualifier_result // time classificado real (vem do banco)
+  const qualifierGuess = myGuess?.qualifier_guess // palpite do usuário
+  const qualifierCorrect = knockout && finished && qualifierResult && qualifierGuess && qualifierGuess === qualifierResult
+
+  // Pontos totais exibidos no badge
+  let totalPts = null
+  if (finished && myGuess) {
+    let pts = correct ? 3 : partialCorrect ? 1 : 0
+    if (knockout && qualifierCorrect) pts += 2
+    totalPts = pts
+  }
+
   const cd = countdown(match.match_date)
 
   async function save() {
     if (locked || saving || home === '' || away === '') return
     setSaving(true)
-    await onSave(match.id, parseInt(home), parseInt(away), myGuess)
+    await onSave(match.id, parseInt(home), parseInt(away), myGuess, knockout ? qualifier : null)
     setSaving(false); setSaved(true)
     setTimeout(() => setSaved(false), 2000)
   }
@@ -333,11 +356,15 @@ function GuessCard({ match, myGuess, onSave }) {
           {/* Badges + ações */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
             {finished
-              ? correct
-                ? <span className="badge badge-green">✓ +{myGuess?.points_earned || 3}pts</span>
-                : partialCorrect
-                  ? <span className="badge badge-gold">✓ +1pt</span>
-                  : <span className="badge badge-red">✗ Erro</span>
+              ? totalPts === 5
+                ? <span className="badge" style={{ background: 'rgba(59,130,246,0.2)', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.35)' }}>⚡ +5pts</span>
+                : totalPts === 3 && knockout
+                  ? <span className="badge" style={{ background: 'rgba(59,130,246,0.2)', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.35)' }}>+3pts</span>
+                  : correct
+                    ? <span className="badge badge-green">✓ +3pts</span>
+                    : partialCorrect
+                      ? <span className="badge badge-gold">✓ +1pt</span>
+                      : <span className="badge badge-red">✗ Erro</span>
               : locked ? <span className="badge badge-muted" style={{ fontSize: '9px' }}>🔒</span>
               : myGuess?.home_score !== undefined ? <span className="badge badge-gold">✓ {myGuess.home_score}×{myGuess.away_score}</span>
               : <span className="badge badge-muted" style={{ fontSize: '9px' }}>sem palpite</span>
@@ -398,8 +425,90 @@ function GuessCard({ match, myGuess, onSave }) {
                 {saving ? 'Salvando...' : saved ? '✓ Salvo!' : 'Salvar Palpite'}
               </button>
             )}
+
+            {/* Seção mata-mata: quem se classifica */}
+            {knockout && (
+              <div style={{ marginTop: '14px', padding: '12px 14px', borderRadius: '10px', background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.25)' }}>
+                <div style={{ fontSize: '10px', fontWeight: 700, color: '#60a5fa', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '10px' }}>
+                  🏆 Quem se classifica? <span style={{ fontSize: '9px', color: 'rgba(96,165,250,0.6)', fontWeight: 400 }}>+2pts bônus</span>
+                </div>
+
+                {finished ? (
+                  // Jogo encerrado: mostra resultado
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    {[match.home_team, match.away_team].map(team => {
+                      const isClassified = qualifierResult === team
+                      const wasGuessed = qualifierGuess === team
+                      return (
+                        <div key={team} style={{
+                          flex: 1, display: 'flex', alignItems: 'center', gap: '8px',
+                          padding: '8px 10px', borderRadius: '8px',
+                          background: isClassified ? 'rgba(59,130,246,0.18)' : 'rgba(255,255,255,0.03)',
+                          border: `1px solid ${isClassified ? 'rgba(59,130,246,0.5)' : 'rgba(255,255,255,0.07)'}`,
+                        }}>
+                          <TeamCircle name={team} size={24} />
+                          <span style={{ fontSize: '11px', fontWeight: 600, color: isClassified ? '#93c5fd' : 'var(--text-3)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {getPT(team)}
+                          </span>
+                          {isClassified && wasGuessed && <span style={{ fontSize: '11px', color: '#60a5fa' }}>✓ +2</span>}
+                          {isClassified && !wasGuessed && <span style={{ fontSize: '10px', color: 'var(--text-3)' }}>✓</span>}
+                        </div>
+                      )
+                    })}
+                  </div>
+                ) : locked ? (
+                  // Travado: mostra palpite registrado (somente leitura)
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    {[match.home_team, match.away_team].map(team => {
+                      const chosen = qualifierGuess === team || qualifier === team
+                      return (
+                        <div key={team} style={{
+                          flex: 1, display: 'flex', alignItems: 'center', gap: '8px',
+                          padding: '8px 10px', borderRadius: '8px',
+                          background: chosen ? 'rgba(59,130,246,0.15)' : 'rgba(255,255,255,0.03)',
+                          border: `1px solid ${chosen ? 'rgba(59,130,246,0.45)' : 'rgba(255,255,255,0.07)'}`,
+                        }}>
+                          <TeamCircle name={team} size={24} />
+                          <span style={{ fontSize: '11px', fontWeight: 600, color: chosen ? '#93c5fd' : 'var(--text-3)', flex: 1 }}>
+                            {getPT(team)}
+                          </span>
+                          {chosen && <span style={{ fontSize: '10px', color: '#60a5fa' }}>🔒</span>}
+                        </div>
+                      )
+                    })}
+                  </div>
+                ) : (
+                  // Aberto: botões para selecionar
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    {[match.home_team, match.away_team].map(team => {
+                      const chosen = qualifier === team
+                      return (
+                        <button key={team} onClick={() => setQualifier(chosen ? '' : team)} style={{
+                          flex: 1, display: 'flex', alignItems: 'center', gap: '8px',
+                          padding: '9px 10px', borderRadius: '8px', cursor: 'pointer',
+                          background: chosen ? 'rgba(59,130,246,0.2)' : 'rgba(255,255,255,0.04)',
+                          border: `1.5px solid ${chosen ? 'rgba(59,130,246,0.6)' : 'rgba(255,255,255,0.1)'}`,
+                          transition: 'all 0.15s',
+                        }}>
+                          <TeamCircle name={team} size={24} />
+                          <span style={{ fontSize: '11px', fontWeight: 600, color: chosen ? '#93c5fd' : 'var(--text-2)', flex: 1, textAlign: 'left', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {getPT(team)}
+                          </span>
+                          {chosen && <span style={{ fontSize: '10px', color: '#60a5fa' }}>✓</span>}
+                        </button>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
+      </div>
+      <div className="glass-card" style={{ padding: '12px 16px' }}>
+        <div style={{ fontSize: '12px', color: 'var(--text-3)', lineHeight: 1.7 }}>
+          🔒 <strong style={{ color: 'var(--text-2)' }}>Trava de 1 minuto:</strong> palpites bloqueados automaticamente 1 minuto antes do apito inicial.
+        </div>
       </div>
     </div>
   )
@@ -594,9 +703,30 @@ function RegrasTab() {
           </div>
         ))}
       </div>
-      <div className="glass-card" style={{ padding: '12px 16px' }}>
-        <div style={{ fontSize: '12px', color: 'var(--text-3)', lineHeight: 1.7 }}>
-          🔒 <strong style={{ color: 'var(--text-2)' }}>Trava de 1 minuto:</strong> palpites bloqueados automaticamente 1 minuto antes do apito inicial.
+      <div className="glass-card" style={{ padding: '16px 20px', border: '1px solid rgba(59,130,246,0.3)' }}>
+        <div style={{ fontFamily: 'var(--font-display)', fontSize: '18px', color: '#60a5fa', marginBottom: '6px', letterSpacing: '0.06em' }}>🏆 MATA-MATA</div>
+        <div style={{ fontSize: '11px', color: 'var(--text-3)', marginBottom: '14px', lineHeight: 1.6 }}>
+          A partir de <strong style={{ color: 'var(--text-2)' }}>28 de junho</strong>, os jogos entram na fase eliminatória. Além do palpite de placar, você também escolhe <strong style={{ color: '#93c5fd' }}>quem se classifica</strong> — e isso vale pontos extras!
+        </div>
+        {[
+          { icon: '⚡', label: 'Placar exato + classificado certo', pts: '+5', color: '#60a5fa', desc: 'Acertou o placar certinho e ainda o time que passa' },
+          { icon: '🎯', label: 'Placar exato (sem acertar classificado)', pts: '+3', color: 'var(--green)', desc: 'Acertou 2×1 = 2×1, mas errou quem classificou' },
+          { icon: '✅', label: 'Resultado certo + classificado certo', pts: '+3', color: '#60a5fa', desc: 'Acertou o vencedor/empate e o time que avança', highlight: true },
+          { icon: '✅', label: 'Resultado certo (sem acertar classificado)', pts: '+1', color: 'var(--gold)', desc: 'Acertou quem ganhou mas errou quem classificou' },
+          { icon: '🏆', label: 'Só acertou quem classifica', pts: '+2', color: '#60a5fa', desc: 'Errou o placar/resultado mas acertou quem avançou' },
+          { icon: '❌', label: 'Errou tudo', pts: '0', color: 'var(--red)', desc: 'Não acertou placar, resultado nem classificado' },
+        ].map((item, i, arr) => (
+          <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 0', borderBottom: i < arr.length - 1 ? '1px solid var(--border)' : 'none' }}>
+            <span style={{ fontSize: '18px', flexShrink: 0 }}>{item.icon}</span>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: '12px', fontWeight: 600, color: item.highlight ? '#93c5fd' : 'var(--text)' }}>{item.label}</div>
+              <div style={{ fontSize: '11px', color: 'var(--text-3)', marginTop: '2px' }}>{item.desc}</div>
+            </div>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: '22px', color: item.color, flexShrink: 0 }}>{item.pts}</div>
+          </div>
+        ))}
+        <div style={{ marginTop: '12px', padding: '10px 12px', borderRadius: '8px', background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.2)', fontSize: '11px', color: 'var(--text-3)', lineHeight: 1.7 }}>
+          💡 <strong style={{ color: '#93c5fd' }}>Como funciona:</strong> No mata-mata, em caso de empate no tempo normal o jogo pode ir para pênaltis. O "classificado" é o time que efetivamente avança — seja pelo tempo normal ou pelos pênaltis. Seu palpite de placar vale para o tempo regulamentar (90min + prorrogação).
         </div>
       </div>
     </div>
@@ -628,9 +758,9 @@ export default function GuessesPage() {
 
   useEffect(() => { fetchData() }, [fetchData])
 
-  async function handleSave(matchId, homeScore, awayScore, existing) {
-    if (existing) await supabase.from('guesses').update({ home_score: homeScore, away_score: awayScore }).eq('id', existing.id)
-    else await supabase.from('guesses').insert({ user_id: user.id, match_id: matchId, home_score: homeScore, away_score: awayScore })
+  async function handleSave(matchId, homeScore, awayScore, existing, qualifierGuess) {
+    if (existing) await supabase.from('guesses').update({ home_score: homeScore, away_score: awayScore, qualifier_guess: qualifierGuess ?? null }).eq('id', existing.id)
+    else await supabase.from('guesses').insert({ user_id: user.id, match_id: matchId, home_score: homeScore, away_score: awayScore, qualifier_guess: qualifierGuess ?? null })
     await fetchData()
   }
 
