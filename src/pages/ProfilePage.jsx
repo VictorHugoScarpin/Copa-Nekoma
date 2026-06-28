@@ -270,9 +270,9 @@ function RegrasRanking() {
 function RegrasSection() {
   const [sub, setSub] = useState('liga')
   const subTabs = [
-    { key: 'liga',    label: '⚽ Liga' },
-    { key: 'torneio', label: '🏆 Torneio' },
-    { key: 'ranking', label: '📊 Ranking' },
+    { key: 'liga',    label: 'Nekomao ⚽' },
+    { key: 'torneio', label: 'Yuuto Kidou 🎌' },
+    { key: 'ranking', label: 'Supercopa 🏆' },
   ]
   return (
     <div style={{ marginBottom: '24px' }}>
@@ -466,7 +466,7 @@ function JogadoresSection({ currentUserId }) {
       const { data } = await supabase
         .from('profiles')
         .select('id, nick, display_name, avatar_url, points, exact_hits, tournament_points')
-        .order('points', { ascending: false })
+        .order('display_name', { ascending: true })
       setPlayers(data || [])
       setLoading(false)
     }
@@ -477,22 +477,24 @@ function JogadoresSection({ currentUserId }) {
     return <PlayerProfileView player={selected} onBack={() => setSelected(null)} />
   }
 
-  const filtered = players.filter(p => {
-    const q = search.toLowerCase()
-    return (p.display_name || '').toLowerCase().includes(q) || (p.nick || '').toLowerCase().includes(q)
-  })
+  const filtered = players
+    .filter(p => {
+      const q = search.toLowerCase()
+      return (p.display_name || '').toLowerCase().includes(q) || (p.nick || '').toLowerCase().includes(q)
+    })
+    .sort((a, b) => (a.display_name || a.nick || '').localeCompare(b.display_name || b.nick || '', 'pt-BR', { sensitivity: 'base' }))
 
   return (
     <div style={{ marginBottom: '24px' }}>
       {/* Busca */}
-      <div style={{ position: 'relative', marginBottom: '12px' }}>
+      <div style={{ position: 'relative', marginBottom: '12px', width: '100%' }}>
         <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', fontSize: '15px', color: 'var(--text-3)' }}>🔍</span>
         <input
           className="input"
           value={search}
           onChange={e => setSearch(e.target.value)}
           placeholder="Buscar jogador..."
-          style={{ paddingLeft: '36px' }}
+          style={{ paddingLeft: '36px', width: '100%', boxSizing: 'border-box' }}
         />
       </div>
 
@@ -502,10 +504,9 @@ function JogadoresSection({ currentUserId }) {
 
       {/* Lista */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-        {filtered.map((player, idx) => {
+        {filtered.map((player) => {
           const initials = (player.display_name || player.nick || '?').slice(0, 2).toUpperCase()
           const isMe = player.id === currentUserId
-          const superPts = (player.points ?? 0) + (player.tournament_points ?? 0)
 
           return (
             <button
@@ -519,11 +520,6 @@ function JogadoresSection({ currentUserId }) {
                 cursor: 'pointer', textAlign: 'left', width: '100%', transition: 'all 0.15s',
               }}
             >
-              {/* Posição */}
-              <div style={{ fontFamily: 'var(--font-display)', fontSize: '16px', color: 'var(--text-3)', width: 24, flexShrink: 0, textAlign: 'center' }}>
-                {idx + 1}
-              </div>
-
               {/* Avatar */}
               {player.avatar_url
                 ? <img src={player.avatar_url} alt="" style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--border-strong)', flexShrink: 0 }} />
@@ -537,12 +533,6 @@ function JogadoresSection({ currentUserId }) {
                   {isMe && <span style={{ fontSize: '10px', color: 'var(--gold)', marginLeft: '6px', background: 'rgba(232,184,75,0.15)', padding: '1px 5px', borderRadius: 8 }}>você</span>}
                 </div>
                 <div style={{ fontSize: '11px', color: 'var(--text-3)', marginTop: 1 }}>@{player.nick}</div>
-              </div>
-
-              {/* Pontos */}
-              <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                <div style={{ fontFamily: 'var(--font-display)', fontSize: '20px', color: 'var(--gold)', lineHeight: 1 }}>{superPts}</div>
-                <div style={{ fontSize: '9px', color: 'var(--text-3)', marginTop: 2, textTransform: 'uppercase', letterSpacing: '0.06em' }}>pts</div>
               </div>
 
               <span style={{ color: 'var(--text-3)', fontSize: '14px', flexShrink: 0 }}>›</span>
@@ -607,7 +597,7 @@ export default function ProfilePage() {
 
       {/* Abas principais */}
       <div style={{ display: 'flex', background: 'var(--surface)', borderRadius: 'var(--r-md)', padding: '4px', marginBottom: '20px', gap: '4px' }}>
-        {[['perfil', '👤 Perfil'], ['jogadores', '👥 Jogadores'], ['regras', '📋 Regras']].map(([key, label]) => (
+        {[['perfil', 'Perfil'], ['jogadores', 'Jogadores'], ['regras', 'Regras']].map(([key, label]) => (
           <button
             key={key}
             onClick={() => setView(key)}
