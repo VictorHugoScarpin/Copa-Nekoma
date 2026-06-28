@@ -1,10 +1,19 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
 import { FlagCircle, getPT, getGuessResult } from '../lib/teams'
 
 const MEDALS = ['🥇', '🥈', '🥉']
 
+// ── Fases do torneio (espelhado do GuessesPage) ───────────────────────────────
+const TOURNAMENT_PHASES = [
+  { key: 'oitavas', label: 'Oitavas',   bonus: 3, start: '2026-06-28', end: '2026-07-03' },
+  { key: 'quartas', label: 'Quartas',   bonus: 4, start: '2026-07-04', end: '2026-07-07' },
+  { key: 'semi',    label: 'Semifinal', bonus: 5, start: '2026-07-09', end: '2026-07-11' },
+  { key: 'final',   label: 'Final',     bonus: 6, start: '2026-07-14', end: '2026-07-15' },
+]
+
+// ── Avatar ────────────────────────────────────────────────────────────────────
 function Avatar({ profile, size = 36 }) {
   if (profile.avatar_url) {
     return <img src={profile.avatar_url} alt="" style={{ width: size, height: size, borderRadius: '50%', objectFit: 'cover', flexShrink: 0, border: '2px solid var(--border-strong)' }} />
@@ -19,11 +28,10 @@ function Avatar({ profile, size = 36 }) {
   )
 }
 
-// ── Lista de jogos em que o usuário pontuou ─────────────────────────────────
-
+// ── Lista de jogos pontuados (aba Ranking/Supercopa) ──────────────────────────
 const KNOCKOUT_START_R = new Date('2026-06-28T00:00:00')
 
-function ScoredGuesses({ userId }) {
+function ScoredGuesses({ userId, tournamentPoints }) {
   const [items, setItems] = useState(null)
 
   useEffect(() => {
@@ -59,16 +67,25 @@ function ScoredGuesses({ userId }) {
     )
   }
 
-  if (items.length === 0) {
-    return (
-      <div style={{ fontSize: '12px', color: 'var(--text-3)', textAlign: 'center', padding: '10px 0' }}>
-        Nenhuma pontuação ainda.
-      </div>
-    )
-  }
-
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+      {/* Pontos do torneio, se houver */}
+      {tournamentPoints > 0 && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 10px', borderRadius: '8px', background: 'rgba(168,85,247,0.1)', border: '1px solid rgba(168,85,247,0.25)' }}>
+          <span style={{ fontSize: '14px' }}>🏆</span>
+          <span style={{ fontSize: '11px', color: '#c084fc', flex: 1 }}>Pontos da Copa Yuuto Kidou</span>
+          <span style={{ fontFamily: 'var(--font-display)', fontSize: '15px', color: '#c084fc', fontWeight: 700 }}>
+            +{tournamentPoints}
+          </span>
+        </div>
+      )}
+
+      {items.length === 0 && tournamentPoints === 0 && (
+        <div style={{ fontSize: '12px', color: 'var(--text-3)', textAlign: 'center', padding: '10px 0' }}>
+          Nenhuma pontuação ainda.
+        </div>
+      )}
+
       {items.map((g, i) => {
         const m = g.matches
         const result = getGuessResult(g, m.home_score, m.away_score)
@@ -78,7 +95,6 @@ function ScoredGuesses({ userId }) {
         const blueCombo = qualifierHit
         const basePoints = isExact ? 3 : result === 'partial' ? 1 : 0
         const totalPoints = basePoints + (qualifierHit ? 2 : 0)
-
         const color = blueCombo ? '#60a5fa' : isExact ? 'var(--green)' : 'var(--gold)'
         const bg = blueCombo ? 'rgba(59,130,246,0.1)' : isExact ? 'var(--green-dim)' : 'rgba(232,184,75,0.08)'
         return (
@@ -102,11 +118,10 @@ function ScoredGuesses({ userId }) {
   )
 }
 
-// ── Aba RANKING (visual, com pódio) ─────────────────────────────────────────
-
-function RankingTab({ ranking, loading, user }) {
+// ── Aba RANKING SUPERCOPA (liga + torneio) ────────────────────────────────────
+function SupercopaTab({ ranking, loading, user }) {
   const [expandedId, setExpandedId] = useState(null)
-  const topScore = ranking[0]?.points || 1
+  const topScore = ranking[0]?.supercopaPoints || 1
 
   if (loading) {
     return Array.from({ length: 5 }).map((_, i) => (
@@ -116,6 +131,19 @@ function RankingTab({ ranking, loading, user }) {
 
   return (
     <>
+      {/* Legenda */}
+      <div style={{ display: 'flex', gap: '16px', marginBottom: '14px', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+          <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--gold)', fontFamily: 'var(--font-display)' }}>Liga</span>
+          <span style={{ fontSize: '11px', color: 'var(--text-3)' }}>pontos Nekomão</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+          <span style={{ fontSize: '11px', fontWeight: 700, color: '#c084fc', fontFamily: 'var(--font-display)' }}>Torneio</span>
+          <span style={{ fontSize: '11px', color: 'var(--text-3)' }}>pontos Yuuto Kidou</span>
+        </div>
+      </div>
+
+      {/* Pódio */}
       {ranking.length >= 3 && (
         <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'center', gap: '8px', marginBottom: '32px', marginTop: '8px' }}>
           {[1, 0, 2].map(idx => {
@@ -132,8 +160,16 @@ function RankingTab({ ranking, loading, user }) {
                 <div style={{ fontSize: isFirst ? '13px' : '11px', fontWeight: 600, color: 'var(--text)', textAlign: 'center', maxWidth: 80, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {p.display_name || p.nick}
                 </div>
-                <div style={{ fontFamily: 'var(--font-display)', fontSize: isFirst ? '24px' : '19px', color, letterSpacing: '0.04em', lineHeight: 1 }}>
-                  {p.points}<span style={{ fontSize: '0.6em', marginLeft: 2 }}>pt</span>
+                {/* Pontos separados */}
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ fontFamily: 'var(--font-display)', fontSize: isFirst ? '24px' : '19px', color, letterSpacing: '0.04em', lineHeight: 1 }}>
+                    {p.supercopaPoints}<span style={{ fontSize: '0.6em', marginLeft: 2 }}>pt</span>
+                  </div>
+                  {p.tournament_points > 0 && (
+                    <div style={{ fontSize: '10px', color: '#c084fc', marginTop: '2px' }}>
+                      +{p.tournament_points} 🏆
+                    </div>
+                  )}
                 </div>
                 <div style={{ height: podiumH, width: '100%', background: isFirst ? 'rgba(232,184,75,0.10)' : 'var(--surface)', border: `1px solid ${color}33`, borderRadius: 'var(--r-sm) var(--r-sm) 0 0', borderBottom: 'none' }} />
               </div>
@@ -144,8 +180,8 @@ function RankingTab({ ranking, loading, user }) {
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
         {ranking.map((p, i) => {
-          const isMe = p.id === user.id
-          const bar = (p.points / topScore) * 100
+          const isMe = p.id === user?.id
+          const bar = (p.supercopaPoints / topScore) * 100
           const isExpanded = expandedId === p.id
           return (
             <div key={p.id} className="glass-card" style={{ padding: '12px 16px', border: isMe ? '1px solid rgba(232,184,75,0.28)' : undefined, background: isMe ? 'rgba(232,184,75,0.04)' : undefined }}>
@@ -155,14 +191,22 @@ function RankingTab({ ranking, loading, user }) {
                 </div>
                 <Avatar profile={p} size={36} />
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '6px' }}>
                     <span style={{ fontWeight: 600, fontSize: '14px', color: isMe ? 'var(--gold-bright)' : 'var(--text)' }}>
                       {p.display_name || p.nick}
                       {isMe && <span style={{ fontSize: '10px', color: 'var(--text-3)', marginLeft: 6, fontWeight: 400 }}>você</span>}
                     </span>
-                    <span style={{ fontFamily: 'var(--font-display)', fontSize: '22px', color: 'var(--text)', letterSpacing: '0.04em', lineHeight: 1 }}>
-                      {p.points}
-                    </span>
+                    {/* Pontos totais + breakdown */}
+                    <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                      <div style={{ fontFamily: 'var(--font-display)', fontSize: '22px', color: 'var(--text)', letterSpacing: '0.04em', lineHeight: 1 }}>
+                        {p.supercopaPoints}
+                      </div>
+                      {p.tournament_points > 0 && (
+                        <div style={{ fontSize: '10px', color: '#c084fc', marginTop: '1px' }}>
+                          {p.points} <span style={{ color: 'var(--text-3)' }}>+</span> <span style={{ color: '#c084fc' }}>{p.tournament_points}🏆</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
                   <div style={{ height: 3, background: 'var(--surface)', borderRadius: 2, overflow: 'hidden' }}>
                     <div style={{ height: '100%', width: `${bar}%`, background: i === 0 ? 'linear-gradient(90deg, var(--gold), var(--gold-bright))' : 'rgba(232,238,248,0.22)', borderRadius: 2, transition: 'width 0.7s ease' }} />
@@ -182,7 +226,7 @@ function RankingTab({ ranking, loading, user }) {
                   <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--gold)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '8px' }}>
                     Jogos que pontuou
                   </div>
-                  <ScoredGuesses userId={p.id} />
+                  <ScoredGuesses userId={p.id} tournamentPoints={p.tournament_points || 0} />
                 </div>
               )}
             </div>
@@ -193,8 +237,7 @@ function RankingTab({ ranking, loading, user }) {
   )
 }
 
-// ── Aba CLASSIFICAÇÃO (tabela detalhada) ────────────────────────────────────
-
+// ── Aba CLASSIFICAÇÃO NEKOMÃO (só liga) ────────────────────────────────────────
 const COL = '34px'
 const COLS = `28px 1fr ${COL} ${COL} ${COL} ${COL} ${COL}`
 const hStyle = { fontSize: '10px', fontWeight: 700, color: 'var(--text-3)', textAlign: 'center', textTransform: 'uppercase', letterSpacing: '0.08em' }
@@ -248,8 +291,14 @@ function PlayerRow({ profile, position, isMe, totalGuesses }) {
   )
 }
 
-function ClassificacaoTab({ ranking, loading, user, guessCounts }) {
-  const myPosition = ranking.findIndex(p => p.id === user?.id) + 1
+function NekomaoTab({ ranking, loading, user, guessCounts }) {
+  // Ordena só por pontos da liga (profiles.points)
+  const ligaRanking = useMemo(() =>
+    [...ranking].sort((a, b) =>
+      (b.points - a.points) || (b.exact_hits - a.exact_hits) || (b.partial_hits - a.partial_hits) || (new Date(a.created_at) - new Date(b.created_at))
+    ), [ranking])
+
+  const myPosition = ligaRanking.findIndex(p => p.id === user?.id) + 1
 
   return (
     <>
@@ -260,7 +309,7 @@ function ClassificacaoTab({ ranking, loading, user, guessCounts }) {
           { sig: 'PR', desc: 'Resultado certo' },
           { sig: 'CC', desc: 'Classificação certa' },
           { sig: 'J',  desc: 'Jogos palpitados' },
-        ].map(({ sig, desc, blue }) => (
+        ].map(({ sig, desc }) => (
           <div key={sig} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
             <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--gold)', fontFamily: 'var(--font-display)', letterSpacing: '0.06em' }}>{sig}</span>
             <span style={{ fontSize: '11px', color: 'var(--text-3)' }}>{desc}</span>
@@ -275,10 +324,10 @@ function ClassificacaoTab({ ranking, loading, user, guessCounts }) {
       ) : (
         <div className="glass-card" style={{ overflow: 'hidden', padding: 0 }}>
           <HeaderRow />
-          {ranking.map((p, i) => (
+          {ligaRanking.map((p, i) => (
             <PlayerRow key={p.id} profile={p} position={i + 1} isMe={p.id === user?.id} totalGuesses={guessCounts[p.id] || 0} />
           ))}
-          {ranking.length === 0 && (
+          {ligaRanking.length === 0 && (
             <div style={{ textAlign: 'center', color: 'var(--text-3)', padding: '40px 0', fontSize: '13px' }}>
               Nenhum participante ainda.
             </div>
@@ -288,7 +337,7 @@ function ClassificacaoTab({ ranking, loading, user, guessCounts }) {
 
       {myPosition > 0 && !loading && (
         <div style={{ marginTop: 14, padding: '10px 14px', background: 'var(--gold-dim)', border: '1px solid rgba(232,184,75,0.22)', borderRadius: 'var(--r-md)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ fontSize: '13px', color: 'var(--text-2)' }}>Sua posição atual</span>
+          <span style={{ fontSize: '13px', color: 'var(--text-2)' }}>Sua posição na Liga</span>
           <span style={{ fontFamily: 'var(--font-display)', fontSize: '22px', color: 'var(--gold)', letterSpacing: '0.06em' }}>{myPosition}º</span>
         </div>
       )}
@@ -296,21 +345,250 @@ function ClassificacaoTab({ ranking, loading, user, guessCounts }) {
   )
 }
 
-// ── Página principal — toggle Ranking / Classificação ───────────────────────
+// ── Aba PONTOS YUUTO KIDOU ────────────────────────────────────────────────────
+
+// Calcula pontos de um usuário em cada fase (filtrando guesses por janela de datas)
+function useTournamentBreakdown(userId) {
+  const [breakdown, setBreakdown] = useState(null) // { oitavas: N, quartas: N, ... }
+
+  useEffect(() => {
+    if (!userId) return
+    supabase
+      .from('guesses')
+      .select('points_earned, matches(match_date, status)')
+      .eq('user_id', userId)
+      .then(({ data: guesses }) => {
+        const result = {}
+        TOURNAMENT_PHASES.forEach(phase => {
+          const start = new Date(phase.start + 'T00:00:00')
+          const end = new Date(phase.end + 'T23:59:59')
+          const pts = (guesses || [])
+            .filter(g => {
+              const md = g.matches?.match_date
+              if (!md) return false
+              const d = new Date(md)
+              return d >= start && d <= end && g.matches?.status === 'finished'
+            })
+            .reduce((s, g) => s + (g.points_earned || 0), 0)
+          result[phase.key] = pts
+        })
+        setBreakdown(result)
+      })
+  }, [userId])
+
+  return breakdown
+}
+
+// Linha de um jogador no ranking do torneio
+function TournamentRow({ profile, position, isMe, breakdown, phasesUnlocked }) {
+  const [expanded, setExpanded] = useState(false)
+  const posColors = { 1: '#FFD700', 2: '#C0C0C0', 3: '#CD7F32' }
+  const posColor = posColors[position] || 'var(--text-3)'
+  const isTop3 = position <= 3
+
+  // Pontos acumulados nas fases que o jogador passou
+  // tournament_points já é o acumulado salvo no banco — mas vamos mostrar o breakdown calculado
+  const phaseBreakdown = useTournamentBreakdown(expanded ? profile.id : null)
+
+  return (
+    <div style={{
+      padding: '10px 14px',
+      background: isMe ? 'rgba(168,85,247,0.06)' : isTop3 ? 'rgba(255,255,255,0.02)' : 'transparent',
+      borderBottom: '1px solid rgba(255,255,255,0.04)',
+      borderLeft: isMe ? '3px solid #a855f7' : isTop3 ? `3px solid ${posColor}` : '3px solid transparent',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        {/* Posição */}
+        <div style={{ width: 28, textAlign: 'center', fontFamily: 'var(--font-display)', fontSize: '15px', color: isTop3 ? posColor : 'var(--text-3)', flexShrink: 0 }}>
+          {isTop3 ? MEDALS[position - 1] : `${position}º`}
+        </div>
+        <Avatar profile={profile} size={30} />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: '13px', fontWeight: isMe ? 700 : 500, color: isMe ? '#c084fc' : 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {profile.display_name || profile.nick}
+            {isMe && <span style={{ fontSize: '10px', color: 'var(--text-3)', marginLeft: 6, fontWeight: 400 }}>você</span>}
+          </div>
+        </div>
+        {/* Total torneio */}
+        <div style={{ textAlign: 'right', flexShrink: 0 }}>
+          <span style={{ fontFamily: 'var(--font-display)', fontSize: '20px', color: '#c084fc', letterSpacing: '0.04em' }}>
+            {profile.tournament_points || 0}
+          </span>
+          <span style={{ fontSize: '10px', color: '#c084fc', marginLeft: 2 }}>pt</span>
+        </div>
+        {/* Expand */}
+        <button
+          onClick={() => setExpanded(e => !e)}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', color: expanded ? '#c084fc' : 'var(--text-3)', padding: '4px', display: 'flex', flexDirection: 'column', gap: '3px', alignItems: 'center', flexShrink: 0 }}
+        >
+          {[0, 1, 2].map(n => <span key={n} style={{ display: 'block', width: '14px', height: '2px', background: 'currentColor', borderRadius: '1px' }} />)}
+        </button>
+      </div>
+
+      {/* Breakdown por fase */}
+      {expanded && (
+        <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid rgba(168,85,247,0.15)', animation: 'fadeUp 0.15s ease' }}>
+          {phaseBreakdown === null ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              {[0,1,2,3].map(i => <div key={i} className="skeleton" style={{ height: 28, borderRadius: 6 }} />)}
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              {TOURNAMENT_PHASES.map((phase, idx) => {
+                const pts = phaseBreakdown[phase.key] || 0
+                const unlocked = idx < phasesUnlocked
+                const isCurrent = idx === phasesUnlocked - 1
+                const passed = pts > 0 // simplificação: se fez pontos na fase, estava nela
+
+                return (
+                  <div key={phase.key} style={{
+                    display: 'flex', alignItems: 'center', gap: '10px',
+                    padding: '6px 10px', borderRadius: '8px',
+                    background: pts > 0 ? 'rgba(168,85,247,0.1)' : 'rgba(255,255,255,0.02)',
+                    opacity: unlocked ? 1 : 0.4,
+                  }}>
+                    <span style={{ fontSize: '11px', fontWeight: 700, color: pts > 0 ? '#c084fc' : 'var(--text-3)', minWidth: '64px' }}>
+                      {phase.label}
+                    </span>
+                    {isCurrent && (
+                      <span style={{ fontSize: '9px', background: 'rgba(168,85,247,0.3)', color: '#c084fc', padding: '1px 6px', borderRadius: 10, fontWeight: 600 }}>
+                        AO VIVO
+                      </span>
+                    )}
+                    <span style={{ flex: 1 }} />
+                    {/* Pontos da liga na fase */}
+                    <span style={{ fontSize: '11px', color: 'var(--text-3)' }}>
+                      {unlocked ? `${pts}pt na liga` : '—'}
+                    </span>
+                    {/* Bônus do torneio se passou */}
+                    {unlocked && pts > 0 && (
+                      <span style={{
+                        fontSize: '12px', fontWeight: 700, color: '#c084fc',
+                        background: 'rgba(168,85,247,0.15)', padding: '2px 8px', borderRadius: 8
+                      }}>
+                        +{phase.bonus}🏆
+                      </span>
+                    )}
+                    {unlocked && pts === 0 && (
+                      <span style={{ fontSize: '11px', color: 'var(--text-3)' }}>eliminado</span>
+                    )}
+                  </div>
+                )
+              })}
+
+              {/* Total acumulado */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', marginTop: '4px', borderTop: '1px solid rgba(168,85,247,0.2)', borderRadius: '0 0 8px 8px' }}>
+                <span style={{ fontSize: '11px', color: 'var(--text-3)', fontWeight: 600 }}>Total acumulado</span>
+                <span style={{ fontFamily: 'var(--font-display)', fontSize: '16px', color: '#c084fc', fontWeight: 700 }}>
+                  {profile.tournament_points || 0}pt
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function YuutoTab({ ranking, loading, user }) {
+  // Ordena pelo tournament_points
+  const tourRanking = useMemo(() =>
+    [...ranking]
+      .filter(p => (p.tournament_points || 0) > 0 || true) // mostra todos
+      .sort((a, b) => (b.tournament_points || 0) - (a.tournament_points || 0) || (b.points - a.points))
+  , [ranking])
+
+  // Quantas fases já começaram
+  const today = new Date()
+  const phasesUnlocked = TOURNAMENT_PHASES.filter(ph => today >= new Date(ph.start + 'T00:00:00')).length || 1
+
+  const myPosition = tourRanking.findIndex(p => p.id === user?.id) + 1
+
+  return (
+    <>
+      {/* Explicação das fases */}
+      <div style={{ marginBottom: '16px', padding: '12px 14px', background: 'rgba(168,85,247,0.08)', border: '1px solid rgba(168,85,247,0.2)', borderRadius: 'var(--r-md)' }}>
+        <div style={{ fontSize: '11px', fontWeight: 700, color: '#c084fc', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+          🏆 Pontuação por fase
+        </div>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          {TOURNAMENT_PHASES.map((ph, i) => {
+            const active = i < phasesUnlocked
+            return (
+              <div key={ph.key} style={{
+                padding: '4px 10px', borderRadius: 20, fontSize: '11px', fontWeight: 600,
+                background: active ? 'rgba(168,85,247,0.2)' : 'var(--surface)',
+                border: `1px solid ${active ? 'rgba(168,85,247,0.4)' : 'var(--border)'}`,
+                color: active ? '#c084fc' : 'var(--text-3)',
+              }}>
+                {ph.label} <span style={{ opacity: 0.7 }}>+{ph.bonus}pt</span>
+              </div>
+            )
+          })}
+        </div>
+        <div style={{ fontSize: '10px', color: 'var(--text-3)', marginTop: '8px', lineHeight: 1.5 }}>
+          Ganhe o confronto de cada fase para acumular os pontos bônus. Quem chegar na final acumula {TOURNAMENT_PHASES.reduce((s, p) => s + p.bonus, 0)}pt! 🔥
+        </div>
+      </div>
+
+      {loading ? (
+        Array.from({ length: 6 }).map((_, i) => (
+          <div key={i} className="skeleton" style={{ height: 52, marginBottom: 4, borderRadius: 10 }} />
+        ))
+      ) : (
+        <div className="glass-card" style={{ overflow: 'hidden', padding: 0 }}>
+          {/* Header */}
+          <div style={{ display: 'flex', alignItems: 'center', padding: '7px 14px', borderBottom: '1px solid var(--border)', gap: 10 }}>
+            <div style={{ width: 28 }} />
+            <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.08em', flex: 1, paddingLeft: 38 }}>Jogador</div>
+            <div style={{ fontSize: '10px', fontWeight: 700, color: '#c084fc', textTransform: 'uppercase', letterSpacing: '0.08em' }}>PT 🏆</div>
+            <div style={{ width: 30 }} />
+          </div>
+
+          {tourRanking.map((p, i) => (
+            <TournamentRow
+              key={p.id}
+              profile={p}
+              position={i + 1}
+              isMe={p.id === user?.id}
+              phasesUnlocked={phasesUnlocked}
+            />
+          ))}
+
+          {tourRanking.length === 0 && (
+            <div style={{ textAlign: 'center', color: 'var(--text-3)', padding: '40px 0', fontSize: '13px' }}>
+              O torneio ainda não começou.
+            </div>
+          )}
+        </div>
+      )}
+
+      {myPosition > 0 && !loading && (
+        <div style={{ marginTop: 14, padding: '10px 14px', background: 'rgba(168,85,247,0.08)', border: '1px solid rgba(168,85,247,0.22)', borderRadius: 'var(--r-md)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span style={{ fontSize: '13px', color: 'var(--text-2)' }}>Sua posição no torneio</span>
+          <span style={{ fontFamily: 'var(--font-display)', fontSize: '22px', color: '#c084fc', letterSpacing: '0.06em' }}>{myPosition}º</span>
+        </div>
+      )}
+    </>
+  )
+}
+
+// ── Página principal ──────────────────────────────────────────────────────────
 
 export default function RankingPage() {
   const { user } = useAuth()
   const [ranking, setRanking] = useState([])
   const [guessCounts, setGuessCounts] = useState({})
   const [loading, setLoading] = useState(true)
-  const [view, setView] = useState('ranking')
+  const [view, setView] = useState('supercopa')
 
   useEffect(() => {
     async function fetchData() {
       const [{ data: profiles }, { data: guesses }] = await Promise.all([
         supabase
           .from('profiles')
-          .select('id, display_name, nick, avatar_url, points, exact_hits, partial_hits, qualifier_hits, created_at')
+          .select('id, display_name, nick, avatar_url, points, exact_hits, partial_hits, qualifier_hits, tournament_points, created_at')
           .order('points', { ascending: false })
           .order('exact_hits', { ascending: false })
           .order('partial_hits', { ascending: false })
@@ -318,36 +596,63 @@ export default function RankingPage() {
         supabase.from('guesses').select('user_id'),
       ])
 
+      // Supercopa = liga + torneio
+      const enriched = (profiles || []).map(p => ({
+        ...p,
+        tournament_points: p.tournament_points || 0,
+        supercopaPoints: (p.points || 0) + (p.tournament_points || 0),
+      }))
+
+      // Ordena pela supercopa
+      enriched.sort((a, b) =>
+        (b.supercopaPoints - a.supercopaPoints) ||
+        (b.exact_hits - a.exact_hits) ||
+        (b.partial_hits - a.partial_hits) ||
+        (new Date(a.created_at) - new Date(b.created_at))
+      )
+
       const counts = {}
       ;(guesses || []).forEach(g => { counts[g.user_id] = (counts[g.user_id] || 0) + 1 })
 
-      setRanking(profiles || [])
+      setRanking(enriched)
       setGuessCounts(counts)
       setLoading(false)
     }
 
     fetchData()
-    const channel = supabase.channel('ranking-classificacao')
+    const channel = supabase.channel('ranking-page')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, fetchData)
       .subscribe()
     return () => supabase.removeChannel(channel)
   }, [])
 
+  const tabs = [
+    { key: 'supercopa',   label: '🏆 Supercopa' },
+    { key: 'nekomao',     label: '⚽ Nekomão' },
+    { key: 'yuuto',       label: '🎌 Yuuto Kidou' },
+  ]
+
+  const titles = {
+    supercopa: 'Ranking Supercopa',
+    nekomao:   'Classificação Nekomão',
+    yuuto:     'Pontos Yuuto Kidou',
+  }
+
   return (
     <div className="page">
-      <div className="section-title">{view === 'ranking' ? 'Ranking' : 'Classificação'}</div>
+      <div className="section-title">{titles[view]}</div>
 
-      {/* Toggle Ranking / Classificação */}
+      {/* Tabs */}
       <div style={{ display: 'flex', background: 'var(--surface)', borderRadius: 'var(--r-md)', padding: '4px', marginBottom: '20px', gap: '4px' }}>
-        {[['ranking', '🏆 Ranking'], ['classificacao', '📊 Classificação']].map(([key, label]) => (
+        {tabs.map(({ key, label }) => (
           <button
             key={key}
             onClick={() => setView(key)}
             style={{
-              flex: 1, padding: '9px', borderRadius: '10px', border: 'none', cursor: 'pointer',
-              fontFamily: 'var(--font-body)', fontSize: '13px', fontWeight: 600, transition: 'all 0.2s',
-              background: view === key ? 'rgba(255,255,255,0.1)' : 'transparent',
-              color: view === key ? 'var(--text)' : 'var(--text-3)',
+              flex: 1, padding: '9px 4px', borderRadius: '10px', border: 'none', cursor: 'pointer',
+              fontFamily: 'var(--font-body)', fontSize: '12px', fontWeight: 600, transition: 'all 0.2s',
+              background: view === key ? (key === 'yuuto' ? 'rgba(168,85,247,0.2)' : 'rgba(255,255,255,0.1)') : 'transparent',
+              color: view === key ? (key === 'yuuto' ? '#c084fc' : 'var(--text)') : 'var(--text-3)',
             }}
           >
             {label}
@@ -355,10 +660,9 @@ export default function RankingPage() {
         ))}
       </div>
 
-      {view === 'ranking'
-        ? <RankingTab ranking={ranking} loading={loading} user={user} />
-        : <ClassificacaoTab ranking={ranking} loading={loading} user={user} guessCounts={guessCounts} />
-      }
+      {view === 'supercopa' && <SupercopaTab ranking={ranking} loading={loading} user={user} />}
+      {view === 'nekomao'   && <NekomaoTab   ranking={ranking} loading={loading} user={user} guessCounts={guessCounts} />}
+      {view === 'yuuto'     && <YuutoTab     ranking={ranking} loading={loading} user={user} />}
     </div>
   )
 }
