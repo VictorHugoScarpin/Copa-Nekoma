@@ -161,6 +161,249 @@ async function recalcMatchPoints(matchId, homeScore, awayScore, qualifierResult,
   }
 
   console.log(`  ↳ Pontos recalculados: jogo ${matchId} | ${affectedUsers.size} usuários`)
+
+  // Tenta avançar fase do torneio após recalcular pontos
+  await tryAdvancePhase(matchDate)
+}
+
+// ── TORNEIO: FASES ──────────────────────────────────────────────────────────
+const TOURNAMENT_PHASES = [
+  { key: 'oitavas', label: 'Oitavas', bonus: 3, start: '2026-06-28', end: '2026-07-03', round: 1 },
+  { key: 'quartas', label: 'Quartas', bonus: 4, start: '2026-07-04', end: '2026-07-07', round: 2 },
+  { key: 'semi',    label: 'Semifinal', bonus: 5, start: '2026-07-09', end: '2026-07-11', round: 3 },
+  { key: 'final',   label: 'Final',   bonus: 6, start: '2026-07-14', end: '2026-07-15', round: 4 },
+]
+
+function getPhaseForDate(dateStr) {
+  const d = new Date(dateStr)
+  return TOURNAMENT_PHASES.find(ph => {
+    return d >= new Date(ph.start + 'T00:00:00Z') && d <= new Date(ph.end + 'T23:59:59Z')
+  }) || null
+}
+
+async function tryAdvancePhase(matchDate) {
+  const phase = getPhaseForDate(matchDate)
+  if (!phase) return // jogo da fase de grupos, ignora
+
+  // Verifica se todos os jogos desta fase já terminaram
+  const { data: phaseMatches } = await supabase
+    .from('matches')
+    .select('id, status')
+    .gte('match_date', phase.start + 'T00:00:00Z')
+    .lte('match_date', phase.end + 'T23:59:59Z')
+
+  if (!phaseMatches?.length) return
+  const allFinished = phaseMatches.every(m => m.status === 'finished')
+  if (!allFinished) return
+
+  console.log(`🏆 Todos os jogos de ${phase.label} terminaram — processando avanço de fase...`)
+
+  // Busca confrontos desta fase que ainda não foram resolvidos
+  const { data: matchups } = await supabase
+    .from('tournament_matchups')
+    .select('*')
+    .eq('phase', phase.key)
+    .is('winner_id', null)
+
+  if (!matchups?.length) {
+    // Fase já resolvida ou não inicializada
+    // Se oitavas, inicializa a partir do ranking geral
+    if (phase.key === 'oitavas') {
+      await initOitavas()
+    }
+    return
+  }
+
+  const phaseMatchIds = phaseMatches.map(m => m.id)
+  const phaseStart = new Date(phase.start + 'T00:00:00Z')
+  const phaseEnd = new Date(phase.end + 'T23:59:59Z')
+
+  for (const mu of matchups) {
+    if (!mu.player1_id || !mu.player2_id) continue
+
+    // Calcula pontos de cada jogador nos jogos desta fase
+    const [p1pts, p2pts] = await Promise.all([
+      calcPlayerPhasePoints(mu.player1_id, phaseMatchIds),
+      calcPlayerPhasePoints(mu.player2_id, phaseMatchIds),
+    ])
+
+    // Desempate: busca exact_hits e partial_hits na fase e created_at
+    let winnerId
+    if (p1pts !== p2pts) {
+      winnerId = p1pts > p2pts ? mu.player1_id : mu.player2_id
+    } else {
+      // Desempate por placares exatos na fase
+      const [p1exact, p2exact] = await Promise.all([
+        calcPlayerPhaseExact(mu.player1_id, phaseMatchIds),
+        calcPlayerPhaseExact(mu.player2_id, phaseMatchIds),
+      ])
+      if (p1exact !== p2exact) {
+        winnerId = p1exact > p2exact ? mu.player1_id : mu.player2_id
+      } else {
+        // Desempate por parciais
+        const [p1partial, p2partial] = await Promise.all([
+          calcPlayerPhasePartial(mu.player1_id, phaseMatchIds),
+          calcPlayerPhasePartial(mu.player2_id, phaseMatchIds),
+        ])
+        if (p1partial !== p2partial) {
+          winnerId = p1partial > p2partial ? mu.player1_id : mu.player2_id
+        } else {
+          // Desempate por data de cadastro (quem entrou primeiro)
+          const { data: profiles } = await supabase
+            .from('profiles')
+            .select('id, created_at')
+            .in('id', [mu.player1_id, mu.player2_id])
+          const p1 = profiles?.find(p => p.id === mu.player1_id)
+          const p2 = profiles?.find(p => p.id === mu.player2_id)
+          winnerId = new Date(p1.created_at) <= new Date(p2.created_at) ? mu.player1_id : mu.player2_id
+        }
+      }
+    }
+
+    const loser = winnerId === mu.player1_id ? mu.player2_id : mu.player1_id
+    console.log(`  ↳ ${phase.label} slot ${mu.slot}: vencedor=${winnerId} (${p1pts}×${p2pts})`)
+
+    // Salva winner e pontos no confronto
+    await supabase.from('tournament_matchups').update({
+      winner_id: winnerId,
+      player1_points: p1pts,
+      player2_points: p2pts,
+    }).eq('id', mu.id)
+
+    // Credita bônus ao vencedor (só uma vez)
+    if (!mu.bonus_awarded) {
+      // tournament_points e points no profile
+      const { data: winner } = await supabase.from('profiles').select('points, tournament_points').eq('id', winnerId).single()
+      await supabase.from('profiles').update({
+        points: (winner.points || 0) + phase.bonus,
+        tournament_points: (winner.tournament_points || 0) + phase.bonus,
+      }).eq('id', winnerId)
+
+      await supabase.from('tournament_matchups').update({ bonus_awarded: true }).eq('id', mu.id)
+      console.log(`  ↳ Bônus +${phase.bonus}pts creditado para ${winnerId}`)
+    }
+  }
+
+  // Monta confrontos da próxima fase com os vencedores
+  const nextPhaseIdx = TOURNAMENT_PHASES.findIndex(ph => ph.key === phase.key) + 1
+  if (nextPhaseIdx < TOURNAMENT_PHASES.length) {
+    await seedNextPhase(phase, TOURNAMENT_PHASES[nextPhaseIdx], matchups)
+  }
+}
+
+async function calcPlayerPhasePoints(userId, matchIds) {
+  const { data } = await supabase
+    .from('guesses')
+    .select('points_earned')
+    .eq('user_id', userId)
+    .in('match_id', matchIds)
+  return (data || []).reduce((s, g) => s + (g.points_earned || 0), 0)
+}
+
+async function calcPlayerPhaseExact(userId, matchIds) {
+  const { data } = await supabase
+    .from('guesses')
+    .select('home_score, away_score, matches(home_score, away_score)')
+    .eq('user_id', userId)
+    .in('match_id', matchIds)
+  return (data || []).filter(g => g.home_score === g.matches?.home_score && g.away_score === g.matches?.away_score).length
+}
+
+async function calcPlayerPhasePartial(userId, matchIds) {
+  const { data } = await supabase
+    .from('guesses')
+    .select('home_score, away_score, matches(home_score, away_score)')
+    .eq('user_id', userId)
+    .in('match_id', matchIds)
+  return (data || []).filter(g => {
+    const m = g.matches
+    if (!m) return false
+    const exact = g.home_score === m.home_score && g.away_score === m.away_score
+    if (exact) return false
+    const rw = m.home_score > m.away_score ? 'home' : m.away_score > m.home_score ? 'away' : 'draw'
+    const gw = g.home_score > g.away_score ? 'home' : g.away_score > g.home_score ? 'away' : 'draw'
+    return rw === gw
+  }).length
+}
+
+async function initOitavas() {
+  // Verifica se oitavas já foram inicializadas
+  const { data: existing } = await supabase
+    .from('tournament_matchups')
+    .select('id')
+    .eq('phase', 'oitavas')
+    .limit(1)
+  if (existing?.length) return
+
+  console.log('🏆 Inicializando oitavas a partir do ranking geral...')
+
+  const { data: profiles } = await supabase
+    .from('profiles')
+    .select('id, display_name, points, exact_hits, partial_hits, created_at')
+    .order('points', { ascending: false })
+    .order('exact_hits', { ascending: false })
+    .order('partial_hits', { ascending: false })
+    .order('created_at', { ascending: true })
+    .limit(16)
+
+  if (!profiles || profiles.length < 2) {
+    console.log('⚠️ Menos de 2 participantes para inicializar oitavas')
+    return
+  }
+
+  const rows = []
+  for (let i = 0; i < 8; i++) {
+    const p1 = profiles[i]
+    const p2 = profiles[15 - i]
+    if (!p1 || !p2) continue
+    rows.push({
+      phase: 'oitavas',
+      slot: i,
+      player1_id: p1.id,
+      player2_id: p2.id,
+    })
+  }
+
+  const { error } = await supabase.from('tournament_matchups').insert(rows)
+  if (error) console.error('⚠️ Erro ao inicializar oitavas:', error.message)
+  else console.log(`✅ ${rows.length} confrontos de oitavas criados`)
+}
+
+async function seedNextPhase(currentPhase, nextPhase, resolvedMatchups) {
+  // Verifica se próxima fase já foi criada
+  const { data: existing } = await supabase
+    .from('tournament_matchups')
+    .select('id')
+    .eq('phase', nextPhase.key)
+    .limit(1)
+  if (existing?.length) return
+
+  // Pega todos os matchups da fase atual (com winners) para montar a próxima
+  const { data: allCurrentMatchups } = await supabase
+    .from('tournament_matchups')
+    .select('*')
+    .eq('phase', currentPhase.key)
+    .order('slot', { ascending: true })
+
+  const winners = allCurrentMatchups?.map(m => m.winner_id).filter(Boolean) || []
+  if (winners.length < 2) return
+
+  console.log(`🏆 Montando ${nextPhase.label} com ${winners.length} vencedores...`)
+
+  // Monta confrontos da próxima fase: 1º vs 2º, 3º vs 4º etc (vencedores mantêm o seed original)
+  const rows = []
+  for (let i = 0; i < Math.floor(winners.length / 2); i++) {
+    rows.push({
+      phase: nextPhase.key,
+      slot: i,
+      player1_id: winners[i * 2],
+      player2_id: winners[i * 2 + 1],
+    })
+  }
+
+  const { error } = await supabase.from('tournament_matchups').insert(rows)
+  if (error) console.error(`⚠️ Erro ao criar ${nextPhase.label}:`, error.message)
+  else console.log(`✅ ${rows.length} confrontos de ${nextPhase.label} criados`)
 }
 
 // ── 1. JOGOS ────────────────────────────────────────────────────────────────
