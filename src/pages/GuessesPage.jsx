@@ -659,19 +659,38 @@ function getCurrentPhase() {
   return 0
 }
 
-// Seed do bracket (1º vs 16º, 2º vs 15º, etc.) — determinístico pelo ranking
-// Chave A: confrontos 1,3,5,7 (posições 0,2,4,6 e 15,13,11,9)
-// Chave B: confrontos 2,4,6,8 (posições 1,3,5,7 e 14,12,10,8)
-function buildBracket(top16) {
-  // top16 = array de 16 profiles ordenados por ranking
-  const matchups = []
-  for (let i = 0; i < 8; i++) {
-    matchups.push({ p1: top16[i], p2: top16[15 - i], slot: i })
+// Monta o bracket a partir dos matchups do banco (tournament_matchups)
+// profilesMap: { [id]: profile }
+function buildBracketFromMatchups(matchups, profilesMap) {
+  const oitavas = matchups.filter(m => m.phase === 'oitavas').sort((a, b) => a.slot - b.slot)
+  const quartas  = matchups.filter(m => m.phase === 'quartas').sort((a, b) => a.slot - b.slot)
+  const semi     = matchups.filter(m => m.phase === 'semi').sort((a, b) => a.slot - b.slot)
+  const final    = matchups.filter(m => m.phase === 'final').sort((a, b) => a.slot - b.slot)
+
+  function toSlot(mu) {
+    return {
+      slot: mu.slot,
+      p1: profilesMap[mu.player1_id] || null,
+      p2: profilesMap[mu.player2_id] || null,
+      winner_id: mu.winner_id || null,
+      player1_points: mu.player1_points,
+      player2_points: mu.player2_points,
+      phase: mu.phase,
+    }
   }
-  // Chave A: slots 0,2,4,6  Chave B: slots 1,3,5,7
-  const chaveA = [matchups[0], matchups[2], matchups[4], matchups[6]]
-  const chaveB = [matchups[1], matchups[3], matchups[5], matchups[7]]
-  return { chaveA, chaveB }
+
+  const oSlots = oitavas.map(toSlot)
+  const chaveA = oSlots.filter((_, i) => i % 2 === 0)
+  const chaveB = oSlots.filter((_, i) => i % 2 === 1)
+
+  return {
+    chaveA,
+    chaveB,
+    quartas: quartas.map(toSlot),
+    semi: semi.map(toSlot),
+    final: final.map(toSlot),
+    all: matchups,
+  }
 }
 
 // Calcula pontos de um usuário dentro de uma janela de datas
@@ -735,12 +754,22 @@ function useOpponentGuesses(opponentId, phase, matches) {
 function AdversarioTab({ myProfile, bracket, matches, currentPhaseIdx }) {
   const phase = TOURNAMENT_PHASES[currentPhaseIdx]
 
-  // Acha o confronto do usuário atual nas oitavas
+  // Acha o confronto do usuário atual NA FASE ATUAL (não sempre oitavas)
   const myMatchup = useMemo(() => {
     if (!bracket || !myProfile) return null
-    const all = [...bracket.chaveA, ...bracket.chaveB]
+    // Pega confrontos da fase atual primeiro, senão cai nas oitavas
+    const phaseKey = phase.key
+    let phaseSlots = []
+    if (phaseKey === 'oitavas') phaseSlots = [...(bracket.chaveA || []), ...(bracket.chaveB || [])]
+    else if (phaseKey === 'quartas') phaseSlots = bracket.quartas || []
+    else if (phaseKey === 'semi') phaseSlots = bracket.semi || []
+    else if (phaseKey === 'final') phaseSlots = bracket.final || []
+    const inPhase = phaseSlots.find(m => m.p1?.id === myProfile.id || m.p2?.id === myProfile.id)
+    if (inPhase) return inPhase
+    // fallback: oitavas (antes do torneio iniciar)
+    const all = [...(bracket.chaveA || []), ...(bracket.chaveB || [])]
     return all.find(m => m.p1?.id === myProfile.id || m.p2?.id === myProfile.id) || null
-  }, [bracket, myProfile])
+  }, [bracket, myProfile, phase])
 
   const opponent = myMatchup
     ? (myMatchup.p1?.id === myProfile?.id ? myMatchup.p2 : myMatchup.p1)
@@ -1044,32 +1073,43 @@ function ChaveamentoTab({ bracket, loading, currentPhaseIdx, myId }) {
 
 function CopaYuutoKidou({ user, matches }) {
   const [subTab, setSubTab] = useState('chaveamento')
-  const [top16, setTop16] = useState(null)
+  const [bracket, setBracket] = useState(null)
   const [myProfile, setMyProfile] = useState(null)
   const [loading, setLoading] = useState(true)
   const currentPhaseIdx = getCurrentPhase()
 
   useEffect(() => {
-    async function fetchRanking() {
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('id, display_name, nick, avatar_url, points, exact_hits, partial_hits, qualifier_hits, created_at')
-        .order('points', { ascending: false })
-        .order('exact_hits', { ascending: false })
-        .order('partial_hits', { ascending: false })
-        .order('created_at', { ascending: true })
+    async function fetchTournament() {
+      const [{ data: matchups }, { data: profiles }] = await Promise.all([
+        supabase.from('tournament_matchups').select('*').order('slot', { ascending: true }),
+        supabase.from('profiles').select('id, display_name, nick, avatar_url, points, exact_hits, partial_hits, qualifier_hits, created_at'),
+      ])
 
       if (profiles) {
-        const t16 = profiles.slice(0, 16)
-        setTop16(t16)
+        const profilesMap = {}
+        profiles.forEach(p => { profilesMap[p.id] = p })
         setMyProfile(profiles.find(p => p.id === user.id) || null)
+
+        if (matchups?.length) {
+          setBracket(buildBracketFromMatchups(matchups, profilesMap))
+        } else {
+          // Preview pré-torneio: mostra oitavas projetadas pelo ranking atual
+          const sorted = [...profiles].sort((a, b) =>
+            (b.points - a.points) || (b.exact_hits - a.exact_hits) || (b.partial_hits - a.partial_hits) || (new Date(a.created_at) - new Date(b.created_at))
+          ).slice(0, 16)
+          if (sorted.length >= 2) {
+            const preview = []
+            for (let i = 0; i < 8 && i < sorted.length && (15 - i) < sorted.length; i++) {
+              preview.push({ phase: 'oitavas', slot: i, player1_id: sorted[i].id, player2_id: sorted[15 - i].id, winner_id: null, player1_points: 0, player2_points: 0 })
+            }
+            setBracket(buildBracketFromMatchups(preview, profilesMap))
+          }
+        }
       }
       setLoading(false)
     }
-    fetchRanking()
+    fetchTournament()
   }, [user.id])
-
-  const bracket = top16 && top16.length >= 2 ? buildBracket(top16) : null
 
   return (
     <div>
