@@ -205,7 +205,7 @@ function HeaderRow() {
       <div style={hStyle}>PT</div>
       <div style={hStyle}>PE</div>
       <div style={hStyle}>PR</div>
-      <div style={{ ...hStyle, color: '#60a5fa' }}>CC</div>
+      <div style={hStyle}>CC</div>
       <div style={hStyle}>J</div>
     </div>
   )
@@ -240,7 +240,7 @@ function PlayerRow({ profile, position, isMe, totalGuesses }) {
       </div>
       <div style={{ textAlign: 'center', fontSize: '13px', color: 'var(--text-2)', fontWeight: 500 }}>{profile.exact_hits ?? 0}</div>
       <div style={{ textAlign: 'center', fontSize: '13px', color: 'var(--text-2)', fontWeight: 500 }}>{profile.partial_hits ?? 0}</div>
-      <div style={{ textAlign: 'center', fontSize: '13px', color: '#60a5fa', fontWeight: 600 }}>{profile.qualifier_hits ?? 0}</div>
+      <div style={{ textAlign: 'center', fontSize: '13px', color: 'var(--text-2)', fontWeight: 500 }}>{profile.qualifier_hits ?? 0}</div>
       <div style={{ textAlign: 'center', fontSize: '13px', color: 'var(--text-3)' }}>{totalGuesses ?? 0}</div>
     </div>
   )
@@ -256,11 +256,11 @@ function ClassificacaoTab({ ranking, loading, user, guessCounts }) {
           { sig: 'PT', desc: 'Pontos totais' },
           { sig: 'PE', desc: 'Placar exato' },
           { sig: 'PR', desc: 'Resultado certo' },
-          { sig: 'CC', desc: 'Classificação certa', blue: true },
+          { sig: 'CC', desc: 'Classificação certa' },
           { sig: 'J',  desc: 'Jogos palpitados' },
         ].map(({ sig, desc, blue }) => (
           <div key={sig} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-            <span style={{ fontSize: '11px', fontWeight: 700, color: blue ? '#60a5fa' : 'var(--gold)', fontFamily: 'var(--font-display)', letterSpacing: '0.06em' }}>{sig}</span>
+            <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--gold)', fontFamily: 'var(--font-display)', letterSpacing: '0.06em' }}>{sig}</span>
             <span style={{ fontSize: '11px', color: 'var(--text-3)' }}>{desc}</span>
           </div>
         ))}
