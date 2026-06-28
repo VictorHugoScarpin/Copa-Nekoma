@@ -504,7 +504,6 @@ function GuessCard({ match, myGuess, onSave }) {
           </div>
         )}
       </div>
-      <div className="glass-card" style={{ padding: '16px 20px', border: '1px solid rgba(59,130,246,0.3)' }}>
     </div>
   )
 }
