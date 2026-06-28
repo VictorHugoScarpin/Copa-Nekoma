@@ -831,7 +831,7 @@ function AdversarioTab({ myProfile, bracket, matches, currentPhaseIdx }) {
       {/* Card do confronto */}
       <div className="glass-card" style={{ padding: '20px', marginBottom: '16px', border: '1px solid rgba(168,85,247,0.3)', background: 'rgba(168,85,247,0.04)' }}>
         <div style={{ fontSize: '10px', fontWeight: 700, color: 'rgba(168,85,247,0.8)', letterSpacing: '0.12em', textTransform: 'uppercase', textAlign: 'center', marginBottom: '16px' }}>
-          ⚔️ {phase.label} · Copa Yuuto Kidou
+          {phase.label} · Copa Yuuto Kidou
         </div>
 
         {/* VS card */}
@@ -898,7 +898,7 @@ function AdversarioTab({ myProfile, bracket, matches, currentPhaseIdx }) {
 
       {/* Título palpites adversário */}
       <div style={{ fontSize: '11px', fontWeight: 700, color: 'rgba(168,85,247,0.7)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '10px' }}>
-        🔍 Palpites de {opponent.display_name || opponent.nick} na fase
+        Palpites de {opponent.display_name || opponent.nick} na fase
       </div>
 
       {opGuesses === null ? (
@@ -915,51 +915,54 @@ function AdversarioTab({ myProfile, bracket, matches, currentPhaseIdx }) {
           return (
             <div key={m.id} style={{
               position: 'relative', overflow: 'hidden',
-              background: 'var(--surface)', border: '1px solid var(--border)',
-              borderRadius: '12px', marginBottom: '8px', padding: '10px 14px',
+              background: finished ? (g?.points_earned > 0 ? 'rgba(34,197,94,0.06)' : 'rgba(239,68,68,0.06)') : 'var(--surface)',
+              border: `1px solid ${finished ? (g?.points_earned > 0 ? 'rgba(34,197,94,0.35)' : 'rgba(239,68,68,0.3)') : 'var(--border)'}`,
+              borderRadius: '14px', marginBottom: '10px',
             }}>
               <CardBg name={m.home_team} side="left" />
               <CardBg name={m.away_team} side="right" />
-              <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: 'radial-gradient(ellipse 40% 80% at 50% 50%, rgba(6,11,20,0.7) 0%, transparent 100%)' }} />
+              <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: 'radial-gradient(ellipse 40% 80% at 50% 50%, rgba(6,11,20,0.55) 0%, transparent 100%)' }} />
 
-              <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', padding: '12px 16px', gap: '10px' }}>
                 {/* Times */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1, minWidth: 0 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <TeamCircle name={m.home_team} size={20} />
-                    <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{getPT(m.home_team)}</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flexShrink: 0 }}>
+                    <TeamCircle name={m.home_team} size={28} />
+                    <TeamCircle name={m.away_team} size={28} />
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <TeamCircle name={m.away_team} size={20} />
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: 1, minWidth: 0 }}>
+                    <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{getPT(m.home_team)}</span>
                     <span style={{ fontSize: '11px', fontWeight: 500, color: 'var(--text-2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{getPT(m.away_team)}</span>
                   </div>
                 </div>
 
-                {/* Placar real */}
-                <div style={{ textAlign: 'center', flexShrink: 0 }}>
+                {/* Centro: placar real ou horário */}
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', flexShrink: 0 }}>
                   {finished ? (
-                    <span style={{ fontFamily: 'var(--font-display)', fontSize: '16px', color: 'var(--text)' }}>{m.home_score} × {m.away_score}</span>
+                    <span style={{ fontFamily: 'var(--font-display)', fontSize: '20px', color: 'var(--text)', letterSpacing: '0.06em' }}>{m.home_score} × {m.away_score}</span>
                   ) : (
-                    <span style={{ fontSize: '10px', color: 'var(--gold)' }}>{format(new Date(m.match_date), 'HH:mm')}</span>
+                    <span style={{ fontSize: '11px', color: 'var(--gold)', fontWeight: 600 }}>{format(new Date(m.match_date), 'HH:mm')}</span>
                   )}
                 </div>
 
                 {/* Divider */}
-                <div style={{ width: '1px', height: '32px', background: 'var(--border)', flexShrink: 0 }} />
+                <div style={{ width: '1px', height: '36px', background: 'var(--border)', flexShrink: 0 }} />
 
                 {/* Palpite adversário */}
-                <div style={{ textAlign: 'center', flexShrink: 0, minWidth: '60px' }}>
+                <div style={{ textAlign: 'center', flexShrink: 0, minWidth: '64px' }}>
                   {!showGuess ? (
                     <span style={{ fontSize: '10px', color: 'var(--text-3)' }}>🔒 em breve</span>
                   ) : !g ? (
                     <span style={{ fontSize: '10px', color: 'var(--text-3)' }}>sem palpite</span>
                   ) : (
                     <>
-                      <div style={{ fontFamily: 'var(--font-display)', fontSize: '16px', color: finished ? (g.points_earned > 0 ? 'var(--green)' : 'var(--red)') : '#c084fc' }}>
+                      <div style={{ fontFamily: 'var(--font-display)', fontSize: '20px', color: finished ? (g.points_earned > 0 ? 'var(--green)' : 'var(--red)') : '#c084fc', letterSpacing: '0.06em', lineHeight: 1 }}>
                         {g.home_score} × {g.away_score}
                       </div>
-                      {finished && g.points_earned > 0 && (
-                        <div style={{ fontSize: '10px', color: 'var(--green)', marginTop: '2px' }}>+{g.points_earned}pt</div>
+                      {finished && (
+                        <div style={{ fontSize: '10px', color: g.points_earned > 0 ? 'var(--green)' : 'var(--text-3)', marginTop: '3px' }}>
+                          {g.points_earned > 0 ? `+${g.points_earned}pt` : '0pt'}
+                        </div>
                       )}
                     </>
                   )}
@@ -1070,7 +1073,7 @@ function ChaveamentoTab({ bracket, loading, currentPhaseIdx, myId }) {
           {/* Chave A */}
           {slotsA.length > 0 && (
             <div style={{ marginBottom: '20px' }}>
-              <div style={{ fontSize: '11px', fontWeight: 700, color: 'rgba(168,85,247,0.7)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '10px' }}>⚔️ Chave A</div>
+              <div style={{ fontSize: '11px', fontWeight: 700, color: 'rgba(168,85,247,0.7)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '10px' }}>Chave A</div>
               {slotsA.map((m, i) => {
                 const seeds = viewPhaseIdx === 0 ? [i * 2 + 1, 16 - i * 2] : [null, null]
                 return <MatchupCard key={i} m1={m.p1} m2={m.p2} seed1={seeds[0]} seed2={seeds[1]} myId={myId} />
@@ -1081,7 +1084,7 @@ function ChaveamentoTab({ bracket, loading, currentPhaseIdx, myId }) {
           {/* Chave B */}
           {slotsB.length > 0 && (
             <div>
-              <div style={{ fontSize: '11px', fontWeight: 700, color: 'rgba(168,85,247,0.7)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '10px' }}>⚔️ Chave B</div>
+              <div style={{ fontSize: '11px', fontWeight: 700, color: 'rgba(168,85,247,0.7)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '10px' }}>Chave B</div>
               {slotsB.map((m, i) => {
                 const seeds = viewPhaseIdx === 0 ? [i * 2 + 2, 15 - i * 2] : [null, null]
                 return <MatchupCard key={i} m1={m.p1} m2={m.p2} seed1={seeds[0]} seed2={seeds[1]} myId={myId} />
@@ -1145,7 +1148,7 @@ function CopaYuutoKidou({ user, matches }) {
     <div>
       {/* Sub-tabs */}
       <div style={{ display: 'flex', borderBottom: '1px solid rgba(255,255,255,0.08)', marginBottom: '16px' }}>
-        {[['chaveamento', '🏆 Chaveamento'], ['adversario', '⚔️ Adversário']].map(([key, label]) => (
+        {[['chaveamento', 'Chaveamento'], ['adversario', '⚔️ Adversário']].map(([key, label]) => (
           <button key={key} onClick={() => setSubTab(key)} style={{
             flex: 1, padding: '9px 8px', border: 'none', cursor: 'pointer',
             fontFamily: 'var(--font-body)', fontSize: '13px', fontWeight: 600,
@@ -1234,7 +1237,7 @@ export default function GuessesPage() {
           if (dx > 40 && cur > 0) setTab(tabs[cur - 1])
         }}
       >
-        {[['palpites', '⚽ Nekomão (Liga)'], ['copa', '🏆 Copa Yuuto Kidou']].map(([key, label]) => (
+        {[['palpites', 'Liga Nekomão'], ['copa', '🎌 Copa Yuuto Kidou']].map(([key, label]) => (
           <button key={key} onClick={() => setTab(key)} style={{ flex: 1, padding: '9px', borderRadius: '10px', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: '12px', fontWeight: 600, transition: 'all 0.2s', background: tab === key ? 'rgba(255,255,255,0.1)' : 'transparent', color: tab === key ? 'var(--text)' : 'var(--text-3)' }}>
             {label}
           </button>
