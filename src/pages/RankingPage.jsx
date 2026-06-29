@@ -256,17 +256,43 @@ const COL = '34px'
 const COLS = `28px 1fr ${COL} ${COL} ${COL} ${COL} ${COL} ${COL}`
 const hStyle = { fontSize: '10px', fontWeight: 700, color: 'var(--text-3)', textAlign: 'center', textTransform: 'uppercase', letterSpacing: '0.08em' }
 
-function HeaderRow() {
+function HeaderRow({ sortKey, sortDir, onSort }) {
+  const cols = [
+    { key: 'points',        label: 'PT' },
+    { key: 'exact_hits',    label: 'PE' },
+    { key: 'partial_hits',  label: 'PR' },
+    { key: 'qualifier_hits',label: 'CC' },
+    { key: 'master',        label: 'PM' },
+    { key: 'guesses',       label: 'J'  },
+  ]
   return (
     <div style={{ display: 'grid', gridTemplateColumns: COLS, alignItems: 'center', padding: '7px 14px', borderBottom: '1px solid var(--border)' }}>
       <div style={hStyle}>#</div>
       <div style={{ ...hStyle, textAlign: 'left', paddingLeft: 8 }}>Jogador</div>
-      <div style={hStyle}>PT</div>
-      <div style={hStyle}>PE</div>
-      <div style={hStyle}>PR</div>
-      <div style={hStyle}>CC</div>
-      <div style={hStyle}>PM</div>
-      <div style={hStyle}>J</div>
+      {cols.map(({ key, label }) => {
+        const active = sortKey === key
+        const isAsc = active && sortDir === 'asc'
+        const isDesc = active && sortDir === 'desc'
+        return (
+          <button
+            key={key}
+            onClick={() => onSort(key)}
+            style={{
+              ...hStyle,
+              background: 'none', border: 'none', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '2px',
+              color: active ? 'var(--gold)' : 'var(--text-3)',
+              padding: 0,
+            }}
+          >
+            {label}
+            <span style={{ display: 'flex', flexDirection: 'column', gap: '1px', marginLeft: '2px' }}>
+              <span style={{ fontSize: '6px', lineHeight: 1, opacity: isAsc ? 1 : 0.3, color: active && isAsc ? 'var(--gold)' : 'currentColor' }}>▲</span>
+              <span style={{ fontSize: '6px', lineHeight: 1, opacity: isDesc ? 1 : 0.3, color: active && isDesc ? 'var(--gold)' : 'currentColor' }}>▼</span>
+            </span>
+          </button>
+        )
+      })}
     </div>
   )
 }
@@ -308,11 +334,44 @@ function PlayerRow({ profile, position, isMe, totalGuesses, masterPoints }) {
 }
 
 function NekomaoTab({ ranking, loading, user, guessCounts, masterGuesses }) {
-  // Ordena só por pontos da liga (profiles.points)
-  const ligaRanking = useMemo(() =>
-    [...ranking].sort((a, b) =>
-      (b.points - a.points) || (b.exact_hits - a.exact_hits) || (b.partial_hits - a.partial_hits) || (new Date(a.created_at) - new Date(b.created_at))
-    ), [ranking])
+  const [sortKey, setSortKey] = useState('points')
+  const [sortDir, setSortDir] = useState('desc')
+
+  function handleSort(key) {
+    if (sortKey === key) {
+      setSortDir(d => d === 'desc' ? 'asc' : 'desc')
+    } else {
+      setSortKey(key)
+      setSortDir('desc')
+    }
+  }
+
+  const ligaRanking = useMemo(() => {
+    const arr = [...ranking].map(p => ({
+      ...p,
+      _master: masterGuesses[p.id] || 0,
+      _guesses: guessCounts[p.id] || 0,
+    }))
+
+    const getVal = (p) => {
+      if (sortKey === 'points')         return p.points ?? 0
+      if (sortKey === 'exact_hits')     return p.exact_hits ?? 0
+      if (sortKey === 'partial_hits')   return p.partial_hits ?? 0
+      if (sortKey === 'qualifier_hits') return p.qualifier_hits ?? 0
+      if (sortKey === 'master')         return p._master
+      if (sortKey === 'guesses')        return p._guesses
+      return 0
+    }
+
+    arr.sort((a, b) => {
+      const diff = getVal(b) - getVal(a)
+      const sorted = sortDir === 'desc' ? diff : -diff
+      if (sorted !== 0) return sorted
+      // desempate padrão
+      return (b.points - a.points) || (b.exact_hits - a.exact_hits) || (b.partial_hits - a.partial_hits) || (new Date(a.created_at) - new Date(b.created_at))
+    })
+    return arr
+  }, [ranking, guessCounts, masterGuesses, sortKey, sortDir])
 
   const myPosition = ligaRanking.findIndex(p => p.id === user?.id) + 1
 
@@ -340,9 +399,9 @@ function NekomaoTab({ ranking, loading, user, guessCounts, masterGuesses }) {
         ))
       ) : (
         <div className="glass-card" style={{ overflow: 'hidden', padding: 0 }}>
-          <HeaderRow />
+          <HeaderRow sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
           {ligaRanking.map((p, i) => (
-            <PlayerRow key={p.id} profile={p} position={i + 1} isMe={p.id === user?.id} totalGuesses={guessCounts[p.id] || 0} masterPoints={masterGuesses[p.id] || 0} />
+            <PlayerRow key={p.id} profile={p} position={i + 1} isMe={p.id === user?.id} totalGuesses={p._guesses} masterPoints={p._master} />
           ))}
           {ligaRanking.length === 0 && (
             <div style={{ textAlign: 'center', color: 'var(--text-3)', padding: '40px 0', fontSize: '13px' }}>
@@ -497,7 +556,7 @@ function TournamentRow({ profile, position, isMe, breakdown, phasesUnlocked }) {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', marginTop: '4px', borderTop: '1px solid rgba(168,85,247,0.2)', borderRadius: '0 0 8px 8px' }}>
                 <span style={{ fontSize: '11px', color: 'var(--text-3)', fontWeight: 600 }}>Total acumulado</span>
                 <span style={{ fontFamily: 'var(--font-display)', fontSize: '16px', color: '#c084fc', fontWeight: 700 }}>
-                  {profile.tournament_points || 0}pt 🎌
+                  {profile.tournament_points || 0}pt
                 </span>
               </div>
             </div>
@@ -526,7 +585,7 @@ function YuutoTab({ ranking, loading, user, tournamentIds }) {
       {/* Explicação das fases */}
       <div style={{ marginBottom: '16px', padding: '12px 14px', background: 'rgba(168,85,247,0.08)', border: '1px solid rgba(168,85,247,0.2)', borderRadius: 'var(--r-md)' }}>
         <div style={{ fontSize: '11px', fontWeight: 700, color: '#c084fc', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-          🏆 Pontuação por fase
+          Pontuação por fase
         </div>
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
           {TOURNAMENT_PHASES.map((ph, i) => {
@@ -544,7 +603,7 @@ function YuutoTab({ ranking, loading, user, tournamentIds }) {
           })}
         </div>
         <div style={{ fontSize: '10px', color: 'var(--text-3)', marginTop: '8px', lineHeight: 1.5 }}>
-          Ganhe o confronto de cada fase para acumular os pontos bônus. Quem chegar na final acumula {TOURNAMENT_PHASES.reduce((s, p) => s + p.bonus, 0)}pt! 🔥
+          Ganhe o confronto de cada fase para acumular os pontos bônus. Quem chegar na final acumula {TOURNAMENT_PHASES.reduce((s, p) => s + p.bonus, 0)}pt!
         </div>
       </div>
 
@@ -658,9 +717,9 @@ export default function RankingPage() {
   }, [])
 
   const tabs = [
-    { key: 'supercopa',   label: '🏆 Supercopa' },
-    { key: 'nekomao',     label: '⚽ Nekomão' },
-    { key: 'yuuto',       label: '🎌 Yuuto Kidou' },
+    { key: 'supercopa',   label: 'Supercopa' },
+    { key: 'nekomao',     label: 'Nekomão' },
+    { key: 'yuuto',       label: 'Yuuto Kidou' },
   ]
 
   const titles = {
