@@ -1425,7 +1425,19 @@ export default function GuessesPage() {
             ))}
           </div>
 
-          {loading
+          {dayTab === 'todos' && (
+            <button
+              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+              style={{
+                position: 'fixed', bottom: '80px', right: '20px', zIndex: 50,
+                width: '40px', height: '40px', borderRadius: '50%',
+                background: 'var(--surface)', border: '1px solid var(--border-strong)',
+                color: 'var(--text-2)', fontSize: '16px', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                boxShadow: '0 4px 16px rgba(0,0,0,0.4)',
+              }}
+            >↑</button>
+          )}
             ? Array.from({ length: 4 }).map((_, i) => <div key={i} className="skeleton" style={{ height: 56, marginBottom: 8, borderRadius: 12 }} />)
             : filteredMatches.length === 0
               ? <div style={{ textAlign: 'center', color: 'var(--text-3)', padding: '40px 0' }}>
