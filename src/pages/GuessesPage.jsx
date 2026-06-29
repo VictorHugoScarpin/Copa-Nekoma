@@ -743,7 +743,7 @@ function RegrasTab() {
           </div>
         ))}
         <div style={{ marginTop: '12px', padding: '10px 12px', borderRadius: '8px', background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.2)', fontSize: '11px', color: 'var(--text-3)', lineHeight: 1.7 }}>
-          💡 <strong style={{ color: '#93c5fd' }}>Como funciona:</strong> No mata-mata, em caso de empate no tempo normal o jogo pode ir para pênaltis. O "classificado" é o time que efetivamente avança — seja pelo tempo normal ou pelos pênaltis. Seu palpite de placar vale para o tempo regulamentar (90min + prorrogação).
+          <strong style={{ color: '#93c5fd' }}>Como funciona:</strong> No mata-mata, em caso de empate no tempo normal o jogo pode ir para pênaltis. O "classificado" é o time que efetivamente avança — seja pelo tempo normal ou pelos pênaltis. Seu palpite de placar vale para o tempo regulamentar (90min + prorrogação).
         </div>
       </div>
     </div>
@@ -1387,7 +1387,7 @@ export default function GuessesPage() {
   })
 
   // Título dinâmico por aba
-  const pageTitle = tab === 'palpites' ? 'Nekomão' : 'Copa Yuuto Kidou'
+  const pageTitle = tab === 'palpites' ? 'Liga' : 'Copa'
 
   const tabs = ['palpites', 'copa']
 
