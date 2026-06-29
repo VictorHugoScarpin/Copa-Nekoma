@@ -425,9 +425,16 @@ function StatsTab() {
 
   return (
     <div>
-      <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', padding: '4px', marginBottom: '16px' }}>
+      <div style={{ display: 'flex', borderBottom: '1px solid rgba(255,255,255,0.08)', marginBottom: '16px' }}>
         {[['scorers', 'Artilheiros'], ['assists', 'Assistências']].map(([k, l]) => (
-          <button key={k} onClick={() => setStatsTab(k)} style={{ flex: 1, padding: '9px', borderRadius: '9px', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: '13px', fontWeight: 600, background: statsTab === k ? 'rgba(255,255,255,0.1)' : 'transparent', color: statsTab === k ? 'var(--text)' : 'var(--text-3)' }}>{l}</button>
+          <button key={k} onClick={() => setStatsTab(k)} style={{
+            flex: 1, padding: '10px 8px', border: 'none', cursor: 'pointer',
+            fontFamily: 'var(--font-body)', fontSize: '13px', fontWeight: 600,
+            background: 'transparent',
+            color: statsTab === k ? 'var(--text)' : 'var(--text-3)',
+            borderBottom: `2px solid ${statsTab === k ? 'var(--gold)' : 'transparent'}`,
+            transition: 'all 0.2s', letterSpacing: '0.02em',
+          }}>{l}</button>
         ))}
       </div>
       {loading
@@ -607,9 +614,9 @@ export default function MatchesPage() {
       }}>
         <span>Os resultados dependem de uma API externa e podem demorar alguns minutos para atualizar.</span>
       </div>
-      <div style={{ display: 'flex', borderBottom: '1px solid rgba(255,255,255,0.08)', marginBottom: '16px' }}>
+      <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', padding: '4px', marginBottom: '16px', gap: '4px' }}>
         {[['jogos', 'Jogos'], ['stats', 'Artilheiros']].map(([key, label]) => (
-          <button key={key} onClick={() => setTab(key)} style={{ flex: 1, padding: '10px 8px', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: '13px', fontWeight: 600, background: 'transparent', color: tab === key ? 'var(--text)' : 'var(--text-3)', borderBottom: `2px solid ${tab === key ? 'var(--gold)' : 'transparent'}`, transition: 'all 0.2s' }}>{label}</button>
+          <button key={key} onClick={() => setTab(key)} style={{ flex: 1, padding: '9px', borderRadius: '9px', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: '13px', fontWeight: 600, transition: 'all 0.2s', background: tab === key ? 'rgba(255,255,255,0.1)' : 'transparent', color: tab === key ? 'var(--text)' : 'var(--text-3)' }}>{label}</button>
         ))}
       </div>
 
