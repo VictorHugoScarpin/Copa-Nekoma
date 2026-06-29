@@ -1425,7 +1425,8 @@ export default function GuessesPage() {
             ))}
           </div>
 
-          {loading)
+          {loading
+            ? Array.from({ length: 4 }).map((_, i) => <div key={i} className="skeleton" style={{ height: 56, marginBottom: 8, borderRadius: 12 }} />)
             : filteredMatches.length === 0
               ? <div style={{ textAlign: 'center', color: 'var(--text-3)', padding: '40px 0' }}>
                   {dayTab === 'hoje' ? 'Nenhum jogo hoje.' : dayTab === 'amanha' ? 'Nenhum jogo amanhã.' : 'Nenhum jogo cadastrado.'}
