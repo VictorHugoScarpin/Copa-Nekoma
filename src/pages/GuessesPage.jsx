@@ -526,7 +526,6 @@ function MasterGuess({ userId }) {
   return (
     <div className="glass-card" style={{ padding: '14px 16px', marginBottom: '18px', border: '1px solid rgba(212,168,50,0.25)' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-        <span>🏆</span>
         <div style={{ fontFamily: 'var(--font-display)', fontSize: '17px', letterSpacing: '0.06em', color: 'var(--gold)' }}>PALPITE MESTRE</div>
         {!locked && <span style={{ marginLeft: 'auto', fontSize: '10px', color: 'rgba(232,184,75,0.6)', fontWeight: 600 }}>⚡ CHANCE RELÂMPAGO · até 15/Jun</span>}
       </div>
@@ -561,7 +560,112 @@ function MasterGuess({ userId }) {
   )
 }
 
-// ── RegrasTab ─────────────────────────────────────────────────────────────────
+// ── CalendarioNav ─────────────────────────────────────────────────────────────
+
+const MESES = [
+  { label: 'Junho', year: 2026, month: 5 },  // month é 0-indexed
+  { label: 'Julho', year: 2026, month: 6 },
+]
+
+function CalendarioNav({ matches, onSelectDay }) {
+  const today = new Date()
+  const initialMonth = today.getMonth() === 5 ? 0 : today.getMonth() === 6 ? 1 : 0
+  const [mesIdx, setMesIdx] = useState(initialMonth)
+
+  const mes = MESES[mesIdx]
+
+  // Quais dias deste mês têm jogos
+  const diasComJogo = useMemo(() => {
+    const set = new Set()
+    matches.forEach(m => {
+      const d = parseISO(m.match_date)
+      if (d.getFullYear() === mes.year && d.getMonth() === mes.month) {
+        set.add(d.getDate())
+      }
+    })
+    return set
+  }, [matches, mes])
+
+  // Dias do mês
+  const diasNoMes = new Date(mes.year, mes.month + 1, 0).getDate()
+  const primeiroDiaSemana = new Date(mes.year, mes.month, 1).getDay() // 0=Dom
+
+  const todayDay = today.getFullYear() === mes.year && today.getMonth() === mes.month ? today.getDate() : null
+
+  const dias = []
+  for (let i = 0; i < primeiroDiaSemana; i++) dias.push(null) // padding
+  for (let d = 1; d <= diasNoMes; d++) dias.push(d)
+
+  const semanas = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S']
+
+  return (
+    <div style={{ background: 'var(--surface)', borderRadius: 'var(--r-md)', padding: '12px', marginBottom: '16px' }}>
+      {/* Header do mês */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+        <button
+          onClick={() => setMesIdx(i => Math.max(0, i - 1))}
+          disabled={mesIdx === 0}
+          style={{ background: 'none', border: 'none', cursor: mesIdx === 0 ? 'default' : 'pointer', color: mesIdx === 0 ? 'var(--text-3)' : 'var(--text-2)', fontSize: '16px', padding: '4px 8px', opacity: mesIdx === 0 ? 0.3 : 1 }}
+        >‹</button>
+        <span style={{ fontFamily: 'var(--font-display)', fontSize: '14px', color: 'var(--text)', letterSpacing: '0.06em' }}>
+          {mes.label} {mes.year}
+        </span>
+        <button
+          onClick={() => setMesIdx(i => Math.min(MESES.length - 1, i + 1))}
+          disabled={mesIdx === MESES.length - 1}
+          style={{ background: 'none', border: 'none', cursor: mesIdx === MESES.length - 1 ? 'default' : 'pointer', color: mesIdx === MESES.length - 1 ? 'var(--text-3)' : 'var(--text-2)', fontSize: '16px', padding: '4px 8px', opacity: mesIdx === MESES.length - 1 ? 0.3 : 1 }}
+        >›</button>
+      </div>
+
+      {/* Cabeçalho dos dias da semana */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', marginBottom: '4px' }}>
+        {semanas.map((s, i) => (
+          <div key={i} style={{ textAlign: 'center', fontSize: '9px', fontWeight: 700, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.06em', padding: '2px 0' }}>{s}</div>
+        ))}
+      </div>
+
+      {/* Grade de dias */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '2px' }}>
+        {dias.map((d, i) => {
+          if (!d) return <div key={`e${i}`} />
+          const temJogo = diasComJogo.has(d)
+          const isHoje = d === todayDay
+          return (
+            <button
+              key={d}
+              onClick={() => temJogo && onSelectDay(d, mes.month, mes.year)}
+              disabled={!temJogo}
+              style={{
+                border: 'none',
+                borderRadius: '6px',
+                padding: '5px 2px',
+                cursor: temJogo ? 'pointer' : 'default',
+                background: isHoje
+                  ? 'rgba(232,184,75,0.2)'
+                  : temJogo ? 'rgba(255,255,255,0.06)' : 'transparent',
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px',
+                transition: 'background 0.15s',
+              }}
+            >
+              <span style={{
+                fontSize: '12px',
+                fontWeight: isHoje ? 700 : temJogo ? 600 : 400,
+                color: isHoje ? 'var(--gold)' : temJogo ? 'var(--text)' : 'var(--text-3)',
+                opacity: temJogo ? 1 : 0.35,
+                fontFamily: temJogo ? 'var(--font-display)' : undefined,
+              }}>{d}</span>
+              {temJogo && (
+                <span style={{ width: '4px', height: '4px', borderRadius: '50%', background: isHoje ? 'var(--gold)' : 'rgba(255,255,255,0.35)' }} />
+              )}
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+
 
 function RegrasTab() {
   return (
@@ -1225,7 +1329,31 @@ export default function GuessesPage() {
 
   useEffect(() => { fetchData() }, [fetchData])
 
-  async function handleSave(matchId, homeScore, awayScore, existing, qualifierGuess) {
+  const dayRefs = useMemo(() => ({}), [])
+
+  function handleCalendarDay(day, month, year) {
+    // Acha a chave do grupo correspondente
+    const target = Object.keys(grouped).find(dateKey => {
+      const match = filteredMatches.find(m => {
+        const d = parseISO(m.match_date)
+        return d.getDate() === day && d.getMonth() === month && d.getFullYear() === year
+      })
+      return !!match && grouped[dateKey]?.some(m => {
+        const d = parseISO(m.match_date)
+        return d.getDate() === day && d.getMonth() === month && d.getFullYear() === year
+      })
+    })
+    if (!target) return
+    // Abre o grupo
+    setExpandedDays(prev => ({ ...prev, [target]: true }))
+    // Scroll após render
+    setTimeout(() => {
+      if (dayRefs[target]) {
+        dayRefs[target].scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }
+    }, 50)
+  }
+
     if (existing) await supabase.from('guesses').update({ home_score: homeScore, away_score: awayScore, qualifier_guess: qualifierGuess ?? null }).eq('id', existing.id)
     else await supabase.from('guesses').insert({ user_id: user.id, match_id: matchId, home_score: homeScore, away_score: awayScore, qualifier_guess: qualifierGuess ?? null })
     await fetchData()
@@ -1269,7 +1397,7 @@ export default function GuessesPage() {
           if (dx > 40 && cur > 0) setTab(tabs[cur - 1])
         }}
       >
-        {[['palpites', '⚽ Liga Nekomão'], ['copa', '🎌 Copa Yuuto Kidou']].map(([key, label]) => (
+        {[['palpites', 'Liga Nekomão'], ['copa', 'Copa Yuuto Kidou']].map(([key, label]) => (
           <button key={key} onClick={() => setTab(key)} style={{ flex: 1, padding: '9px', borderRadius: '10px', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: '12px', fontWeight: 600, transition: 'all 0.2s', background: tab === key ? 'rgba(255,255,255,0.1)' : 'transparent', color: tab === key ? 'var(--text)' : 'var(--text-3)' }}>
             {label}
           </button>
@@ -1302,31 +1430,36 @@ export default function GuessesPage() {
               ? <div style={{ textAlign: 'center', color: 'var(--text-3)', padding: '40px 0' }}>
                   {dayTab === 'hoje' ? 'Nenhum jogo hoje.' : dayTab === 'amanha' ? 'Nenhum jogo amanhã.' : 'Nenhum jogo cadastrado.'}
                 </div>
-              : Object.entries(grouped).map(([date, dayMatches]) => {
-                  const isTodos = dayTab === 'todos'
-                  const isExpanded = isTodos
-                    ? (expandedDays[date] !== undefined ? expandedDays[date] : date === format(new Date(), "EEEE, dd 'de' MMMM", { locale: ptBR }))
-                    : true
+              : <>
+                  {dayTab === 'todos' && (
+                    <CalendarioNav matches={matches} onSelectDay={handleCalendarDay} />
+                  )}
+                  {Object.entries(grouped).map(([date, dayMatches]) => {
+                    const isTodos = dayTab === 'todos'
+                    const isExpanded = isTodos
+                      ? (expandedDays[date] !== undefined ? expandedDays[date] : date === format(new Date(), "EEEE, dd 'de' MMMM", { locale: ptBR }))
+                      : true
 
-                  return (
-                    <div key={date}>
-                      <div
-                        onClick={isTodos ? () => setExpandedDays(prev => ({ ...prev, [date]: !isExpanded })) : undefined}
-                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '11px', fontWeight: 700, color: 'var(--gold)', textTransform: 'capitalize', letterSpacing: '0.08em', marginBottom: '8px', marginTop: '16px', cursor: isTodos ? 'pointer' : 'default', userSelect: 'none', padding: '4px 0' }}
-                      >
-                        <span>{date}</span>
-                        {isTodos && (
-                          <span style={{ fontSize: '10px', color: 'var(--text-3)', marginLeft: '8px' }}>
-                            {isExpanded ? '▲' : `▼ ${dayMatches.length} jogo${dayMatches.length > 1 ? 's' : ''}`}
-                          </span>
-                        )}
+                    return (
+                      <div key={date} ref={el => { dayRefs[date] = el }}>
+                        <div
+                          onClick={isTodos ? () => setExpandedDays(prev => ({ ...prev, [date]: !isExpanded })) : undefined}
+                          style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '11px', fontWeight: 700, color: 'var(--gold)', textTransform: 'capitalize', letterSpacing: '0.08em', marginBottom: '8px', marginTop: '16px', cursor: isTodos ? 'pointer' : 'default', userSelect: 'none', padding: '4px 0' }}
+                        >
+                          <span>{date}</span>
+                          {isTodos && (
+                            <span style={{ fontSize: '10px', color: 'var(--text-3)', marginLeft: '8px' }}>
+                              {isExpanded ? '▲' : `▼ ${dayMatches.length} jogo${dayMatches.length > 1 ? 's' : ''}`}
+                            </span>
+                          )}
+                        </div>
+                        {isExpanded && dayMatches.map(m => (
+                          <GuessCard key={m.id} match={m} myGuess={myGuesses[m.id]} onSave={handleSave} />
+                        ))}
                       </div>
-                      {isExpanded && dayMatches.map(m => (
-                        <GuessCard key={m.id} match={m} myGuess={myGuesses[m.id]} onSave={handleSave} />
-                      ))}
-                    </div>
-                  )
-                })
+                    )
+                  })}
+                </>
           }
         </>
       )}
