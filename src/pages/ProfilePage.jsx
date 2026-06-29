@@ -683,8 +683,8 @@ export default function ProfilePage() {
           {/* Créditos */}
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', marginBottom: '32px' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '20px' }}>
-              <img src="/neko.png" alt="Neko" style={{ height: '36px', filter: 'drop-shadow(0 0 8px rgba(232,184,75,0.4))', opacity: 0.85 }} onError={e => { e.target.style.display = 'none' }} />
-              <img src="/hugos.png" alt="Hugos" style={{ height: '36px', filter: 'drop-shadow(0 0 8px rgba(232,184,75,0.4))', opacity: 0.85 }} onError={e => { e.target.style.display = 'none' }} />
+              <img src="/neo.png" alt="Neko" style={{ height: '45px', filter: 'drop-shadow(0 0 8px rgba(232,184,75,0.4))', opacity: 0.85 }} onError={e => { e.target.style.display = 'none' }} />
+              <img src="/hugos.png" alt="Hugos" style={{ height: '45px', filter: 'drop-shadow(0 0 8px rgba(232,184,75,0.4))', opacity: 0.85 }} onError={e => { e.target.style.display = 'none' }} />
             </div>
             <p style={{ fontSize: '10px', color: 'var(--text-3)', textAlign: 'center', letterSpacing: '0.04em', lineHeight: 1.6, margin: 0 }}>
               Produzido por <span style={{ color: 'var(--text-2)', fontWeight: 600 }}>Scarpin Xavier</span> feat. <span style={{ color: 'var(--text-2)', fontWeight: 600 }}>Nekoma</span><br />
