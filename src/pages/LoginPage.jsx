@@ -26,33 +26,27 @@ export default function LoginPage() {
       alignItems: 'center', justifyContent: 'center',
       padding: '24px', background: 'var(--void)', overflow: 'hidden',
     }}>
-      {/* Orbs */}
-      <div style={{ position: 'fixed', top: '-30%', left: '-20%', width: '80vw', height: '80vw', borderRadius: '50%', background: 'radial-gradient(circle, rgba(29,185,84,0.07) 0%, transparent 65%)', pointerEvents: 'none', animation: 'bgDrift1 14s ease-in-out infinite' }} />
-      <div style={{ position: 'fixed', bottom: '-25%', right: '-15%', width: '70vw', height: '70vw', borderRadius: '50%', background: 'radial-gradient(circle, rgba(232,184,75,0.07) 0%, transparent 65%)', pointerEvents: 'none', animation: 'bgDrift2 18s ease-in-out infinite' }} />
+      {/* Estrelas flutuantes */}
+      <div style={{ position: 'fixed', top: '-30%', left: '-20%', width: '80vw', height: '80vw', pointerEvents: 'none', animation: 'bgDrift1 14s ease-in-out infinite' }}>
+        <svg viewBox="0 0 100 100" style={{ width: '100%', height: '100%', opacity: 0.12 }}>
+          <polygon points="50,5 61,35 95,35 68,57 79,91 50,70 21,91 32,57 5,35 39,35" fill="rgba(29,185,84,1)" />
+        </svg>
+      </div>
+      <div style={{ position: 'fixed', bottom: '-25%', right: '-15%', width: '70vw', height: '70vw', pointerEvents: 'none', animation: 'bgDrift2 18s ease-in-out infinite' }}>
+        <svg viewBox="0 0 100 100" style={{ width: '100%', height: '100%', opacity: 0.10 }}>
+          <polygon points="50,5 61,35 95,35 68,57 79,91 50,70 21,91 32,57 5,35 39,35" fill="rgba(232,184,75,1)" />
+        </svg>
+      </div>
 
       <div style={{ width: '100%', maxWidth: '360px', animation: 'fadeUp 0.5s ease both' }}>
         {/* Logo */}
         <div style={{ textAlign: 'center', marginBottom: '40px' }}>
           <img
-            src="https://upload.wikimedia.org/wikipedia/en/thumb/5/5c/2026_FIFA_World_Cup_emblem.svg/800px-2026_FIFA_World_Cup_emblem.svg.png"
-            alt="Copa 2026"
-            style={{ width: '100px', marginBottom: '22px', filter: 'drop-shadow(0 0 28px rgba(232,184,75,0.50)) drop-shadow(0 0 56px rgba(29,185,84,0.20))' }}
+            src="/login.png"
+            alt="Nekoma"
+            style={{ height: '80px', marginBottom: '22px', filter: 'drop-shadow(0 0 28px rgba(232,184,75,0.60)) drop-shadow(0 0 56px rgba(232,184,75,0.30))' }}
             onError={e => { e.target.style.display = 'none' }}
           />
-          <div style={{
-            fontFamily: 'var(--font-display)', fontSize: '52px',
-            letterSpacing: '0.12em', lineHeight: 1,
-            background: 'linear-gradient(135deg, #c9921a 0%, var(--gold-bright) 45%, #a8d8a8 100%)',
-            WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-          }}>
-            BOLÃO
-          </div>
-          <div style={{
-            fontFamily: 'var(--font-display)', fontSize: '12px',
-            letterSpacing: '0.4em', color: 'var(--text-3)', marginTop: '6px',
-          }}>
-            COPA DO MUNDO 2026
-          </div>
         </div>
 
         <div className="glass-card" style={{ padding: '28px 24px', border: '1px solid rgba(232,184,75,0.12)' }}>
