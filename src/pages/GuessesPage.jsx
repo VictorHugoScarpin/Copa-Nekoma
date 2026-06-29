@@ -1354,6 +1354,7 @@ export default function GuessesPage() {
     }, 50)
   }
 
+  async function handleSave(matchId, homeScore, awayScore, existing, qualifierGuess) {
     if (existing) await supabase.from('guesses').update({ home_score: homeScore, away_score: awayScore, qualifier_guess: qualifierGuess ?? null }).eq('id', existing.id)
     else await supabase.from('guesses').insert({ user_id: user.id, match_id: matchId, home_score: homeScore, away_score: awayScore, qualifier_guess: qualifierGuess ?? null })
     await fetchData()
