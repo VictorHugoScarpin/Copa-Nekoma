@@ -1319,6 +1319,12 @@ export default function GuessesPage() {
   }, [dayTab])
   const [expandedDays, setExpandedDays] = useState({})
 
+  useEffect(() => {
+    const handler = () => setExpandedDays({})
+    window.addEventListener('reset-expanded', handler)
+    return () => window.removeEventListener('reset-expanded', handler)
+  }, [])
+
   const fetchData = useCallback(async () => {
     const [{ data: mData }, { data: myData }] = await Promise.all([
       supabase.from('matches').select('*').order('match_date'),
