@@ -31,6 +31,63 @@ function Avatar({ profile, size = 36 }) {
 // ── Lista de jogos pontuados (aba Ranking/Supercopa) ──────────────────────────
 const KNOCKOUT_START_R = new Date('2026-06-28T00:00:00')
 
+function GuessItem({ g }) {
+  const m = g.matches
+  const result = getGuessResult(g, m.home_score, m.away_score)
+  const isExact = result === 'exact'
+  const isKo = new Date(m.match_date) >= KNOCKOUT_START_R
+  const qualifierHit = isKo && g.qualifier_guess && m.qualifier_result && g.qualifier_guess === m.qualifier_result
+  const basePoints = isExact ? 3 : result === 'partial' ? 1 : 0
+  const totalPoints = basePoints + (qualifierHit ? 2 : 0)
+  const color = qualifierHit ? '#60a5fa' : isExact ? 'var(--green)' : result === 'partial' ? 'var(--gold)' : 'var(--red)'
+  const bg = qualifierHit ? 'rgba(59,130,246,0.1)' : isExact ? 'var(--green-dim)' : result === 'partial' ? 'rgba(232,184,75,0.08)' : 'rgba(240,62,62,0.08)'
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 10px', borderRadius: '8px', background: bg }}>
+      <FlagCircle name={m.home_team} size={22} />
+      <span style={{ fontSize: '10px', color: 'var(--text-3)', flexShrink: 0 }}>×</span>
+      <FlagCircle name={m.away_team} size={22} />
+      <span style={{ fontSize: '11px', color: 'var(--text-2)', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        {getPT(m.home_team)} × {getPT(m.away_team)}
+      </span>
+      <span style={{ fontFamily: 'var(--font-display)', fontSize: '15px', color, letterSpacing: '0.04em', flexShrink: 0 }}>
+        {g.home_score} × {g.away_score}
+      </span>
+      <span style={{ fontFamily: 'var(--font-display)', fontSize: '12px', fontWeight: 700, color, flexShrink: 0, minWidth: '26px', textAlign: 'right' }}>
+        +{totalPoints}
+      </span>
+    </div>
+  )
+}
+
+function CollapseSection({ label, count, pts, children, defaultOpen = false, accentColor = 'var(--gold)' }) {
+  const [open, setOpen] = useState(defaultOpen)
+  return (
+    <div style={{ border: `1px solid ${accentColor}22`, borderRadius: '10px', overflow: 'hidden' }}>
+      <button
+        onClick={() => setOpen(o => !o)}
+        style={{
+          width: '100%', display: 'flex', alignItems: 'center', gap: '8px',
+          padding: '8px 10px', background: `${accentColor}0d`,
+          border: 'none', cursor: 'pointer', textAlign: 'left',
+        }}
+      >
+        <span style={{ fontSize: '11px', fontWeight: 700, color: accentColor, flex: 1, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+          {label}
+        </span>
+        <span style={{ fontSize: '10px', color: 'var(--text-3)', marginRight: 4 }}>
+          {count} jogo{count !== 1 ? 's' : ''} · +{pts}pt
+        </span>
+        <span style={{ fontSize: '10px', color: accentColor, transition: 'transform 0.2s', display: 'inline-block', transform: open ? 'rotate(180deg)' : 'rotate(0deg)' }}>▼</span>
+      </button>
+      {open && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', padding: '8px' }}>
+          {children}
+        </div>
+      )}
+    </div>
+  )
+}
+
 function ScoredGuesses({ userId, tournamentPoints }) {
   const [items, setItems] = useState(null)
   const [masterPoints, setMasterPoints] = useState(0)
@@ -75,67 +132,54 @@ function ScoredGuesses({ userId, tournamentPoints }) {
     )
   }
 
+  const groupStage = items.filter(g => new Date(g.matches.match_date) < KNOCKOUT_START_R)
+  const knockout   = items.filter(g => new Date(g.matches.match_date) >= KNOCKOUT_START_R)
+
+  const calcPts = (list) => list.reduce((sum, g) => {
+    const m = g.matches
+    const result = getGuessResult(g, m.home_score, m.away_score)
+    const isExact = result === 'exact'
+    const isKo = new Date(m.match_date) >= KNOCKOUT_START_R
+    const qualifierHit = isKo && g.qualifier_guess && m.qualifier_result && g.qualifier_guess === m.qualifier_result
+    return sum + (isExact ? 3 : result === 'partial' ? 1 : 0) + (qualifierHit ? 2 : 0)
+  }, 0)
+
+  const isEmpty = items.length === 0 && tournamentPoints === 0 && masterPoints === 0
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-      {/* Pontos do torneio, se houver */}
-      {tournamentPoints > 0 && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 10px', borderRadius: '8px', background: 'rgba(168,85,247,0.1)', border: '1px solid rgba(168,85,247,0.25)' }}>
-          <span style={{ fontSize: '14px' }}>🎌</span>
-          <span style={{ fontSize: '11px', color: '#c084fc', flex: 1 }}>Pontos da Copa Yuuto Kidou</span>
-          <span style={{ fontFamily: 'var(--font-display)', fontSize: '15px', color: '#c084fc', fontWeight: 700 }}>
-            +{tournamentPoints}
-          </span>
-        </div>
-      )}
-
-      {/* Pontos do Palpite Mestre, se houver */}
-      {masterPoints > 0 && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 10px', borderRadius: '8px', background: 'rgba(251,146,60,0.1)', border: '1px solid rgba(251,146,60,0.25)' }}>
-          <span style={{ fontSize: '14px' }}>🏆</span>
-          <span style={{ fontSize: '11px', color: '#fb923c', flex: 1 }}>
-            Palpite Mestre {masterPoints === 10 ? '(2 finalistas ✓✓)' : '(1 finalista ✓)'}
-          </span>
-          <span style={{ fontFamily: 'var(--font-display)', fontSize: '15px', color: '#fb923c', fontWeight: 700 }}>
-            +{masterPoints}
-          </span>
-        </div>
-      )}
-
-      {items.length === 0 && tournamentPoints === 0 && masterPoints === 0 && (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+      {isEmpty && (
         <div style={{ fontSize: '12px', color: 'var(--text-3)', textAlign: 'center', padding: '10px 0' }}>
           Nenhuma pontuação ainda.
         </div>
       )}
 
-      {items.map((g, i) => {
-        const m = g.matches
-        const result = getGuessResult(g, m.home_score, m.away_score)
-        const isExact = result === 'exact'
-        const isKo = new Date(m.match_date) >= KNOCKOUT_START_R
-        const qualifierHit = isKo && g.qualifier_guess && m.qualifier_result && g.qualifier_guess === m.qualifier_result
-        const blueCombo = qualifierHit
-        const basePoints = isExact ? 3 : result === 'partial' ? 1 : 0
-        const totalPoints = basePoints + (qualifierHit ? 2 : 0)
-        // Azul = qualificado certo (qualquer combo), Verde = placar exato sem classificado, Amarelo = resultado certo sem classificado
-        const color = qualifierHit ? '#60a5fa' : isExact ? 'var(--green)' : result === 'partial' ? 'var(--gold)' : 'var(--red)'
-        const bg = qualifierHit ? 'rgba(59,130,246,0.1)' : isExact ? 'var(--green-dim)' : result === 'partial' ? 'rgba(232,184,75,0.08)' : 'rgba(240,62,62,0.08)'
-        return (
-          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 10px', borderRadius: '8px', background: bg }}>
-            <FlagCircle name={m.home_team} size={22} />
-            <span style={{ fontSize: '10px', color: 'var(--text-3)', flexShrink: 0 }}>×</span>
-            <FlagCircle name={m.away_team} size={22} />
-            <span style={{ fontSize: '11px', color: 'var(--text-2)', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {getPT(m.home_team)} × {getPT(m.away_team)}
-            </span>
-            <span style={{ fontFamily: 'var(--font-display)', fontSize: '15px', color, letterSpacing: '0.04em', flexShrink: 0 }}>
-              {g.home_score} × {g.away_score}
-            </span>
-            <span style={{ fontFamily: 'var(--font-display)', fontSize: '12px', fontWeight: 700, color, flexShrink: 0, minWidth: '26px', textAlign: 'right' }}>
-              +{totalPoints}
-            </span>
-          </div>
-        )
-      })}
+      {groupStage.length > 0 && (
+        <CollapseSection label="Fase de Grupos" count={groupStage.length} pts={calcPts(groupStage)} accentColor="var(--gold)" defaultOpen={knockout.length === 0}>
+          {groupStage.map((g, i) => <GuessItem key={i} g={g} />)}
+        </CollapseSection>
+      )}
+
+      {knockout.length > 0 && (
+        <CollapseSection label="Mata-Mata" count={knockout.length} pts={calcPts(knockout) + (tournamentPoints > 0 ? tournamentPoints : 0)} accentColor="#60a5fa" defaultOpen>
+          {knockout.map((g, i) => <GuessItem key={i} g={g} />)}
+          {tournamentPoints > 0 && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 10px', borderRadius: '8px', background: 'rgba(168,85,247,0.1)', border: '1px solid rgba(168,85,247,0.2)', marginTop: '2px' }}>
+              <span style={{ fontSize: '11px', color: '#c084fc', flex: 1 }}>Bônus Yuuto Kidou</span>
+              <span style={{ fontFamily: 'var(--font-display)', fontSize: '13px', color: '#c084fc', fontWeight: 700 }}>+{tournamentPoints}</span>
+            </div>
+          )}
+        </CollapseSection>
+      )}
+
+      {masterPoints > 0 && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 10px', borderRadius: '8px', background: 'rgba(251,146,60,0.1)', border: '1px solid rgba(251,146,60,0.25)' }}>
+          <span style={{ fontSize: '11px', color: '#fb923c', flex: 1 }}>
+            Palpite Mestre {masterPoints === 10 ? '(2 finalistas ✓✓)' : '(1 finalista ✓)'}
+          </span>
+          <span style={{ fontFamily: 'var(--font-display)', fontSize: '15px', color: '#fb923c', fontWeight: 700 }}>+{masterPoints}</span>
+        </div>
+      )}
     </div>
   )
 }
