@@ -78,9 +78,10 @@ function mapStatus(status) {
 
 function mapStage(stage) {
   if (stage === 'GROUP_STAGE') return 'Grupos'
-  if (stage === 'ROUND_OF_16' || stage === 'LAST_32') return 'Oitavas'
-  if (stage === 'QUARTER_FINALS' || stage === 'LAST_16') return 'Quartas'
-  if (stage === 'SEMI_FINALS' || stage === 'LAST_8') return 'Semis'
+  if (stage === 'ROUND_OF_32' || stage === 'LAST_64') return 'Fase de 32'
+  if (stage === 'ROUND_OF_16' || stage === 'LAST_32') return 'LAST_16'
+  if (stage === 'QUARTER_FINALS' || stage === 'LAST_16') return 'LAST_8'
+  if (stage === 'SEMI_FINALS' || stage === 'LAST_8') return 'LAST_4'
   if (stage === 'THIRD_PLACE') return '3º Lugar'
   if (stage === 'FINAL' || stage === 'LAST_4') return 'Final'
   return stage || 'Grupos'
