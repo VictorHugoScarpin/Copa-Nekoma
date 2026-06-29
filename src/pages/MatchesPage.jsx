@@ -87,14 +87,14 @@ const TEAM_PT = {
 
 const STAGE_PT = {
   'LAST_32':        'Fase de 32',
-  'LAST_16':        '16 avos de final',   // ← era 'Oitavas de final'
-  'LAST_8':         'Quartas de final',   // adicione se a API usar essa chave
+  'LAST_16':        '16 avos de final',
+  'LAST_8':         'Oitavas de final',   // ← adicionar
   'QUARTER_FINAL':  'Quartas de final',
   'SEMI_FINAL':     'Semifinal',
   'FINAL':          'Final',
-  // variações possíveis da API
   'Round of 32':    'Fase de 32',
-  'Round of 16':    '16 avos de final',   // ← era 'Oitavas de final'
+  'Round of 16':    '16 avos de final',
+  'Round of 8':     'Oitavas de final',   // ← adicionar
   'Quarter-final':  'Quartas de final',
   'Semi-final':     'Semifinal',
   'Final':          'Final',
