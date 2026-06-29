@@ -535,6 +535,11 @@ async function syncMatches() {
     const finalHome = rtHome != null ? rtHome + (etHome ?? 0) : ftHome
     const finalAway = rtAway != null ? rtAway + (etAway ?? 0) : ftAway
 
+    // DEBUG: log de jogos com pênaltis
+    if (match.score?.penalties?.home != null) {
+      console.log(`🔍 PEN [${match.homeTeam.name} x ${match.awayTeam.name}] score:`, JSON.stringify(match.score))
+    }
+
     let qualifierResult = null
     if (status === 'finished' && new Date(match.utcDate) >= KNOCKOUT_START) {
       if (penHome != null && penAway != null) {
