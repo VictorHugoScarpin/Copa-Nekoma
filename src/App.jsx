@@ -68,11 +68,9 @@ function AppRoutes() {
   }, [])
 
   useEffect(() => {
-    const el = mainRef.current
-    if (!el) return
-    const handleScroll = () => setShowScrollTop(el.scrollTop > 100)
-    el.addEventListener('scroll', handleScroll)
-    return () => el.removeEventListener('scroll', handleScroll)
+    const handleScroll = () => setShowScrollTop(window.scrollY > 100)
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
   }, [user])
 
   if (loading) return (
@@ -104,7 +102,7 @@ function AppRoutes() {
       <BottomNav />
       {pathname === '/palpites' && dayTab === 'todos' && showScrollTop && (
         <button
-          onClick={() => mainRef.current?.scrollTo({ top: 0, behavior: 'smooth' })}
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
           style={{
             position: 'fixed', bottom: '80px', right: '20px', zIndex: 200,
             width: '40px', height: '40px', borderRadius: '50%',
