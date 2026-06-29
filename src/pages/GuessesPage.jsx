@@ -1314,6 +1314,13 @@ export default function GuessesPage() {
   const [tab, setTab] = useState('palpites')
   const [dayTab, setDayTab] = useState('hoje')
   const [expandedDays, setExpandedDays] = useState({})
+  const [showScrollTop, setShowScrollTop] = useState(false)
+
+  useEffect(() => {
+    const handleScroll = () => setShowScrollTop(window.scrollY > 100)
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
 
   const fetchData = useCallback(async () => {
     const [{ data: mData }, { data: myData }] = await Promise.all([
@@ -1463,7 +1470,7 @@ export default function GuessesPage() {
                 </>
           }
 
-          {dayTab === 'todos' && (
+          {dayTab === 'todos' && showScrollTop && (
             <button
               onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
               style={{
