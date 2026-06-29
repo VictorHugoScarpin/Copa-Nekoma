@@ -36,7 +36,7 @@ export default function TopHeader() {
   return (
     <header className="top-header">
       <img
-        src="/neo.png"
+        src="/uau.png"
         alt="Neko"
         style={{ height: '56px', filter: 'drop-shadow(0 0 8px rgba(232,184,75,0.45))', flexShrink: 0 }}
         onError={e => { e.target.style.display = 'none' }}
