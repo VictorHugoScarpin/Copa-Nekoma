@@ -329,9 +329,9 @@ function GuessCard({ match, myGuess, onSave }) {
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
             {finished
               ? totalPts === 5
-                ? <span className="badge" style={{ background: 'rgba(59,130,246,0.2)', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.35)' }}>⚡ +5pts</span>
+                ? <span className="badge" style={{ background: 'rgba(59,130,246,0.2)', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.35)' }}>+5pts</span>
                 : qualifierCorrect && correct
-                  ? <span className="badge" style={{ background: 'rgba(59,130,246,0.2)', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.35)' }}>⚡ +5pts</span>
+                  ? <span className="badge" style={{ background: 'rgba(59,130,246,0.2)', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.35)' }}>+5pts</span>
                 : qualifierCorrect && partialCorrect
                   ? <span className="badge" style={{ background: 'rgba(59,130,246,0.2)', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.35)' }}>+3pts</span>
                 : qualifierCorrect
@@ -396,7 +396,7 @@ function GuessCard({ match, myGuess, onSave }) {
             {knockout && (
               <div style={{ marginTop: '14px', padding: '12px 14px', borderRadius: '10px', background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.25)' }}>
                 <div style={{ fontSize: '10px', fontWeight: 700, color: '#60a5fa', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '10px' }}>
-                  🏆 Quem se classifica? <span style={{ fontSize: '9px', color: 'rgba(96,165,250,0.6)', fontWeight: 400 }}>+2pts bônus</span>
+                  Quem se classifica? <span style={{ fontSize: '9px', color: 'rgba(96,165,250,0.6)', fontWeight: 400 }}>+2pts bônus</span>
                 </div>
                 {finished ? (
                   <div style={{ display: 'flex', gap: '8px' }}>
@@ -982,10 +982,10 @@ function AdversarioTab({ myProfile, bracket, matches, currentPhaseIdx }) {
         {myPoints !== null && opPoints !== null && (
           <div style={{ marginTop: '14px', padding: '8px 12px', borderRadius: '8px', background: 'rgba(255,255,255,0.04)', textAlign: 'center', fontSize: '12px', color: 'var(--text-3)' }}>
             {myPoints > opPoints
-              ? <span style={{ color: 'var(--green)' }}>✅ Você está na frente! Segura que tá bom...</span>
+              ? <span style={{ color: 'var(--green)' }}>Você está na frente! Segura que tá bom...</span>
               : myPoints < opPoints
-              ? <span style={{ color: 'var(--red)' }}>📉 Você está atrás. Vai que vira!</span>
-              : <span style={{ color: 'var(--gold)' }}>⚖️ Empatado! O desempate decide.</span>
+              ? <span style={{ color: 'var(--red)' }}>Você está atrás. Pra cima deles!</span>
+              : <span style={{ color: 'var(--gold)' }}>Empatado! O desempate decide.</span>
             }
           </div>
         )}
