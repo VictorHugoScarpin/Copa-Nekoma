@@ -35,18 +35,12 @@ export default function TopHeader() {
 
   return (
     <header className="top-header">
-      <div style={{
-        fontFamily: 'var(--font-display)',
-        fontSize: '22px',
-        letterSpacing: '0.14em',
-        background: 'linear-gradient(90deg, #00c853 0%, #f5c518 55%, #ffe566 100%)',
-        WebkitBackgroundClip: 'text',
-        WebkitTextFillColor: 'transparent',
-        lineHeight: 1,
-        flexShrink: 0,
-      }}>
-        NEKOMA
-      </div>
+      <img
+        src="/neko.png"
+        alt="Neko"
+        style={{ height: '34px', filter: 'drop-shadow(0 0 8px rgba(232,184,75,0.45))', flexShrink: 0 }}
+        onError={e => { e.target.style.display = 'none' }}
+      />
 
       <div style={{
         flex: 1,
