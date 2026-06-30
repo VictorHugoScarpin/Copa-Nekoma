@@ -297,18 +297,93 @@ function SupercopaTab({ ranking, loading, user }) {
 
 // ── Aba CLASSIFICAÇÃO NEKOMÃO (só liga) ────────────────────────────────────────
 const COL = '34px'
-const COLS = `28px 1fr ${COL} ${COL} ${COL} ${COL} ${COL} ${COL}`
+const COLS_FULL  = `28px 1fr ${COL} ${COL} ${COL} ${COL} ${COL} ${COL}`
+const COLS_GROUP = `28px 1fr ${COL} ${COL} ${COL} ${COL}`
 const hStyle = { fontSize: '10px', fontWeight: 700, color: 'var(--text-3)', textAlign: 'center', textTransform: 'uppercase', letterSpacing: '0.08em' }
 
-function HeaderRow({ sortKey, sortDir, onSort }) {
-  const cols = [
-    { key: 'points',        label: 'PT' },
-    { key: 'exact_hits',    label: 'PE' },
-    { key: 'partial_hits',  label: 'PR' },
-    { key: 'qualifier_hits',label: 'CC' },
-    { key: 'master',        label: 'PM' },
-    { key: 'guesses',       label: 'J'  },
-  ]
+// Sub-navegação Geral / Fase de Grupos / Mata-mata
+function PhaseNav({ phase, onChange }) {
+  const opts = [['geral', 'Geral'], ['grupos', 'Fase de Grupos'], ['mata', 'Mata-mata']]
+  return (
+    <div style={{ display: 'flex', background: 'var(--surface)', borderRadius: 'var(--r-md)', padding: '4px', marginBottom: '14px', gap: '4px' }}>
+      {opts.map(([key, label]) => (
+        <button
+          key={key}
+          onClick={() => onChange(key)}
+          style={{
+            flex: 1, padding: '8px 4px', borderRadius: '10px', border: 'none', cursor: 'pointer',
+            fontFamily: 'var(--font-body)', fontSize: '12px', fontWeight: 600, transition: 'all 0.2s',
+            background: phase === key ? 'rgba(255,255,255,0.1)' : 'transparent',
+            color: phase === key ? 'var(--text)' : 'var(--text-3)',
+          }}
+        >
+          {label}
+        </button>
+      ))}
+    </div>
+  )
+}
+
+// Calcula PT/PE/PR/CC por usuário, separados em fase de grupos x mata-mata
+function useNekomaoPhaseStats() {
+  const [stats, setStats] = useState(null)
+
+  useEffect(() => {
+    let active = true
+    supabase
+      .from('guesses')
+      .select('user_id, home_score, away_score, qualifier_guess, matches(home_score, away_score, status, match_date, qualifier_result)')
+      .then(({ data }) => {
+        if (!active) return
+        const map = {}
+        ;(data || []).forEach(g => {
+          const m = g.matches
+          if (!m) return
+          const isKo = new Date(m.match_date) >= KNOCKOUT_START_R
+          if (!map[g.user_id]) {
+            map[g.user_id] = {
+              grupos: { pt: 0, pe: 0, pr: 0, j: 0 },
+              mata:   { pt: 0, pe: 0, pr: 0, cc: 0, j: 0 },
+            }
+          }
+          const bucket = isKo ? map[g.user_id].mata : map[g.user_id].grupos
+          bucket.j++
+          if (m.status === 'finished') {
+            const result = getGuessResult(g, m.home_score, m.away_score)
+            const isExact = result === 'exact'
+            const isPartial = result === 'partial'
+            const qualifierHit = isKo && g.qualifier_guess && m.qualifier_result && g.qualifier_guess === m.qualifier_result
+            bucket.pt += (isExact ? 3 : isPartial ? 1 : 0) + (qualifierHit ? 2 : 0)
+            if (isExact) bucket.pe++
+            if (isPartial) bucket.pr++
+            if (isKo && qualifierHit) map[g.user_id].mata.cc++
+          }
+        })
+        setStats(map)
+      })
+    return () => { active = false }
+  }, [])
+
+  return stats
+}
+
+function HeaderRow({ mode, sortKey, sortDir, onSort }) {
+  const cols = mode === 'grupos'
+    ? [
+        { key: 'pt', label: 'PT' },
+        { key: 'pe', label: 'PE' },
+        { key: 'pr', label: 'PR' },
+        { key: 'j',  label: 'J'  },
+      ]
+    : [
+        { key: 'pt', label: 'PT' },
+        { key: 'pe', label: 'PE' },
+        { key: 'pr', label: 'PR' },
+        { key: 'cc', label: 'CC' },
+        { key: 'pm', label: 'PM' },
+        { key: 'j',  label: 'J'  },
+      ]
+  const COLS = mode === 'grupos' ? COLS_GROUP : COLS_FULL
   return (
     <div style={{ display: 'grid', gridTemplateColumns: COLS, alignItems: 'center', padding: '7px 14px', borderBottom: '1px solid var(--border)' }}>
       <div style={hStyle}>#</div>
@@ -341,11 +416,12 @@ function HeaderRow({ sortKey, sortDir, onSort }) {
   )
 }
 
-function PlayerRow({ profile, position, isMe, totalGuesses, masterPoints }) {
+function PlayerRow({ mode, profile, position, isMe, stats }) {
   const posColors = { 1: '#FFD700', 2: '#C0C0C0', 3: '#CD7F32' }
   const posColor = posColors[position] || 'var(--text-3)'
   const isTop3 = position <= 3
   const bgColor = isMe ? 'rgba(232,184,75,0.06)' : isTop3 ? 'rgba(255,255,255,0.02)' : 'transparent'
+  const COLS = mode === 'grupos' ? COLS_GROUP : COLS_FULL
 
   return (
     <div style={{
@@ -366,20 +442,33 @@ function PlayerRow({ profile, position, isMe, totalGuesses, masterPoints }) {
         </div>
       </div>
       <div style={{ textAlign: 'center', fontFamily: 'var(--font-display)', fontSize: '17px', color: isTop3 ? posColor : 'var(--text)', letterSpacing: '0.02em', lineHeight: 1 }}>
-        {profile.points ?? 0}
+        {stats.pt ?? 0}
       </div>
-      <div style={{ textAlign: 'center', fontSize: '13px', color: 'var(--text-2)', fontWeight: 500 }}>{profile.exact_hits ?? 0}</div>
-      <div style={{ textAlign: 'center', fontSize: '13px', color: 'var(--text-2)', fontWeight: 500 }}>{profile.partial_hits ?? 0}</div>
-      <div style={{ textAlign: 'center', fontSize: '13px', color: 'var(--text-2)', fontWeight: 500 }}>{profile.qualifier_hits ?? 0}</div>
-      <div style={{ textAlign: 'center', fontSize: '13px', color: 'var(--text-2)', fontWeight: 500 }}>{masterPoints > 0 ? masterPoints : 0}</div>
-      <div style={{ textAlign: 'center', fontSize: '13px', color: 'var(--text-3)' }}>{totalGuesses ?? 0}</div>
+      <div style={{ textAlign: 'center', fontSize: '13px', color: 'var(--text-2)', fontWeight: 500 }}>{stats.pe ?? 0}</div>
+      <div style={{ textAlign: 'center', fontSize: '13px', color: 'var(--text-2)', fontWeight: 500 }}>{stats.pr ?? 0}</div>
+      {mode !== 'grupos' && (
+        <>
+          <div style={{ textAlign: 'center', fontSize: '13px', color: 'var(--text-2)', fontWeight: 500 }}>{stats.cc ?? 0}</div>
+          <div style={{ textAlign: 'center', fontSize: '13px', color: 'var(--text-2)', fontWeight: 500 }}>{stats.pm > 0 ? stats.pm : 0}</div>
+        </>
+      )}
+      <div style={{ textAlign: 'center', fontSize: '13px', color: 'var(--text-3)' }}>{stats.j ?? 0}</div>
     </div>
   )
 }
 
 function NekomaoTab({ ranking, loading, user, guessCounts, masterGuesses }) {
-  const [sortKey, setSortKey] = useState('points')
+  const [phase, setPhase] = useState('geral')
+  const [sortKey, setSortKey] = useState('pt')
   const [sortDir, setSortDir] = useState('desc')
+  const phaseStats = useNekomaoPhaseStats()
+  const phaseLoading = loading || (phase !== 'geral' && phaseStats === null)
+
+  function handlePhaseChange(p) {
+    setPhase(p)
+    setSortKey('pt')
+    setSortDir('desc')
+  }
 
   function handleSort(key) {
     if (sortKey === key) {
@@ -390,46 +479,66 @@ function NekomaoTab({ ranking, loading, user, guessCounts, masterGuesses }) {
     }
   }
 
+  // Monta a lista de stats genéricos { pt, pe, pr, cc, pm, j } conforme a fase selecionada
+  const baseRanking = useMemo(() => {
+    return ranking.map(p => {
+      let stats
+      if (phase === 'grupos') {
+        const s = phaseStats?.[p.id]?.grupos || { pt: 0, pe: 0, pr: 0, j: 0 }
+        stats = { pt: s.pt, pe: s.pe, pr: s.pr, j: s.j }
+      } else if (phase === 'mata') {
+        const s = phaseStats?.[p.id]?.mata || { pt: 0, pe: 0, pr: 0, cc: 0, j: 0 }
+        stats = { pt: s.pt, pe: s.pe, pr: s.pr, cc: s.cc, pm: masterGuesses[p.id] || 0, j: s.j }
+      } else {
+        stats = {
+          pt: p.points ?? 0,
+          pe: p.exact_hits ?? 0,
+          pr: p.partial_hits ?? 0,
+          cc: p.qualifier_hits ?? 0,
+          pm: masterGuesses[p.id] || 0,
+          j: guessCounts[p.id] || 0,
+        }
+      }
+      return { ...p, _stats: stats }
+    })
+  }, [ranking, guessCounts, masterGuesses, phase, phaseStats])
+
   const ligaRanking = useMemo(() => {
-    const arr = [...ranking].map(p => ({
-      ...p,
-      _master: masterGuesses[p.id] || 0,
-      _guesses: guessCounts[p.id] || 0,
-    }))
-
-    const getVal = (p) => {
-      if (sortKey === 'points')         return p.points ?? 0
-      if (sortKey === 'exact_hits')     return p.exact_hits ?? 0
-      if (sortKey === 'partial_hits')   return p.partial_hits ?? 0
-      if (sortKey === 'qualifier_hits') return p.qualifier_hits ?? 0
-      if (sortKey === 'master')         return p._master
-      if (sortKey === 'guesses')        return p._guesses
-      return 0
-    }
-
+    const arr = [...baseRanking]
     arr.sort((a, b) => {
-      const diff = getVal(b) - getVal(a)
+      const diff = (b._stats[sortKey] ?? 0) - (a._stats[sortKey] ?? 0)
       const sorted = sortDir === 'desc' ? diff : -diff
       if (sorted !== 0) return sorted
-      // desempate padrão
-      return (b.points - a.points) || (b.exact_hits - a.exact_hits) || (b.partial_hits - a.partial_hits) || (new Date(a.created_at) - new Date(b.created_at))
+      // desempate padrão: PT > PE > PR > antiguidade
+      return (b._stats.pt - a._stats.pt) || (b._stats.pe - a._stats.pe) || (b._stats.pr - a._stats.pr) || (new Date(a.created_at) - new Date(b.created_at))
     })
     return arr
-  }, [ranking, guessCounts, masterGuesses, sortKey, sortDir])
+  }, [baseRanking, sortKey, sortDir])
 
   const myPosition = ligaRanking.findIndex(p => p.id === user?.id) + 1
 
+  const legendItems = phase === 'grupos'
+    ? [
+        { sig: 'PT', desc: 'Pontos totais' },
+        { sig: 'PE', desc: 'Placar exato' },
+        { sig: 'PR', desc: 'Resultado certo' },
+        { sig: 'J',  desc: 'Jogos palpitados' },
+      ]
+    : [
+        { sig: 'PT', desc: 'Pontos totais' },
+        { sig: 'PE', desc: 'Placar exato' },
+        { sig: 'PR', desc: 'Resultado certo' },
+        { sig: 'CC', desc: 'Classificação certa' },
+        { sig: 'PM', desc: 'Palpite Mestre' },
+        { sig: 'J',  desc: 'Jogos palpitados' },
+      ]
+
   return (
     <>
+      <PhaseNav phase={phase} onChange={handlePhaseChange} />
+
       <div style={{ display: 'flex', gap: 16, marginBottom: 14, flexWrap: 'wrap' }}>
-        {[
-          { sig: 'PT', desc: 'Pontos totais' },
-          { sig: 'PE', desc: 'Placar exato' },
-          { sig: 'PR', desc: 'Resultado certo' },
-          { sig: 'CC', desc: 'Classificação certa' },
-          { sig: 'PM', desc: 'Palpite Mestre' },
-          { sig: 'J',  desc: 'Jogos palpitados' },
-        ].map(({ sig, desc }) => (
+        {legendItems.map(({ sig, desc }) => (
           <div key={sig} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
             <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--gold)', fontFamily: 'var(--font-display)', letterSpacing: '0.06em' }}>{sig}</span>
             <span style={{ fontSize: '11px', color: 'var(--text-3)' }}>{desc}</span>
@@ -437,15 +546,15 @@ function NekomaoTab({ ranking, loading, user, guessCounts, masterGuesses }) {
         ))}
       </div>
 
-      {loading ? (
+      {phaseLoading ? (
         Array.from({ length: 6 }).map((_, i) => (
           <div key={i} className="skeleton" style={{ height: 48, marginBottom: 4, borderRadius: 10 }} />
         ))
       ) : (
         <div className="glass-card" style={{ overflow: 'hidden', padding: 0 }}>
-          <HeaderRow sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
+          <HeaderRow mode={phase} sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
           {ligaRanking.map((p, i) => (
-            <PlayerRow key={p.id} profile={p} position={i + 1} isMe={p.id === user?.id} totalGuesses={p._guesses} masterPoints={p._master} />
+            <PlayerRow key={p.id} mode={phase} profile={p} position={i + 1} isMe={p.id === user?.id} stats={p._stats} />
           ))}
           {ligaRanking.length === 0 && (
             <div style={{ textAlign: 'center', color: 'var(--text-3)', padding: '40px 0', fontSize: '13px' }}>
@@ -455,7 +564,7 @@ function NekomaoTab({ ranking, loading, user, guessCounts, masterGuesses }) {
         </div>
       )}
 
-      {myPosition > 0 && !loading && (
+      {myPosition > 0 && !phaseLoading && (
         <div style={{ marginTop: 14, padding: '10px 14px', background: 'var(--gold-dim)', border: '1px solid rgba(232,184,75,0.22)', borderRadius: 'var(--r-md)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span style={{ fontSize: '13px', color: 'var(--text-2)' }}>Sua posição na Liga</span>
           <span style={{ fontFamily: 'var(--font-display)', fontSize: '22px', color: 'var(--gold)', letterSpacing: '0.06em' }}>{myPosition}º</span>
