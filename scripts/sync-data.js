@@ -581,15 +581,12 @@ async function syncMatches() {
     const finalHome = rtHome != null ? rtHome + (etHome ?? 0) : ftHome
     const finalAway = rtAway != null ? rtAway + (etAway ?? 0) : ftAway
 
-    // Pênaltis: busca na RapidAPI se foi shootout (football-data retorna dado errado)
+    // Pênaltis: calcula subtraindo regularTime + extraTime do fullTime acumulado
     let penHome = null
     let penAway = null
-    if (status === 'finished' && match.score?.duration === 'PENALTY_SHOOTOUT') {
-      const rapid = await fetchRapidPenalties(match.homeTeam.name, match.awayTeam.name, match.utcDate)
-      if (rapid) {
-        penHome = rapid.penHome
-        penAway = rapid.penAway
-      }
+    if (status === 'finished' && match.score?.duration === 'PENALTY_SHOOTOUT' && ftHome != null && ftAway != null && finalHome != null && finalAway != null) {
+      penHome = ftHome - finalHome
+      penAway = ftAway - finalAway
     }
 
     let qualifierResult = null
