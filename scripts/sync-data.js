@@ -510,19 +510,6 @@ async function syncMatches() {
     }
     if (!match.homeTeam?.name || !match.awayTeam?.name) { pulados++; continue }
 
-  let salvos = 0, pulados = 0, erros = 0
-
-  for (const match of matches) {
-    if (match.score?.duration === 'PENALTY_SHOOTOUT') {
-      console.log('🔍 RAW:', match.homeTeam.name, 'x', match.awayTeam.name, JSON.stringify(match.score))
-    }
-    if (!match.homeTeam?.name || !match.awayTeam?.name) { pulados++; continue }
-
-  let salvos = 0, pulados = 0, erros = 0
-
-  for (const match of matches) {
-    if (!match.homeTeam?.name || !match.awayTeam?.name) { pulados++; continue }
-
     const status = mapStatus(match.status)
     const externalId = String(match.id)
     const statusAntes = existingStatusMap[externalId] // status que estava no banco
