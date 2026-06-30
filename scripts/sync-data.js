@@ -76,9 +76,14 @@ async function fetchRapidPenalties(homeTeam, awayTeam, utcDate) {
         'x-rapidapi-host': 'api-football-v1.p.rapidapi.com',
       }
     })
-    if (!res.ok) { rapidPenCache[cacheKey] = null; return null }
+    if (!res.ok) {
+      const txt = await res.text()
+      console.log('  ⚠️ RapidAPI HTTP', res.status, txt.slice(0, 200))
+      rapidPenCache[cacheKey] = null; return null
+    }
     const json = await res.json()
     const fixtures = json.response || []
+    console.log('  🔍 RapidAPI fixtures encontrados:', fixtures.length, '| teams:', fixtures.map(f => f.teams?.home?.name + ' x ' + f.teams?.away?.name).join(', '))
 
     // Procura o jogo pelo nome dos times
     const fix = fixtures.find(f => {
@@ -88,10 +93,14 @@ async function fetchRapidPenalties(homeTeam, awayTeam, utcDate) {
              (a.includes(awayTeam.split(' ')[0]) || awayTeam.includes(a.split(' ')[0]))
     })
 
-    if (!fix) { rapidPenCache[cacheKey] = null; return null }
+    if (!fix) {
+      console.log('  ⚠️ RapidAPI jogo não encontrado para:', homeTeam, 'x', awayTeam)
+      rapidPenCache[cacheKey] = null; return null
+    }
 
     const penHome = fix.score?.penalty?.home
     const penAway = fix.score?.penalty?.away
+    console.log('  🔍 RapidAPI score raw:', JSON.stringify(fix.score))
     if (penHome == null || penAway == null) { rapidPenCache[cacheKey] = null; return null }
 
     const result = { penHome, penAway }
