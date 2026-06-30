@@ -403,12 +403,14 @@ function GuessCard({ match, myGuess, onSave }) {
                     {[match.home_team, match.away_team].map(team => {
                       const isClassified = qualifierResult === team
                       const wasGuessed = qualifierGuess === team
+                      const acertou = isClassified && wasGuessed
+                      const errou = !isClassified && wasGuessed
                       return (
                         <div key={team} style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 10px', borderRadius: '8px', background: isClassified ? 'rgba(59,130,246,0.18)' : 'rgba(255,255,255,0.03)', border: `1px solid ${isClassified ? 'rgba(59,130,246,0.5)' : 'rgba(255,255,255,0.07)'}` }}>
                           <TeamCircle name={team} size={24} />
                           <span style={{ fontSize: '11px', fontWeight: 600, color: isClassified ? '#93c5fd' : 'var(--text-3)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{getPT(team)}</span>
-                          {isClassified && wasGuessed && <span style={{ fontSize: '11px', color: '#60a5fa' }}>✓ +2</span>}
-                          {isClassified && !wasGuessed && <span style={{ fontSize: '10px', color: 'var(--text-3)' }}>✓</span>}
+                          {acertou && <span style={{ fontSize: '11px', color: '#4ade80', fontWeight: 700 }}>✓ +2</span>}
+                          {errou && <span style={{ fontSize: '11px', color: '#f87171', fontWeight: 700 }}>✗ +0</span>}
                         </div>
                       )
                     })}
