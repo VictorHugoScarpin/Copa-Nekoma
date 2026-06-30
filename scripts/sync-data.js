@@ -513,12 +513,14 @@ async function repairQualifierPoints() {
   if (!matches?.length) { console.log('  ↳ Nenhum jogo knockout finalizado com qualifier ainda.'); return }
 
   for (const m of matches) {
-    // Verifica se algum guess acertou o qualifier mas tem points_earned sem o bônus
+    // Verifica TODOS os palpites do jogo, não só quem acertou — o qualifier_result
+    // pode ter mudado (ex: API corrigiu o resultado), então quem antes "acertava"
+    // pode agora estar errando, e vice-versa. Sem isso, pontos de bônus errados
+    // ficam presos no total de quem passou a errar.
     const { data: guesses } = await supabase
       .from('guesses')
       .select('id, user_id, home_score, away_score, qualifier_guess, points_earned')
       .eq('match_id', m.id)
-      .eq('qualifier_guess', m.qualifier_result)
 
     if (!guesses?.length) continue
 
@@ -529,7 +531,8 @@ async function repairQualifierPoints() {
         const gw = g.home_score > g.away_score ? 'home' : g.away_score > g.home_score ? 'away' : 'draw'
         return rw === gw ? 1 : 0
       })()
-      const expected = expectedBase + 2 // +2 pelo qualifier
+      const acertouQualifier = g.qualifier_guess && g.qualifier_guess === m.qualifier_result
+      const expected = expectedBase + (acertouQualifier ? 2 : 0)
       return (g.points_earned ?? 0) !== expected
     })
 
