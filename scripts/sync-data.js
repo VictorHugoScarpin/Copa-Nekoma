@@ -491,7 +491,6 @@ async function syncMatches() {
   console.log('📅 Sincronizando jogos...')
   const data = await apiRequest('/competitions/WC/matches?season=2026')
   const matches = data.matches || []
-
   // Busca status e qualifier_result atual de todos os jogos no banco de uma vez
   const { data: existingMatches } = await supabase
     .from('matches')
@@ -502,6 +501,22 @@ async function syncMatches() {
     existingStatusMap[m.external_id] = m.status
     existingQualifierMap[m.external_id] = m.qualifier_result
   }
+
+  let salvos = 0, pulados = 0, erros = 0
+
+  for (const match of matches) {
+    if (match.score?.duration === 'PENALTY_SHOOTOUT') {
+      console.log('🔍 RAW:', match.homeTeam.name, 'x', match.awayTeam.name, JSON.stringify(match.score))
+    }
+    if (!match.homeTeam?.name || !match.awayTeam?.name) { pulados++; continue }
+
+  let salvos = 0, pulados = 0, erros = 0
+
+  for (const match of matches) {
+    if (match.score?.duration === 'PENALTY_SHOOTOUT') {
+      console.log('🔍 RAW:', match.homeTeam.name, 'x', match.awayTeam.name, JSON.stringify(match.score))
+    }
+    if (!match.homeTeam?.name || !match.awayTeam?.name) { pulados++; continue }
 
   let salvos = 0, pulados = 0, erros = 0
 
