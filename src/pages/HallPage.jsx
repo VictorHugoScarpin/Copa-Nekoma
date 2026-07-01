@@ -1,6 +1,130 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 
+const TEAM_ISO = {
+  'Brazil': 'br', 'Argentina': 'ar', 'France': 'fr', 'Germany': 'de',
+  'Spain': 'es', 'England': 'gb-eng', 'Portugal': 'pt', 'Netherlands': 'nl',
+  'Italy': 'it', 'Uruguay': 'uy', 'Colombia': 'co', 'Mexico': 'mx',
+  'United States': 'us', 'USA': 'us', 'Canada': 'ca', 'Japan': 'jp',
+  'South Korea': 'kr', 'Korea Republic': 'kr', 'Morocco': 'ma',
+  'Senegal': 'sn', 'Ghana': 'gh', 'Nigeria': 'ng', 'Australia': 'au',
+  'Saudi Arabia': 'sa', 'Iran': 'ir', 'IR Iran': 'ir', 'Qatar': 'qa',
+  'Croatia': 'hr', 'Serbia': 'rs', 'Switzerland': 'ch', 'Belgium': 'be',
+  'Denmark': 'dk', 'Poland': 'pl', 'Cameroon': 'cm', 'Ecuador': 'ec',
+  'Tunisia': 'tn', 'Costa Rica': 'cr', 'Wales': 'gb-wls',
+  'Chile': 'cl', 'Peru': 'pe', 'Paraguay': 'py', 'Venezuela': 've',
+  'Bolivia': 'bo', 'Austria': 'at', 'Turkey': 'tr', 'Ukraine': 'ua',
+  'Honduras': 'hn', 'Panama': 'pa', 'Jamaica': 'jm',
+  'Slovakia': 'sk', 'Romania': 'ro', 'Hungary': 'hu',
+  'Czechia': 'cz', 'Czech Republic': 'cz', 'Slovenia': 'si',
+  'Algeria': 'dz', 'Egypt': 'eg', 'New Zealand': 'nz',
+  "Côte d'Ivoire": 'ci', 'Ivory Coast': 'ci',
+  'Guatemala': 'gt', 'El Salvador': 'sv',
+  'South Africa': 'za', 'Bosnia and Herzegovina': 'ba', 'Bosnia & Herzegovina': 'ba',
+  'Haiti': 'ht', 'Curaçao': 'cw', 'Curacao': 'cw',
+  'Cape Verde': 'cv', 'Cape Verde Islands': 'cv',
+  'Congo DR': 'cd', 'DR Congo': 'cd',
+  'Scotland': 'gb-sct', 'Northern Ireland': 'gb-nir', 'Ireland': 'ie',
+  'Greece': 'gr', 'Norway': 'no', 'Sweden': 'se', 'Finland': 'fi',
+  'Albania': 'al', 'North Macedonia': 'mk', 'Montenegro': 'me',
+  'Georgia': 'ge', 'Kosovo': 'xk',
+  'Trinidad and Tobago': 'tt', 'Cuba': 'cu', 'Nicaragua': 'ni',
+  'Suriname': 'sr', 'Guyana': 'gy',
+  'Kenya': 'ke', 'Tanzania': 'tz', 'Uganda': 'ug', 'Mali': 'ml',
+  'Mozambique': 'mz', 'Angola': 'ao', 'Zambia': 'zm', 'Zimbabwe': 'zw',
+  'Togo': 'tg', 'Benin': 'bj', 'Guinea': 'gn', 'Burkina Faso': 'bf',
+  'Ethiopia': 'et', 'Namibia': 'na', 'Mauritania': 'mr',
+  'Thailand': 'th', 'Vietnam': 'vn', 'Indonesia': 'id',
+  'Philippines': 'ph', 'Malaysia': 'my', 'China': 'cn',
+  'India': 'in', 'Uzbekistan': 'uz', 'Kazakhstan': 'kz',
+  'Iraq': 'iq', 'Jordan': 'jo', 'United Arab Emirates': 'ae', 'UAE': 'ae',
+  'Oman': 'om', 'Kuwait': 'kw', 'Bahrain': 'bh',
+  'Bosnia Herzegovina': 'ba', 'Bosna i Hercegovina': 'ba', 'Bosnia-Herzegovina': 'ba',
+}
+
+const TEAM_PT = {
+  'Brazil': 'Brasil', 'Argentina': 'Argentina', 'France': 'França',
+  'Germany': 'Alemanha', 'Spain': 'Espanha', 'England': 'Inglaterra',
+  'Portugal': 'Portugal', 'Netherlands': 'Holanda', 'Italy': 'Itália',
+  'Uruguay': 'Uruguai', 'Colombia': 'Colômbia', 'Mexico': 'México',
+  'United States': 'EUA', 'USA': 'EUA', 'Canada': 'Canadá',
+  'Japan': 'Japão', 'South Korea': 'Coreia do Sul', 'Korea Republic': 'Coreia do Sul',
+  'Morocco': 'Marrocos', 'Senegal': 'Senegal', 'Ghana': 'Gana',
+  'Nigeria': 'Nigéria', 'Australia': 'Austrália', 'Saudi Arabia': 'Arábia Saudita',
+  'Iran': 'Irã', 'IR Iran': 'Irã', 'Qatar': 'Catar', 'Croatia': 'Croácia',
+  'Serbia': 'Sérvia', 'Switzerland': 'Suíça', 'Belgium': 'Bélgica',
+  'Denmark': 'Dinamarca', 'Poland': 'Polônia', 'Cameroon': 'Camarões',
+  'Ecuador': 'Equador', 'Tunisia': 'Tunísia', 'Costa Rica': 'Costa Rica',
+  'Wales': 'País de Gales', 'Chile': 'Chile', 'Peru': 'Peru',
+  'Paraguay': 'Paraguai', 'Venezuela': 'Venezuela', 'Bolivia': 'Bolívia',
+  'Austria': 'Áustria', 'Turkey': 'Turquia', 'Ukraine': 'Ucrânia',
+  'Honduras': 'Honduras', 'Panama': 'Panamá', 'Jamaica': 'Jamaica',
+  'Slovakia': 'Eslováquia', 'Romania': 'Romênia', 'Hungary': 'Hungria',
+  'Czechia': 'Rep. Tcheca', 'Czech Republic': 'Rep. Tcheca',
+  'Slovenia': 'Eslovênia', 'Algeria': 'Argélia', 'Egypt': 'Egito',
+  'New Zealand': 'Nova Zelândia', "Côte d'Ivoire": 'Costa do Marfim',
+  'Ivory Coast': 'Costa do Marfim', 'Guatemala': 'Guatemala',
+  'El Salvador': 'El Salvador', 'South Africa': 'África do Sul',
+  'Bosnia and Herzegovina': 'Bósnia e Herzegovina',
+  'Bosnia & Herzegovina': 'Bósnia e Herzegovina',
+  'Bosnia-Herzegovina': 'Bósnia e Herzegovina',
+  'Haiti': 'Haiti', 'Curaçao': 'Curaçao', 'Curacao': 'Curaçao',
+  'Cape Verde': 'Cabo Verde', 'Cape Verde Islands': 'Cabo Verde',
+  'Congo DR': 'Congo RD', 'DR Congo': 'Congo RD',
+  'Scotland': 'Escócia', 'Northern Ireland': 'Irlanda do Norte', 'Ireland': 'Irlanda',
+  'Greece': 'Grécia', 'Norway': 'Noruega', 'Sweden': 'Suécia',
+  'Finland': 'Finlândia', 'Albania': 'Albânia',
+  'North Macedonia': 'Macedônia do Norte', 'Montenegro': 'Montenegro',
+  'Georgia': 'Geórgia', 'Kosovo': 'Kosovo',
+  'Trinidad and Tobago': 'Trinidad e Tobago', 'Cuba': 'Cuba',
+  'United Arab Emirates': 'Emirados Árabes', 'UAE': 'Emirados Árabes',
+  'Bosnia Herzegovina': 'Bósnia e Herzegovina',
+  'Bosna i Hercegovina': 'Bósnia e Herzegovina',
+}
+
+// Bandeiras salvas localmente em /public (para países com problema no flagcdn)
+const FLAG_LOCAL = {
+  'Argentina': '/ar.png',
+  'Bosnia and Herzegovina': '/ba.png',
+  'Bosnia & Herzegovina': '/ba.png',
+  'Bosnia Herzegovina': '/ba.png',
+  'Bosna i Hercegovina': '/ba.png',
+  'Bosnia-Herzegovina': '/ba.png',
+  'Jordan': '/jor.png',
+  'Korea Republic': '/cor.png',
+  'South Korea': '/cor.png',
+  'Uzbekistan': '/uz.png',
+}
+
+function getFlagUrl(name) {
+  if (FLAG_LOCAL[name]) return FLAG_LOCAL[name]
+  const iso = TEAM_ISO[name]
+  return iso ? `https://flagcdn.com/w160/${iso}.png` : null
+}
+
+function getPT(name) {
+  return TEAM_PT[name] || name
+}
+
+// Bolinha: sempre bandeira, cover 100% (igual MatchesPage)
+function TeamCircle({ name, size = 32 }) {
+  const flagUrl = getFlagUrl(name)
+  return (
+    <div style={{
+      width: size, height: size,
+      borderRadius: '50%', overflow: 'hidden', flexShrink: 0,
+      border: '2px solid rgba(255,255,255,0.18)',
+      background: 'var(--surface)',
+    }}>
+      {flagUrl ? (
+        <img src={flagUrl} alt={name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+      ) : (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%', fontSize: size * 0.42 }}>🏳️</div>
+      )}
+    </div>
+  )
+}
+
 function Avatar({ profile, size = 40 }) {
   if (profile.avatar_url) {
     return <img src={profile.avatar_url} alt="" style={{ width: size, height: size, borderRadius: '50%', objectFit: 'cover', flexShrink: 0, border: '2px solid var(--border-strong)' }} />
@@ -134,7 +258,7 @@ const STAGE_LABELS = {
 export default function HallPage() {
   const [profiles, setProfiles] = useState([])
   const [guesses, setGuesses] = useState([])
-  const [groupStandings, setGroupStandings] = useState([])
+  const [groupMatches, setGroupMatches] = useState([])
   const [knockoutMatches, setKnockoutMatches] = useState([])
   const [loading, setLoading] = useState(true)
   const [mainTab, setMainTab] = useState('hall')
@@ -142,15 +266,15 @@ export default function HallPage() {
 
   useEffect(() => {
     async function fetchData() {
-      const [{ data: prof }, { data: gues }, { data: gs }, { data: km }] = await Promise.all([
+      const [{ data: prof }, { data: gues }, { data: gm }, { data: km }] = await Promise.all([
         supabase.from('profiles').select('*').order('points', { ascending: false }),
         supabase.from('guesses').select('*, matches(status, home_score, away_score)'),
-        supabase.from('group_standings').select('*'),
+        supabase.from('matches').select('*').eq('stage', 'Grupos'),
         supabase.from('matches').select('*').in('stage', STAGE_ORDER).order('match_date', { ascending: true }),
       ])
       setProfiles(prof || [])
       setGuesses(gues || [])
-      setGroupStandings(gs || [])
+      setGroupMatches(gm || [])
       setKnockoutMatches(km || [])
       setLoading(false)
     }
@@ -234,11 +358,32 @@ export default function HallPage() {
     return { ...p, _value: zeros }
   }).sort((a, b) => b._value - a._value)
 
-  // ── FASE DE GRUPOS ──────────────────────────────────────────────────────
+  // ── FASE DE GRUPOS (calculada a partir dos jogos reais, não da tabela group_standings) ──
+  const teamsByGroup = {} // groupName -> { teamName: statsObj }
+  groupMatches.forEach(m => {
+    if (!m.group_name) return
+    if (!teamsByGroup[m.group_name]) teamsByGroup[m.group_name] = {}
+    const g = teamsByGroup[m.group_name]
+    ;[[m.home_team, m.home_flag], [m.away_team, m.away_flag]].forEach(([team, flag]) => {
+      if (!team) return
+      if (!g[team]) g[team] = { team_name: team, flag_emoji: flag || '🏳️', played: 0, won: 0, drawn: 0, lost: 0, goals_for: 0, goals_against: 0, points: 0 }
+    })
+    if (m.status === 'finished' && m.home_score != null && m.away_score != null) {
+      const h = g[m.home_team], a = g[m.away_team]
+      if (h && a) {
+        h.played++; a.played++
+        h.goals_for += m.home_score; h.goals_against += m.away_score
+        a.goals_for += m.away_score; a.goals_against += m.home_score
+        if (m.home_score > m.away_score) { h.won++; a.lost++; h.points += 3 }
+        else if (m.home_score < m.away_score) { a.won++; h.lost++; a.points += 3 }
+        else { h.drawn++; a.drawn++; h.points += 1; a.points += 1 }
+      }
+    }
+  })
+
   const groupsMap = {}
-  groupStandings.forEach(row => {
-    if (!groupsMap[row.group_name]) groupsMap[row.group_name] = []
-    groupsMap[row.group_name].push(row)
+  Object.keys(teamsByGroup).forEach(gn => {
+    groupsMap[gn] = Object.values(teamsByGroup[gn]).map(t => ({ ...t, group_name: gn, goal_diff: t.goals_for - t.goals_against }))
   })
   const groupNames = Object.keys(groupsMap).sort()
   const sortTeams = (a, b) => (b.points ?? 0) - (a.points ?? 0) || (b.goal_diff ?? 0) - (a.goal_diff ?? 0) || (b.goals_for ?? 0) - (a.goals_for ?? 0)
@@ -256,6 +401,15 @@ export default function HallPage() {
     if (!byStage[m.stage]) byStage[m.stage] = []
     byStage[m.stage].push(m)
   })
+  // Ordena pela ordem oficial do chaveamento (external_id da football-data.org
+  // segue a sequência oficial de jogos do mata-mata), com data como fallback
+  Object.keys(byStage).forEach(stage => {
+    byStage[stage].sort((a, b) => {
+      const idA = Number(a.external_id), idB = Number(b.external_id)
+      if (!Number.isNaN(idA) && !Number.isNaN(idB)) return idA - idB
+      return new Date(a.match_date) - new Date(b.match_date)
+    })
+  })
 
   const stats = [
     { icon: '🔥', title: 'EM CHAMAS', subtitle: 'Maior sequência de acertos consecutivos', data: emChamas, unit: 'seguidos', color: '#f97316' },
@@ -271,9 +425,10 @@ export default function HallPage() {
     <div className="page">
       <div className="section-title">Hall da Fama</div>
 
-      <div style={{ display: 'flex', gap: 20, borderBottom: '1px solid var(--border)', marginBottom: 18 }}>
-        <TabButton active={mainTab === 'hall'} onClick={() => setMainTab('hall')}>Hall</TabButton>
-        <TabButton active={mainTab === 'info'} onClick={() => setMainTab('info')}>Informações</TabButton>
+      <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', padding: '4px', marginBottom: '16px', gap: '4px' }}>
+        {[['hall', 'Hall'], ['info', 'Informações']].map(([key, label]) => (
+          <button key={key} onClick={() => setMainTab(key)} style={{ flex: 1, padding: '9px', borderRadius: '9px', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: '13px', fontWeight: 600, transition: 'all 0.2s', background: mainTab === key ? 'rgba(255,255,255,0.1)' : 'transparent', color: mainTab === key ? 'var(--text)' : 'var(--text-3)' }}>{label}</button>
+        ))}
       </div>
 
       {mainTab === 'hall' && (
@@ -304,9 +459,19 @@ export default function HallPage() {
 
       {mainTab === 'info' && (
         <>
-          <div style={{ display: 'flex', gap: 18, borderBottom: '1px solid var(--border)', marginBottom: 16 }}>
-            <TabButton small active={infoTab === 'grupos'} onClick={() => setInfoTab('grupos')}>Fase de Grupos</TabButton>
-            <TabButton small active={infoTab === 'matamata'} onClick={() => setInfoTab('matamata')}>Mata-Mata</TabButton>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', borderBottom: '1px solid rgba(255,255,255,0.08)', marginBottom: 16 }}>
+            <div style={{ display: 'flex', flex: 1, overflowX: 'auto', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+              {[['grupos', 'Fase de Grupos'], ['matamata', 'Mata-Mata']].map(([key, label]) => (
+                <button key={key} onClick={() => setInfoTab(key)} style={{
+                  flexShrink: 0, flex: 1, minWidth: '80px', padding: '10px 8px', border: 'none', cursor: 'pointer',
+                  fontFamily: 'var(--font-body)', fontSize: '13px', fontWeight: 600,
+                  background: 'transparent',
+                  color: infoTab === key ? 'var(--text)' : 'var(--text-3)',
+                  borderBottom: `2px solid ${infoTab === key ? 'var(--gold)' : 'transparent'}`,
+                  transition: 'all 0.2s', letterSpacing: '0.02em',
+                }}>{label}</button>
+              ))}
+            </div>
           </div>
 
           {infoTab === 'grupos' && (
@@ -332,28 +497,6 @@ export default function HallPage() {
 }
 
 // ── TABS / FASE DE GRUPOS / MATA-MATA ──────────────────────────────────────
-
-function TabButton({ active, onClick, children, small }) {
-  return (
-    <button
-      onClick={onClick}
-      style={{
-        background: 'none',
-        border: 'none',
-        cursor: 'pointer',
-        padding: small ? '6px 2px 10px' : '4px 2px 12px',
-        fontFamily: 'var(--font-display)',
-        fontSize: small ? 12 : 14,
-        letterSpacing: '0.06em',
-        color: active ? 'var(--gold, #f5c518)' : 'var(--text-3)',
-        borderBottom: active ? '2px solid var(--gold, #f5c518)' : '2px solid transparent',
-        transition: 'color 0.15s, border-color 0.15s',
-      }}
-    >
-      {children}
-    </button>
-  )
-}
 
 const tableTh = { padding: '4px 6px', textAlign: 'center' }
 const tableTd = { padding: '6px 6px', textAlign: 'center', color: 'var(--text-2)' }
@@ -382,7 +525,7 @@ function GroupTable({ groupName, teams }) {
           <tbody>
             {teams.map((t, i) => (
               <tr
-                key={t.id}
+                key={t.team_name}
                 style={{
                   background: i < 2 ? 'rgba(0,200,83,0.07)' : i === 2 ? 'rgba(77,142,240,0.07)' : 'rgba(240,62,62,0.05)',
                   borderTop: '1px solid var(--border)',
@@ -441,7 +584,7 @@ function ThirdPlacedTable({ teams }) {
           <tbody>
             {teams.map((t, i) => (
               <tr
-                key={t.id}
+                key={t.group_name + t.team_name}
                 style={{
                   background: i < 8 ? 'rgba(0,200,83,0.07)' : 'rgba(240,62,62,0.05)',
                   borderTop: i === 8 ? '2px dashed var(--border-strong)' : '1px solid var(--border)',
@@ -506,9 +649,9 @@ function BracketMatch({ match }) {
 
   return (
     <div className="glass-card" style={{ padding: '10px 12px' }}>
-      <BracketRow team={match.home_team} flag={match.home_flag} score={match.home_score} pen={match.penalty_home} winner={homeWin} finished={finished} />
+      <BracketRow team={match.home_team} score={match.home_score} pen={match.penalty_home} winner={homeWin} finished={finished} />
       <div style={{ height: 1, background: 'var(--border)', margin: '6px 0' }} />
-      <BracketRow team={match.away_team} flag={match.away_flag} score={match.away_score} pen={match.penalty_away} winner={awayWin} finished={finished} />
+      <BracketRow team={match.away_team} score={match.away_score} pen={match.penalty_away} winner={awayWin} finished={finished} />
       {!finished && match.match_date && (
         <div style={{ fontSize: 9, color: 'var(--text-3)', textAlign: 'center', marginTop: 6 }}>
           {new Date(match.match_date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} • {new Date(match.match_date).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
@@ -518,16 +661,16 @@ function BracketMatch({ match }) {
   )
 }
 
-function BracketRow({ team, flag, score, pen, winner, finished }) {
+function BracketRow({ team, score, pen, winner, finished }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-      <span style={{ fontSize: 14, flexShrink: 0 }}>{flag || '🏳️'}</span>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+      <TeamCircle name={team} size={22} />
       <span style={{
         flex: 1, fontSize: 11, fontWeight: winner ? 700 : 500,
         color: winner ? 'var(--text)' : 'var(--text-3)',
         overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
       }}>
-        {team || 'A definir'}
+        {team ? getPT(team) : 'A definir'}
       </span>
       {finished && (
         <span style={{ fontSize: 12, fontWeight: 700, color: winner ? 'var(--gold, #f5c518)' : 'var(--text-3)', flexShrink: 0 }}>
@@ -537,3 +680,4 @@ function BracketRow({ team, flag, score, pen, winner, finished }) {
     </div>
   )
 }
+
