@@ -398,12 +398,6 @@ function GuessCard({ match, myGuess, onSave }) {
               </div>
             </div>
 
-            {!locked && !finished && (
-              <button className={`btn ${saved ? 'btn-primary' : ''}`} style={{ padding: '9px', fontSize: '13px' }} onClick={save} disabled={saving || home === '' || away === ''}>
-                {saving ? 'Salvando...' : saved ? '✓ Salvo!' : 'Salvar Palpite'}
-              </button>
-            )}
-
             {knockout && (
               <div style={{ marginTop: '14px', padding: '12px 14px', borderRadius: '10px', background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.25)' }}>
                 <div style={{ fontSize: '10px', fontWeight: 700, color: '#60a5fa', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '10px' }}>
@@ -454,6 +448,12 @@ function GuessCard({ match, myGuess, onSave }) {
                   </div>
                 )}
               </div>
+            )}
+
+            {!locked && !finished && (
+              <button className={`btn ${saved ? 'btn-primary' : ''}`} style={{ padding: '9px', fontSize: '13px', marginTop: '14px' }} onClick={save} disabled={saving || home === '' || away === ''}>
+                {saving ? 'Salvando...' : saved ? '✓ Salvo!' : 'Salvar Palpite'}
+              </button>
             )}
           </div>
         )}
