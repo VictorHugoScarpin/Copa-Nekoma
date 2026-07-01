@@ -533,7 +533,10 @@ function GroupTable({ groupName, teams }) {
               >
                 <td style={{ ...tableTd, textAlign: 'left', color: 'var(--text-3)' }}>{i + 1}º</td>
                 <td style={{ ...tableTd, textAlign: 'left', fontWeight: 600, color: 'var(--text)' }}>
-                  <span style={{ marginRight: 6 }}>{t.flag_emoji || '🏳️'}</span>{t.team_name}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <TeamCircle name={t.team_name} size={20} />
+                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{getPT(t.team_name)}</span>
+                  </div>
                 </td>
                 <td style={{ ...tableTd, fontWeight: 700, color: 'var(--gold, #f5c518)' }}>{t.points ?? 0}</td>
                 <td style={tableTd}>{t.won ?? 0}</td>
@@ -593,7 +596,10 @@ function ThirdPlacedTable({ teams }) {
                 <td style={{ ...tableTd, textAlign: 'left', color: 'var(--text-3)' }}>{i + 1}º</td>
                 <td style={{ ...tableTd, color: 'var(--text-3)' }}>{(t.group_name || '').replace('Grupo ', '')}</td>
                 <td style={{ ...tableTd, textAlign: 'left', fontWeight: 600, color: 'var(--text)' }}>
-                  <span style={{ marginRight: 6 }}>{t.flag_emoji || '🏳️'}</span>{t.team_name}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <TeamCircle name={t.team_name} size={20} />
+                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{getPT(t.team_name)}</span>
+                  </div>
                 </td>
                 <td style={{ ...tableTd, fontWeight: 700, color: 'var(--gold, #f5c518)' }}>{t.points ?? 0}</td>
                 <td style={tableTd}>{t.won ?? 0}</td>
@@ -611,10 +617,24 @@ function ThirdPlacedTable({ teams }) {
   )
 }
 
-function MataMataView({ byStage }) {
-  const stagesPresent = STAGE_ORDER.filter(s => byStage[s]?.length)
+// ── Chaveamento com linhas conectoras (estilo fluxograma) ──────────────────
+const MAIN_CHAIN = ['Fase de 32', 'LAST_16', 'LAST_8', 'LAST_4', 'Final']
+const MATCH_H = 82
+const V_GAP = 18
+const COL_GAP = 46
+const STUB = 16
 
-  if (stagesPresent.length === 0) {
+function wrapperHeight(roundIndex) {
+  let h = MATCH_H
+  for (let i = 0; i < roundIndex; i++) h = 2 * h + V_GAP
+  return h
+}
+
+function MataMataView({ byStage }) {
+  const stagesPresent = MAIN_CHAIN.filter(s => byStage[s]?.length)
+  const thirdPlace = byStage['3º Lugar']?.[0]
+
+  if (stagesPresent.length === 0 && !thirdPlace) {
     return (
       <div className="glass-card" style={{ padding: 24, textAlign: 'center', color: 'var(--text-3)', fontSize: 12 }}>
         O chaveamento do mata-mata ainda não começou.
@@ -623,22 +643,81 @@ function MataMataView({ byStage }) {
   }
 
   return (
-    <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 8 }}>
-      {stagesPresent.map(stage => (
-        <div key={stage} style={{ minWidth: 190, flexShrink: 0 }}>
+    <div>
+      <div style={{ display: 'flex', gap: COL_GAP, overflowX: 'auto', paddingBottom: 8, paddingLeft: 4, paddingTop: 4 }}>
+        {stagesPresent.map(stage => {
+          const ri = MAIN_CHAIN.indexOf(stage)
+          const h = wrapperHeight(ri)
+          const matches = byStage[stage]
+          return (
+            <div key={stage} style={{ minWidth: 200, flexShrink: 0 }}>
+              <div style={{
+                fontSize: 11, fontWeight: 700, color: 'var(--gold, #f5c518)', textTransform: 'uppercase',
+                letterSpacing: '0.06em', marginBottom: 12, textAlign: 'center', height: 14,
+              }}>
+                {STAGE_LABELS[stage] || stage}
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: V_GAP }}>
+                {matches.map(m => (
+                  <div key={m.id} style={{ height: h, display: 'flex', alignItems: 'center', position: 'relative' }}>
+                    {ri > 0 && <BracketConnector prevH={wrapperHeight(ri - 1)} h={h} />}
+                    <BracketMatch match={m} />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )
+        })}
+      </div>
+
+      {thirdPlace && (
+        <div style={{ marginTop: 24 }}>
           <div style={{
             fontSize: 11, fontWeight: 700, color: 'var(--gold, #f5c518)', textTransform: 'uppercase',
-            letterSpacing: '0.06em', marginBottom: 8, textAlign: 'center',
+            letterSpacing: '0.06em', marginBottom: 10,
           }}>
-            {STAGE_LABELS[stage] || stage}
+            Disputa de 3º Lugar
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {byStage[stage].map(m => <BracketMatch key={m.id} match={m} />)}
+          <div style={{ maxWidth: 220 }}>
+            <BracketMatch match={thirdPlace} />
           </div>
         </div>
-      ))}
+      )}
     </div>
   )
+}
+
+// Desenha o "[" que liga os dois jogos anteriores ao centro do jogo atual
+function BracketConnector({ prevH, h }) {
+  const y1 = prevH / 2
+  const y2 = h - prevH / 2
+  return (
+    <>
+      <div style={{
+        position: 'absolute', left: -COL_GAP, top: y1, height: y2 - y1, width: COL_GAP - STUB,
+        borderTop: '2px solid var(--border-strong)',
+        borderBottom: '2px solid var(--border-strong)',
+        borderRight: '2px solid var(--border-strong)',
+      }} />
+      <div style={{
+        position: 'absolute', left: -STUB, top: h / 2 - 1, height: 2, width: STUB,
+        background: 'var(--border-strong)',
+      }} />
+    </>
+  )
+}
+
+function formatMatchHeader(match) {
+  const d = new Date(match.match_date)
+  const weekday = d.toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', '')
+  const label = weekday.charAt(0).toUpperCase() + weekday.slice(1) + '.,'
+  const dayMonth = d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
+  if (match.status === 'finished') {
+    const hasPen = match.penalty_home != null && match.penalty_away != null
+    return { text: `${label} ${dayMonth}`, badge: hasPen ? 'FIM (P)' : 'FIM' }
+  }
+  const time = d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+  return { text: `${label} ${dayMonth}, ${time}`, badge: null }
 }
 
 function BracketMatch({ match }) {
@@ -646,17 +725,21 @@ function BracketMatch({ match }) {
   const hasPen = match.penalty_home != null && match.penalty_away != null
   const homeWin = finished && (hasPen ? match.penalty_home > match.penalty_away : match.home_score > match.away_score)
   const awayWin = finished && (hasPen ? match.penalty_away > match.penalty_home : match.away_score > match.home_score)
+  const header = formatMatchHeader(match)
 
   return (
-    <div className="glass-card" style={{ padding: '10px 12px' }}>
+    <div className="glass-card" style={{ padding: '8px 10px', width: '100%', height: MATCH_H, boxSizing: 'border-box', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+        <span style={{ fontSize: 9, color: 'var(--text-3)' }}>{header.text}</span>
+        {header.badge && (
+          <span style={{ fontSize: 8, fontWeight: 700, color: 'var(--text-3)', background: 'rgba(255,255,255,0.08)', padding: '2px 6px', borderRadius: 6 }}>
+            {header.badge}
+          </span>
+        )}
+      </div>
       <BracketRow team={match.home_team} score={match.home_score} pen={match.penalty_home} winner={homeWin} finished={finished} />
-      <div style={{ height: 1, background: 'var(--border)', margin: '6px 0' }} />
+      <div style={{ height: 1, background: 'var(--border)', margin: '5px 0' }} />
       <BracketRow team={match.away_team} score={match.away_score} pen={match.penalty_away} winner={awayWin} finished={finished} />
-      {!finished && match.match_date && (
-        <div style={{ fontSize: 9, color: 'var(--text-3)', textAlign: 'center', marginTop: 6 }}>
-          {new Date(match.match_date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} • {new Date(match.match_date).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-        </div>
-      )}
     </div>
   )
 }
@@ -664,20 +747,22 @@ function BracketMatch({ match }) {
 function BracketRow({ team, score, pen, winner, finished }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-      <TeamCircle name={team} size={22} />
+      <TeamCircle name={team} size={20} />
       <span style={{
-        flex: 1, fontSize: 11, fontWeight: winner ? 700 : 500,
+        flex: 1, fontSize: 12, fontWeight: winner ? 700 : 500,
         color: winner ? 'var(--text)' : 'var(--text-3)',
         overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
       }}>
         {team ? getPT(team) : 'A definir'}
       </span>
       {finished && (
-        <span style={{ fontSize: 12, fontWeight: 700, color: winner ? 'var(--gold, #f5c518)' : 'var(--text-3)', flexShrink: 0 }}>
-          {score ?? '-'}{pen != null ? ` (${pen})` : ''}
+        <span style={{ display: 'flex', alignItems: 'center', gap: 3, flexShrink: 0 }}>
+          <span style={{ fontSize: 12, fontWeight: 700, color: winner ? 'var(--text)' : 'var(--text-3)' }}>
+            {score ?? '-'}{pen != null ? ` (${pen})` : ''}
+          </span>
+          {winner && <span style={{ fontSize: 9, color: 'var(--gold, #f5c518)' }}>◂</span>}
         </span>
       )}
     </div>
   )
 }
-
