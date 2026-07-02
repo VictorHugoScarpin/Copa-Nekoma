@@ -245,14 +245,33 @@ function BoltIcon()   { return <svg width="18" height="18" viewBox="0 0 24 24" f
 function HandIcon()   { return <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M18 11V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v0"/><path d="M14 10V4a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v2"/><path d="M10 10.5V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/></svg> }
 function SkullIcon()  { return <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><path d="M8 20v2h8v-2"/><path d="m12.5 17-.5-1-.5 1h1z"/><path d="M16 20a2 2 0 0 0 1.956-2.4l-1.536-7.68A5 5 0 0 0 7.58 9.92L6.044 17.6A2 2 0 0 0 8 20Z"/></svg> }
 
-const STAGE_ORDER = ['Fase de 32', 'LAST_16', 'LAST_8', 'LAST_4', '3º Lugar', 'Final']
-const STAGE_LABELS = {
-  'Fase de 32': 'Dezesseis-avos',
-  'LAST_16': 'Oitavas de Final',
-  'LAST_8': 'Quartas de Final',
-  'LAST_4': 'Semifinal',
-  '3º Lugar': 'Disputa de 3º Lugar',
-  'Final': 'Final',
+// Convenção do banco: 'LAST_N' = fase que decide quem sobra entre os últimos N times
+// (ex: LAST_16 = jogos que reduzem o campo a 16 = "dezesseis-avos"/rodada de 32;
+//  LAST_8 = oitavas de final; LAST_4 = quartas; LAST_2 = semifinal), seguido de 'Final'.
+// Em vez de fixar os nomes na mão (o que já causou bug quando o banco não batia com
+// o que o código esperava), a cadeia é descoberta dinamicamente a partir do que
+// realmente existe em byStage — funciona mesmo quando fases novas forem adicionadas.
+function buildStageChain(byStage) {
+  const lastStages = Object.keys(byStage)
+    .map(s => {
+      const m = /^LAST_(\d+)$/.exec(s)
+      return m ? { stage: s, n: Number(m[1]) } : null
+    })
+    .filter(Boolean)
+    .sort((a, b) => b.n - a.n) // maior N = fase mais cedo (mais times ainda disputando)
+    .map(x => x.stage)
+  const chain = [...lastStages]
+  if (byStage['Final']) chain.push('Final')
+  return chain
+}
+
+const STAGE_LABEL_BY_N = { 32: 'Trinta e dois-avos', 16: 'Dezesseis-avos', 8: 'Oitavas de Final', 4: 'Quartas de Final', 2: 'Semifinal' }
+function stageLabel(stage) {
+  if (stage === 'Final') return 'Final'
+  if (stage === '3º Lugar') return 'Disputa de 3º Lugar'
+  const m = /^LAST_(\d+)$/.exec(stage)
+  if (m) return STAGE_LABEL_BY_N[Number(m[1])] || stage
+  return stage
 }
 
 export default function HallPage() {
@@ -270,7 +289,7 @@ export default function HallPage() {
         supabase.from('profiles').select('*').order('points', { ascending: false }),
         supabase.from('guesses').select('*, matches(status, home_score, away_score)'),
         supabase.from('matches').select('*').eq('stage', 'Grupos'),
-        supabase.from('matches').select('*').in('stage', STAGE_ORDER).order('match_date', { ascending: true }),
+        supabase.from('matches').select('*').neq('stage', 'Grupos').order('match_date', { ascending: true }),
       ])
       setProfiles(prof || [])
       setGuesses(gues || [])
@@ -397,7 +416,7 @@ export default function HallPage() {
   // ── MATA-MATA ────────────────────────────────────────────────────────────
   const byStage = {}
   knockoutMatches.forEach(m => {
-    if (!STAGE_ORDER.includes(m.stage)) return
+    if (!m.stage) return
     if (!byStage[m.stage]) byStage[m.stage] = []
     byStage[m.stage].push(m)
   })
@@ -618,7 +637,6 @@ function ThirdPlacedTable({ teams }) {
 }
 
 // ── Chaveamento com linhas conectoras (estilo fluxograma) ──────────────────
-const MAIN_CHAIN = ['Fase de 32', 'LAST_16', 'LAST_8', 'LAST_4', 'Final']
 const MATCH_H = 82
 const V_GAP = 18
 const COL_GAP = 46
@@ -703,14 +721,15 @@ function round32SlotIndex(match) {
   return ROUND32_ORDER.findIndex(([x, y]) => (x === a && y === b) || (x === b && y === a))
 }
 
-// Monta a árvore inteira (16→8→4→2→1) a partir dos 16 jogos reais da Fase de 32.
-// Cada box das fases seguintes é pré-definido (par fixo de vencedores) e só recebe
-// o jogo real do banco quando os dois times daquele confronto específico existirem —
-// nunca por posição solta no array, sempre pelo confronto que realmente aconteceu.
-function buildBracketRounds(byStage) {
-  // Reordena os 16 jogos da Fase de 32 pela chave oficial (não pela data do jogo),
+// Monta a árvore inteira (16→8→4→2→1) a partir dos 16 jogos reais da primeira fase
+// do mata-mata (chain[0], hoje = 'LAST_16' no banco). Cada box das fases seguintes é
+// pré-definido (par fixo de vencedores) e só recebe o jogo real do banco quando os
+// dois times daquele confronto específico existirem — nunca por posição solta no
+// array, sempre pelo confronto que realmente aconteceu.
+function buildBracketRounds(byStage, chain) {
+  // Reordena os 16 jogos da 1ª fase pela chave oficial (não pela data do jogo),
   // pra garantir que o pareamento por índice (0-1, 2-3...) bata com a chave real.
-  const round32 = [...(byStage['Fase de 32'] || [])].sort((m1, m2) => {
+  const round32 = [...(byStage[chain[0]] || [])].sort((m1, m2) => {
     const i1 = round32SlotIndex(m1)
     const i2 = round32SlotIndex(m2)
     if (i1 === -1 && i2 === -1) return 0
@@ -721,7 +740,7 @@ function buildBracketRounds(byStage) {
   let current = round32.map(m => ({ homeTeam: m.home_team, awayTeam: m.away_team, match: m }))
   const rounds = [current]
 
-  const nextStages = ['LAST_16', 'LAST_8', 'LAST_4', 'Final']
+  const nextStages = chain.slice(1)
   for (const stageKey of nextStages) {
     const pool = byStage[stageKey] || []
     const next = []
@@ -745,12 +764,13 @@ function buildBracketRounds(byStage) {
     rounds.push(next)
     current = next
   }
-  return rounds // [Fase de 32 (16), LAST_16 (8), LAST_8 (4), LAST_4 (2), Final (1)]
+  return rounds // [chain[0] (16), chain[1] (8), chain[2] (4), chain[3] (2), Final (1)]
 }
 
 function MataMataView({ byStage }) {
   const thirdPlace = byStage['3º Lugar']?.[0]
-  const round32 = byStage['Fase de 32'] || []
+  const chain = buildStageChain(byStage)
+  const round32 = byStage[chain[0]] || []
 
   if (round32.length === 0 && !thirdPlace) {
     return (
@@ -760,7 +780,7 @@ function MataMataView({ byStage }) {
     )
   }
 
-  const rounds = buildBracketRounds(byStage)
+  const rounds = buildBracketRounds(byStage, chain)
 
   return (
     <div>
@@ -769,12 +789,12 @@ function MataMataView({ byStage }) {
           if (!nodes.length) return null
           const h = wrapperHeight(ri)
           return (
-            <div key={MAIN_CHAIN[ri]} style={{ minWidth: 200, flexShrink: 0 }}>
+            <div key={chain[ri]} style={{ minWidth: 200, flexShrink: 0 }}>
               <div style={{
                 fontSize: 11, fontWeight: 700, color: 'var(--gold, #f5c518)', textTransform: 'uppercase',
                 letterSpacing: '0.06em', marginBottom: 12, textAlign: 'center', height: 14,
               }}>
-                {STAGE_LABELS[MAIN_CHAIN[ri]] || MAIN_CHAIN[ri]}
+                {stageLabel(chain[ri])}
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: V_GAP }}>
                 {nodes.map((node, i) => (
