@@ -302,7 +302,7 @@ export default function HallPage() {
 
   if (loading) return (
     <div className="page">
-      <div className="section-title">Hall da Fama</div>
+      <div className="section-title">Extras</div>
       {Array.from({ length: 4 }).map((_, i) => (
         <div key={i} className="skeleton" style={{ height: 140, marginBottom: 12, borderRadius: 14 }} />
       ))}
@@ -442,10 +442,10 @@ export default function HallPage() {
 
   return (
     <div className="page">
-      <div className="section-title">Hall da Fama</div>
+      <div className="section-title">Extras</div>
 
       <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', padding: '4px', marginBottom: '16px', gap: '4px' }}>
-        {[['hall', 'Hall'], ['info', 'Informações']].map(([key, label]) => (
+        {[['hall', 'Hall da Fama'], ['info', 'Informações']].map(([key, label]) => (
           <button key={key} onClick={() => setMainTab(key)} style={{ flex: 1, padding: '9px', borderRadius: '9px', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: '13px', fontWeight: 600, transition: 'all 0.2s', background: mainTab === key ? 'rgba(255,255,255,0.1)' : 'transparent', color: mainTab === key ? 'var(--text)' : 'var(--text-3)' }}>{label}</button>
         ))}
       </div>
@@ -781,6 +781,7 @@ function MataMataView({ byStage }) {
   }
 
   const rounds = buildBracketRounds(byStage, chain)
+  const isLastCol = (ri) => ri === rounds.length - 1
 
   return (
     <div>
@@ -804,25 +805,25 @@ function MataMataView({ byStage }) {
                   </div>
                 ))}
               </div>
+
+              {isLastCol(ri) && (
+                <div style={{ marginTop: 28 }}>
+                  <div style={{
+                    fontSize: 10, fontWeight: 700, color: 'var(--text-3)', textTransform: 'uppercase',
+                    letterSpacing: '0.06em', marginBottom: 8, textAlign: 'center',
+                  }}>
+                    Disputa de 3º Lugar
+                  </div>
+                  <BracketMatch node={{
+                    homeTeam: thirdPlace?.home_team ?? null,
+                    awayTeam: thirdPlace?.away_team ?? null,
+                    match: thirdPlace ?? null,
+                  }} />
+                </div>
+              )}
             </div>
           )
         })}
-      </div>
-
-      <div style={{ marginTop: 24 }}>
-        <div style={{
-          fontSize: 11, fontWeight: 700, color: 'var(--gold, #f5c518)', textTransform: 'uppercase',
-          letterSpacing: '0.06em', marginBottom: 10,
-        }}>
-          Disputa de 3º Lugar
-        </div>
-        <div style={{ maxWidth: 220 }}>
-          <BracketMatch node={{
-            homeTeam: thirdPlace?.home_team ?? null,
-            awayTeam: thirdPlace?.away_team ?? null,
-            match: thirdPlace ?? null,
-          }} />
-        </div>
       </div>
     </div>
   )
