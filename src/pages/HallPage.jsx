@@ -442,6 +442,10 @@ export default function HallPage() {
 
   return (
     <div className="page">
+      <style>{`
+        .hscroll { overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; -ms-overflow-style: none; }
+        .hscroll::-webkit-scrollbar { display: none; height: 0; }
+      `}</style>
       <div className="section-title">Extras</div>
 
       <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', padding: '4px', marginBottom: '16px', gap: '4px' }}>
@@ -479,7 +483,7 @@ export default function HallPage() {
       {mainTab === 'info' && (
         <>
           <div style={{ display: 'flex', alignItems: 'center', gap: '4px', borderBottom: '1px solid rgba(255,255,255,0.08)', marginBottom: 16 }}>
-            <div style={{ display: 'flex', flex: 1, overflowX: 'auto', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+            <div className="hscroll" style={{ display: 'flex', flex: 1 }}>
               {[['grupos', 'Fase de Grupos'], ['matamata', 'Mata-Mata']].map(([key, label]) => (
                 <button key={key} onClick={() => setInfoTab(key)} style={{
                   flexShrink: 0, flex: 1, minWidth: '80px', padding: '10px 8px', border: 'none', cursor: 'pointer',
@@ -526,8 +530,7 @@ function GroupTable({ groupName, teams }) {
       <div style={{ fontFamily: 'var(--font-display)', fontSize: 14, letterSpacing: '0.06em', color: 'var(--text)', marginBottom: 10 }}>
         {groupName}
       </div>
-      <div style={{ overflowX: 'auto' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11, minWidth: 420 }}>
+      <div className="hscroll">
           <thead>
             <tr style={{ color: 'var(--text-3)', textTransform: 'uppercase', fontSize: 9, letterSpacing: '0.05em' }}>
               <th style={{ ...tableTh, textAlign: 'left' }}>#</th>
@@ -587,8 +590,7 @@ function ThirdPlacedTable({ teams }) {
       <div style={{ fontSize: 11, color: 'var(--text-3)', marginBottom: 10 }}>
         Os 8 melhores 3ºs colocados avançam ao mata-mata
       </div>
-      <div style={{ overflowX: 'auto' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11, minWidth: 460 }}>
+      <div className="hscroll">
           <thead>
             <tr style={{ color: 'var(--text-3)', textTransform: 'uppercase', fontSize: 9, letterSpacing: '0.05em' }}>
               <th style={{ ...tableTh, textAlign: 'left' }}>#</th>
@@ -785,7 +787,7 @@ function MataMataView({ byStage }) {
 
   return (
     <div>
-      <div style={{ display: 'flex', gap: COL_GAP, overflowX: 'auto', paddingBottom: 8, paddingLeft: 4, paddingTop: 4 }}>
+      <div className="hscroll" style={{ display: 'flex', gap: COL_GAP, paddingBottom: 8, paddingLeft: 4, paddingTop: 4 }}>
         {rounds.map((nodes, ri) => {
           if (!nodes.length) return null
           const h = wrapperHeight(ri)
