@@ -75,7 +75,7 @@ function AppRoutes() {
 
   if (loading) return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ fontFamily: 'var(--font-display)', fontSize: '32px', letterSpacing: '0.1em', color: 'var(--gold)', animation: 'pulse 1.5s infinite' }}>BOLÃO ⚽</div>
+      <img src="/banner.png" alt="Copa Nekoma" style={{ maxWidth: '220px', width: '60%', animation: 'pulse 1.5s infinite' }} />
     </div>
   )
   if (!user) return <LoginPage />
