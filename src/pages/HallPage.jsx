@@ -445,6 +445,13 @@ export default function HallPage() {
       <style>{`
         .hscroll { overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; -ms-overflow-style: none; }
         .hscroll::-webkit-scrollbar { display: none; height: 0; }
+        @media (hover: hover) and (pointer: fine) {
+          .hscroll { scrollbar-width: thin; scrollbar-color: var(--border-strong) transparent; }
+          .hscroll::-webkit-scrollbar { display: block; height: 8px; }
+          .hscroll::-webkit-scrollbar-track { background: transparent; }
+          .hscroll::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 4px; }
+          .hscroll::-webkit-scrollbar-thumb:hover { background: var(--text-3); }
+        }
       `}</style>
       <div className="section-title">Extras</div>
 
@@ -530,7 +537,7 @@ function GroupTable({ groupName, teams }) {
       <div style={{ fontFamily: 'var(--font-display)', fontSize: 14, letterSpacing: '0.06em', color: 'var(--text)', marginBottom: 10 }}>
         {groupName}
       </div>
-      <div className="hscroll">
+      <div className="hscroll" onWheel={onWheelHorizontal}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11, minWidth: 420 }}>
           <thead>
             <tr style={{ color: 'var(--text-3)', textTransform: 'uppercase', fontSize: 9, letterSpacing: '0.05em' }}>
@@ -591,7 +598,7 @@ function ThirdPlacedTable({ teams }) {
       <div style={{ fontSize: 11, color: 'var(--text-3)', marginBottom: 10 }}>
         Os 8 melhores 3ºs colocados avançam ao mata-mata
       </div>
-      <div className="hscroll">
+      <div className="hscroll" onWheel={onWheelHorizontal}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11, minWidth: 460 }}>
           <thead>
             <tr style={{ color: 'var(--text-3)', textTransform: 'uppercase', fontSize: 9, letterSpacing: '0.05em' }}>
@@ -771,6 +778,15 @@ function buildBracketRounds(byStage, chain) {
   return rounds // [chain[0] (16), chain[1] (8), chain[2] (4), chain[3] (2), Final (1)]
 }
 
+// Deixa a roda do mouse rolar o chaveamento na horizontal (comportamento padrão em brackets)
+function onWheelHorizontal(e) {
+  const el = e.currentTarget
+  if (el.scrollWidth <= el.clientWidth) return
+  if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+    el.scrollLeft += e.deltaY
+  }
+}
+
 function MataMataView({ byStage }) {
   const thirdPlace = byStage['3º Lugar']?.[0]
   const chain = buildStageChain(byStage)
@@ -789,7 +805,7 @@ function MataMataView({ byStage }) {
 
   return (
     <div>
-      <div className="hscroll" style={{ display: 'flex', gap: COL_GAP, paddingBottom: 8, paddingLeft: 4, paddingTop: 4 }}>
+      <div className="hscroll" onWheel={onWheelHorizontal} style={{ display: 'flex', gap: COL_GAP, paddingBottom: 8, paddingLeft: 4, paddingTop: 4 }}>
         {rounds.map((nodes, ri) => {
           if (!nodes.length) return null
           const h = wrapperHeight(ri)
