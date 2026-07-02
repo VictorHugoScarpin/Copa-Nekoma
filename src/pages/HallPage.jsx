@@ -630,11 +630,60 @@ function wrapperHeight(roundIndex) {
   return h
 }
 
-function MataMataView({ byStage }) {
-  const stagesPresent = MAIN_CHAIN.filter(s => byStage[s]?.length)
-  const thirdPlace = byStage['3º Lugar']?.[0]
+// Quem venceu um confronto de mata-mata (usa qualifier_result do banco; cai pro placar como reforço)
+function getWinnerName(match) {
+  if (!match) return null
+  if (match.qualifier_result) return match.qualifier_result
+  if (match.status !== 'finished') return null
+  const hasPen = match.penalty_home != null && match.penalty_away != null
+  if (hasPen) return match.penalty_home > match.penalty_away ? match.home_team : match.away_team
+  if (match.home_score != null && match.away_score != null && match.home_score !== match.away_score) {
+    return match.home_score > match.away_score ? match.home_team : match.away_team
+  }
+  return null
+}
 
-  if (stagesPresent.length === 0 && !thirdPlace) {
+// Monta a árvore inteira (16→8→4→2→1) a partir dos 16 jogos reais da Fase de 32.
+// Cada box das fases seguintes é pré-definido (par fixo de vencedores) e só recebe
+// o jogo real do banco quando os dois times daquele confronto específico existirem —
+// nunca por posição solta no array, sempre pelo confronto que realmente aconteceu.
+function buildBracketRounds(byStage) {
+  const round32 = [...(byStage['Fase de 32'] || [])]
+  let current = round32.map(m => ({ homeTeam: m.home_team, awayTeam: m.away_team, match: m }))
+  const rounds = [current]
+
+  const nextStages = ['LAST_16', 'LAST_8', 'LAST_4', 'Final']
+  for (const stageKey of nextStages) {
+    const pool = byStage[stageKey] || []
+    const next = []
+    for (let i = 0; i < current.length; i += 2) {
+      const a = current[i], b = current[i + 1]
+      const homeTeam = a ? getWinnerName(a.match) : null
+      const awayTeam = b ? getWinnerName(b.match) : null
+      let real = null
+      if (homeTeam && awayTeam) {
+        real = pool.find(m =>
+          (m.home_team === homeTeam && m.away_team === awayTeam) ||
+          (m.home_team === awayTeam && m.away_team === homeTeam)
+        ) || null
+      }
+      next.push({
+        homeTeam: real ? real.home_team : homeTeam,
+        awayTeam: real ? real.away_team : awayTeam,
+        match: real,
+      })
+    }
+    rounds.push(next)
+    current = next
+  }
+  return rounds // [Fase de 32 (16), LAST_16 (8), LAST_8 (4), LAST_4 (2), Final (1)]
+}
+
+function MataMataView({ byStage }) {
+  const thirdPlace = byStage['3º Lugar']?.[0]
+  const round32 = byStage['Fase de 32'] || []
+
+  if (round32.length === 0 && !thirdPlace) {
     return (
       <div className="glass-card" style={{ padding: 24, textAlign: 'center', color: 'var(--text-3)', fontSize: 12 }}>
         O chaveamento do mata-mata ainda não começou.
@@ -642,26 +691,27 @@ function MataMataView({ byStage }) {
     )
   }
 
+  const rounds = buildBracketRounds(byStage)
+
   return (
     <div>
       <div style={{ display: 'flex', gap: COL_GAP, overflowX: 'auto', paddingBottom: 8, paddingLeft: 4, paddingTop: 4 }}>
-        {stagesPresent.map(stage => {
-          const ri = MAIN_CHAIN.indexOf(stage)
+        {rounds.map((nodes, ri) => {
+          if (!nodes.length) return null
           const h = wrapperHeight(ri)
-          const matches = byStage[stage]
           return (
-            <div key={stage} style={{ minWidth: 200, flexShrink: 0 }}>
+            <div key={MAIN_CHAIN[ri]} style={{ minWidth: 200, flexShrink: 0 }}>
               <div style={{
                 fontSize: 11, fontWeight: 700, color: 'var(--gold, #f5c518)', textTransform: 'uppercase',
                 letterSpacing: '0.06em', marginBottom: 12, textAlign: 'center', height: 14,
               }}>
-                {STAGE_LABELS[stage] || stage}
+                {STAGE_LABELS[MAIN_CHAIN[ri]] || MAIN_CHAIN[ri]}
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: V_GAP }}>
-                {matches.map(m => (
-                  <div key={m.id} style={{ height: h, display: 'flex', alignItems: 'center', position: 'relative' }}>
+                {nodes.map((node, i) => (
+                  <div key={i} style={{ height: h, display: 'flex', alignItems: 'center', position: 'relative' }}>
                     {ri > 0 && <BracketConnector prevH={wrapperHeight(ri - 1)} h={h} />}
-                    <BracketMatch match={m} />
+                    <BracketMatch node={node} />
                   </div>
                 ))}
               </div>
@@ -679,7 +729,7 @@ function MataMataView({ byStage }) {
             Disputa de 3º Lugar
           </div>
           <div style={{ maxWidth: 220 }}>
-            <BracketMatch match={thirdPlace} />
+            <BracketMatch node={{ homeTeam: thirdPlace.home_team, awayTeam: thirdPlace.away_team, match: thirdPlace }} />
           </div>
         </div>
       )}
@@ -720,26 +770,34 @@ function formatMatchHeader(match) {
   return { text: `${label} ${dayMonth}, ${time}`, badge: null }
 }
 
-function BracketMatch({ match }) {
-  const finished = match.status === 'finished'
-  const hasPen = match.penalty_home != null && match.penalty_away != null
-  const homeWin = finished && (hasPen ? match.penalty_home > match.penalty_away : match.home_score > match.away_score)
-  const awayWin = finished && (hasPen ? match.penalty_away > match.penalty_home : match.away_score > match.home_score)
-  const header = formatMatchHeader(match)
+function BracketMatch({ node }) {
+  const { homeTeam, awayTeam, match } = node
+  const finished = match?.status === 'finished'
+  const hasPen = finished && match.penalty_home != null && match.penalty_away != null
+  const header = match ? formatMatchHeader(match) : null
+
+  // Se o jogo real tem os times invertidos em relação ao nosso "homeTeam" sintetizado
+  // (mandante/visitante trocados), ainda assim casamos o placar certo com o time certo.
+  const homeScore = match ? (match.home_team === homeTeam ? match.home_score : match.away_score) : null
+  const awayScore = match ? (match.home_team === awayTeam ? match.home_score : match.away_score) : null
+  const homePen = match ? (match.home_team === homeTeam ? match.penalty_home : match.penalty_away) : null
+  const awayPen = match ? (match.home_team === awayTeam ? match.penalty_home : match.penalty_away) : null
+  const homeWinFlag = finished && (hasPen ? homePen > awayPen : homeScore > awayScore)
+  const awayWinFlag = finished && (hasPen ? awayPen > homePen : awayScore > homeScore)
 
   return (
     <div className="glass-card" style={{ padding: '8px 10px', width: '100%', height: MATCH_H, boxSizing: 'border-box', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-        <span style={{ fontSize: 9, color: 'var(--text-3)' }}>{header.text}</span>
-        {header.badge && (
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6, minHeight: 12 }}>
+        {header && <span style={{ fontSize: 9, color: 'var(--text-3)' }}>{header.text}</span>}
+        {header?.badge && (
           <span style={{ fontSize: 8, fontWeight: 700, color: 'var(--text-3)', background: 'rgba(255,255,255,0.08)', padding: '2px 6px', borderRadius: 6 }}>
             {header.badge}
           </span>
         )}
       </div>
-      <BracketRow team={match.home_team} score={match.home_score} pen={match.penalty_home} winner={homeWin} finished={finished} />
+      <BracketRow team={homeTeam} score={homeScore} pen={homePen} winner={homeWinFlag} finished={finished} />
       <div style={{ height: 1, background: 'var(--border)', margin: '5px 0' }} />
-      <BracketRow team={match.away_team} score={match.away_score} pen={match.penalty_away} winner={awayWin} finished={finished} />
+      <BracketRow team={awayTeam} score={awayScore} pen={awayPen} winner={awayWinFlag} finished={finished} />
     </div>
   )
 }
