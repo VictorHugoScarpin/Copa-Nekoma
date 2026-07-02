@@ -248,20 +248,20 @@ function SkullIcon()  { return <svg width="18" height="18" viewBox="0 0 24 24" f
 // Convenção do banco: 'LAST_N' = fase que decide quem sobra entre os últimos N times
 // (ex: LAST_16 = jogos que reduzem o campo a 16 = "dezesseis-avos"/rodada de 32;
 //  LAST_8 = oitavas de final; LAST_4 = quartas; LAST_2 = semifinal), seguido de 'Final'.
-// Em vez de fixar os nomes na mão (o que já causou bug quando o banco não batia com
-// o que o código esperava), a cadeia é descoberta dinamicamente a partir do que
-// realmente existe em byStage — funciona mesmo quando fases novas forem adicionadas.
+// A cadeia é sempre projetada até a final (16→8→4→2→1), mesmo que as fases mais
+// avançadas ainda não tenham nenhum jogo cadastrado no banco — assim o chaveamento
+// inteiro aparece de uma vez, com "A definir" nas caixinhas que ainda não têm confronto.
 function buildStageChain(byStage) {
-  const lastStages = Object.keys(byStage)
-    .map(s => {
-      const m = /^LAST_(\d+)$/.exec(s)
-      return m ? { stage: s, n: Number(m[1]) } : null
-    })
+  const discovered = Object.keys(byStage)
+    .map(s => { const m = /^LAST_(\d+)$/.exec(s); return m ? Number(m[1]) : null })
     .filter(Boolean)
-    .sort((a, b) => b.n - a.n) // maior N = fase mais cedo (mais times ainda disputando)
-    .map(x => x.stage)
-  const chain = [...lastStages]
-  if (byStage['Final']) chain.push('Final')
+  let n = discovered.length ? Math.max(...discovered) : 16
+  const chain = []
+  while (n >= 2) {
+    chain.push(`LAST_${n}`)
+    n = n / 2
+  }
+  chain.push('Final')
   return chain
 }
 
@@ -809,19 +809,21 @@ function MataMataView({ byStage }) {
         })}
       </div>
 
-      {thirdPlace && (
-        <div style={{ marginTop: 24 }}>
-          <div style={{
-            fontSize: 11, fontWeight: 700, color: 'var(--gold, #f5c518)', textTransform: 'uppercase',
-            letterSpacing: '0.06em', marginBottom: 10,
-          }}>
-            Disputa de 3º Lugar
-          </div>
-          <div style={{ maxWidth: 220 }}>
-            <BracketMatch node={{ homeTeam: thirdPlace.home_team, awayTeam: thirdPlace.away_team, match: thirdPlace }} />
-          </div>
+      <div style={{ marginTop: 24 }}>
+        <div style={{
+          fontSize: 11, fontWeight: 700, color: 'var(--gold, #f5c518)', textTransform: 'uppercase',
+          letterSpacing: '0.06em', marginBottom: 10,
+        }}>
+          Disputa de 3º Lugar
         </div>
-      )}
+        <div style={{ maxWidth: 220 }}>
+          <BracketMatch node={{
+            homeTeam: thirdPlace?.home_team ?? null,
+            awayTeam: thirdPlace?.away_team ?? null,
+            match: thirdPlace ?? null,
+          }} />
+        </div>
+      </div>
     </div>
   )
 }
