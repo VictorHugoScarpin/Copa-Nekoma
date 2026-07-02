@@ -643,12 +643,81 @@ function getWinnerName(match) {
   return null
 }
 
+// ── Ordem fixa da chave dos Dezesseis-avos (Fase de 32) ────────────────────
+// O banco só garante a ORDEM CRONOLÓGICA dos jogos (match_date), mas a ordem
+// cronológica não é a mesma coisa que a ordem da chave (quem alimenta qual
+// jogo das Oitavas). Por isso, em vez de confiar na ordem que vem do Supabase,
+// usamos a chave oficial da FIFA (fixa, definida antes da fase de grupos acabar)
+// pra reordenar os 16 jogos antes de parear. Cada par de posições consecutivas
+// abaixo (0-1, 2-3, 4-5...) alimenta um confronto das Oitavas, na mesma ordem
+// da tabela oficial / imagem de referência.
+const TEAM_ALIASES = {
+  'south africa': 'south africa', 'canada': 'canada',
+  'netherlands': 'netherlands', 'morocco': 'morocco',
+  'germany': 'germany', 'paraguay': 'paraguay',
+  'france': 'france', 'sweden': 'sweden',
+  'belgium': 'belgium', 'senegal': 'senegal',
+  'united states': 'usa', 'usa': 'usa',
+  'bosnia and herzegovina': 'bosnia', 'bosnia & herzegovina': 'bosnia',
+  'bosnia herzegovina': 'bosnia', 'bosnia-herzegovina': 'bosnia', 'bosna i hercegovina': 'bosnia',
+  'spain': 'spain', 'austria': 'austria',
+  'portugal': 'portugal', 'croatia': 'croatia',
+  'brazil': 'brazil', 'japan': 'japan',
+  "côte d'ivoire": 'ivory coast', 'ivory coast': 'ivory coast',
+  'norway': 'norway',
+  'mexico': 'mexico', 'ecuador': 'ecuador',
+  'england': 'england', 'congo dr': 'dr congo', 'dr congo': 'dr congo',
+  'switzerland': 'switzerland', 'algeria': 'algeria',
+  'colombia': 'colombia', 'ghana': 'ghana',
+  'australia': 'australia', 'egypt': 'egypt',
+  'argentina': 'argentina',
+  'cape verde': 'cape verde', 'cape verde islands': 'cape verde',
+}
+function normTeam(name) {
+  if (!name) return ''
+  const key = name.trim().toLowerCase()
+  return TEAM_ALIASES[key] || key
+}
+// Slots 1 a 16, na ordem oficial da chave (par de posições consecutivas = 1 jogo das Oitavas)
+const ROUND32_ORDER = [
+  ['south africa', 'canada'],
+  ['netherlands', 'morocco'],
+  ['germany', 'paraguay'],
+  ['france', 'sweden'],
+  ['belgium', 'senegal'],
+  ['usa', 'bosnia'],
+  ['spain', 'austria'],
+  ['portugal', 'croatia'],
+  ['brazil', 'japan'],
+  ['ivory coast', 'norway'],
+  ['mexico', 'ecuador'],
+  ['england', 'dr congo'],
+  ['switzerland', 'algeria'],
+  ['colombia', 'ghana'],
+  ['australia', 'egypt'],
+  ['argentina', 'cape verde'],
+]
+function round32SlotIndex(match) {
+  const a = normTeam(match.home_team)
+  const b = normTeam(match.away_team)
+  return ROUND32_ORDER.findIndex(([x, y]) => (x === a && y === b) || (x === b && y === a))
+}
+
 // Monta a árvore inteira (16→8→4→2→1) a partir dos 16 jogos reais da Fase de 32.
 // Cada box das fases seguintes é pré-definido (par fixo de vencedores) e só recebe
 // o jogo real do banco quando os dois times daquele confronto específico existirem —
 // nunca por posição solta no array, sempre pelo confronto que realmente aconteceu.
 function buildBracketRounds(byStage) {
-  const round32 = [...(byStage['Fase de 32'] || [])]
+  // Reordena os 16 jogos da Fase de 32 pela chave oficial (não pela data do jogo),
+  // pra garantir que o pareamento por índice (0-1, 2-3...) bata com a chave real.
+  const round32 = [...(byStage['Fase de 32'] || [])].sort((m1, m2) => {
+    const i1 = round32SlotIndex(m1)
+    const i2 = round32SlotIndex(m2)
+    if (i1 === -1 && i2 === -1) return 0
+    if (i1 === -1) return 1   // jogo não reconhecido vai pro fim, não quebra os outros
+    if (i2 === -1) return -1
+    return i1 - i2
+  })
   let current = round32.map(m => ({ homeTeam: m.home_team, awayTeam: m.away_team, match: m }))
   const rounds = [current]
 
