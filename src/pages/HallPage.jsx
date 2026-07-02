@@ -531,6 +531,7 @@ function GroupTable({ groupName, teams }) {
         {groupName}
       </div>
       <div className="hscroll">
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11, minWidth: 420 }}>
           <thead>
             <tr style={{ color: 'var(--text-3)', textTransform: 'uppercase', fontSize: 9, letterSpacing: '0.05em' }}>
               <th style={{ ...tableTh, textAlign: 'left' }}>#</th>
@@ -591,6 +592,7 @@ function ThirdPlacedTable({ teams }) {
         Os 8 melhores 3ºs colocados avançam ao mata-mata
       </div>
       <div className="hscroll">
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11, minWidth: 460 }}>
           <thead>
             <tr style={{ color: 'var(--text-3)', textTransform: 'uppercase', fontSize: 9, letterSpacing: '0.05em' }}>
               <th style={{ ...tableTh, textAlign: 'left' }}>#</th>
