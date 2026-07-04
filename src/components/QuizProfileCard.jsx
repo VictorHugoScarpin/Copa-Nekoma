@@ -5,7 +5,7 @@ import { getQuizStatus } from '../lib/quiz'
 
 const SPOTIFY_GIFT_LINK = 'https://open.spotify.com/referral/003988681f532c39c9bf64c9183464892d50c687452732e0c12a34?si=_rT4rYZESOux_tTx_pqrZg&locale=pt'
 
-export default function QuizProfileCard({ userId }) {
+export default function QuizProfileCard({ userId, playerName = 'Você', isMe = true }) {
   const navigate = useNavigate()
   const [config, setConfig] = useState(null)
   const [myAttempt, setMyAttempt] = useState(null)
@@ -87,14 +87,14 @@ export default function QuizProfileCard({ userId }) {
           <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 1 }}>
           {myAttempt
   ? myPosition
-    ? `Você fez ${myAttempt.score}/15 acertos — ${myPosition}º lugar`
-    : `Você fez ${myAttempt.score}/15 acertos`
-  : st.status === 'active'
-    ? 'Participe e concorra a 3 meses de Spotify'
-    : 'Quiz encerrado'}
+    ? `${playerName} fez ${myAttempt.score}/15 acertos — ${myPosition}º lugar`
+    : `${playerName} fez ${myAttempt.score}/15 acertos`
+  : isMe
+    ? (st.status === 'active' ? 'Participe e concorra a 3 meses de Spotify' : 'Quiz encerrado')
+    : (st.status === 'active' || st.status === 'result' || st.status === 'archived' ? `${playerName} ainda não jogou` : 'Quiz encerrado')}
           </div>
         </div>
-        {st.status === 'active' && !myAttempt && (
+        {isMe && st.status === 'active' && !myAttempt && (
           <button className="btn btn-primary" onClick={() => navigate('/quiz')} style={{ padding: '8px 14px', fontSize: 12, width: 'auto' }}>
             Jogar
           </button>
@@ -111,29 +111,33 @@ export default function QuizProfileCard({ userId }) {
         <div style={{ background: 'rgba(232,184,75,0.08)', border: '1px solid rgba(232,184,75,0.3)', borderRadius: 'var(--r-md)', padding: '14px', textAlign: 'center' }}>
           <img src="/taca.png" alt="Vencedor" style={{ width: 44, height: 44, objectFit: 'contain', marginBottom: 6 }} />
           <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--gold-bright)', marginBottom: 4 }}>
-            Parabéns, você ganhou!
+            {isMe ? 'Parabéns, você ganhou!' : `🏆 ${playerName} ganhou o quiz!`}
           </div>
-          <div style={{ fontSize: 11, color: 'var(--text-3)', marginBottom: 12, lineHeight: 1.5 }}>
-            Lembrando: o prêmio só vale se você nunca teve Spotify Premium antes.
-          </div>
-          <a
-            href={SPOTIFY_GIFT_LINK}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="btn btn-primary"
-            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, textDecoration: 'none', marginBottom: 10 }}
-          >
-            <img src="/spot.png" alt="" style={{ width: 18, height: 18, objectFit: 'contain' }} />
-            Resgatar 3 meses de Spotify
-          </a>
-          {nextName && (
-            <button
-              onClick={passToNext}
-              disabled={passing}
-              style={{ width: '100%', background: 'transparent', border: 'none', fontSize: 11, color: 'var(--text-3)', cursor: 'pointer', textDecoration: 'underline', padding: '4px 0' }}
-            >
-              {passing ? 'Passando...' : `Já tenho Premium — passar para ${nextName}`}
-            </button>
+          {isMe && (
+            <>
+              <div style={{ fontSize: 11, color: 'var(--text-3)', marginBottom: 12, lineHeight: 1.5 }}>
+                Lembrando: o prêmio só vale se você nunca teve Spotify Premium antes.
+              </div>
+              <a
+                href={SPOTIFY_GIFT_LINK}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn btn-primary"
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, textDecoration: 'none', marginBottom: 10 }}
+              >
+                <img src="/spot.png" alt="" style={{ width: 18, height: 18, objectFit: 'contain' }} />
+                Resgatar 3 meses de Spotify
+              </a>
+              {nextName && (
+                <button
+                  onClick={passToNext}
+                  disabled={passing}
+                  style={{ width: '100%', background: 'transparent', border: 'none', fontSize: 11, color: 'var(--text-3)', cursor: 'pointer', textDecoration: 'underline', padding: '4px 0' }}
+                >
+                  {passing ? 'Passando...' : `Já tenho Premium — passar para ${nextName}`}
+                </button>
+              )}
+            </>
           )}
         </div>
       )}
