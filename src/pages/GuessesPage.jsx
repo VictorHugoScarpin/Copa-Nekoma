@@ -876,21 +876,26 @@ function useOpponentGuesses(opponentId, phase, matches) {
 
 // Card do adversário na fase atual
 function AdversarioTab({ myProfile, bracket, matches, currentPhaseIdx }) {
-  const phase = TOURNAMENT_PHASES[currentPhaseIdx]
+  // Fase que está sendo VISUALIZADA (pode ser diferente da atual — dá pra rever fases já jogadas)
+  const [viewPhaseIdx, setViewPhaseIdx] = useState(currentPhaseIdx)
+  const phase = TOURNAMENT_PHASES[viewPhaseIdx]
 
-  // Acha o confronto do usuário atual NA FASE ATUAL (não sempre oitavas)
-  const myMatchup = useMemo(() => {
-    if (!bracket || !myProfile) return null
+  // Acha o confronto do usuário NA FASE VISUALIZADA (não sempre a atual)
+  const { myMatchup, phaseHasSlots } = useMemo(() => {
+    if (!bracket || !myProfile) return { myMatchup: null, phaseHasSlots: false }
     const phaseKey = phase.key
     let phaseSlots = []
     if (phaseKey === 'oitavas') phaseSlots = [...(bracket.chaveA || []), ...(bracket.chaveB || [])]
     else if (phaseKey === 'quartas') phaseSlots = bracket.quartas || []
     else if (phaseKey === 'semi') phaseSlots = bracket.semi || []
     else if (phaseKey === 'final') phaseSlots = bracket.final || []
-    return phaseSlots.find(m => m.p1?.id === myProfile.id || m.p2?.id === myProfile.id) || null
+    return {
+      myMatchup: phaseSlots.find(m => m.p1?.id === myProfile.id || m.p2?.id === myProfile.id) || null,
+      phaseHasSlots: phaseSlots.length > 0,
+    }
   }, [bracket, myProfile, phase])
 
-  // Verifica se o usuário já foi eliminado em alguma fase anterior à atual
+  // Verifica se o usuário já foi eliminado em alguma fase até (e incluindo) a visualizada
   const eliminatedAt = useMemo(() => {
     if (!bracket || !myProfile) return null
     for (const p of TOURNAMENT_PHASES) {
@@ -949,20 +954,53 @@ function AdversarioTab({ myProfile, bracket, matches, currentPhaseIdx }) {
     }).sort((a, b) => new Date(a.match_date) - new Date(b.match_date))
   }, [matches, phase])
 
+  // Navegação de fases — igual à do Chaveamento, pra rever qualquer fase já jogada
+  const phaseNav = (
+    <div style={{ display: 'flex', gap: '6px', marginBottom: '20px', overflowX: 'auto', paddingBottom: '4px' }}>
+      {TOURNAMENT_PHASES.map((ph, i) => (
+        <div
+          key={ph.key}
+          onClick={() => setViewPhaseIdx(i)}
+          role="button"
+          tabIndex={0}
+          style={{
+            flexShrink: 0, padding: '6px 14px', borderRadius: '20px',
+            fontSize: '12px', fontWeight: 600, cursor: 'pointer', userSelect: 'none',
+            background: i === viewPhaseIdx ? 'rgba(168,85,247,0.2)' : 'var(--surface)',
+            border: `1px solid ${i === viewPhaseIdx ? 'rgba(168,85,247,0.5)' : i === currentPhaseIdx ? 'rgba(168,85,247,0.3)' : 'var(--border)'}`,
+            color: i === viewPhaseIdx ? '#c084fc' : i < currentPhaseIdx ? 'var(--text-2)' : 'var(--text-3)',
+          }}>
+          {i < currentPhaseIdx ? '✓ ' : ''}{ph.label}
+          {i === currentPhaseIdx && <span style={{ marginLeft: '6px', fontSize: '9px', background: 'rgba(168,85,247,0.3)', padding: '1px 5px', borderRadius: '10px' }}>AO VIVO</span>}
+        </div>
+      ))}
+    </div>
+  )
+
   if (!myMatchup || !opponent) {
     if (eliminatedAt) {
       return (
-        <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-3)' }}>
-          <div style={{ fontSize: '32px', marginBottom: '12px' }}>💔</div>
-          <div style={{ fontSize: '14px', color: 'var(--text-2)', fontWeight: 700, marginBottom: '4px' }}>Eliminado</div>
-          <div style={{ fontSize: '13px' }}>Você caiu na fase de {eliminatedAt.label}.</div>
+        <div>
+          {phaseNav}
+          <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-3)' }}>
+            <div style={{ fontSize: '32px', marginBottom: '12px' }}>💔</div>
+            <div style={{ fontSize: '14px', color: 'var(--text-2)', fontWeight: 700, marginBottom: '4px' }}>Eliminado</div>
+            <div style={{ fontSize: '13px' }}>Você caiu na fase de {eliminatedAt.label}.</div>
+          </div>
         </div>
       )
     }
     return (
-      <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-3)' }}>
-        <div style={{ fontSize: '32px', marginBottom: '12px' }}>🏆</div>
-        <div style={{ fontSize: '14px' }}>Você não está no chaveamento desta fase.</div>
+      <div>
+        {phaseNav}
+        <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-3)' }}>
+          <div style={{ fontSize: '32px', marginBottom: '12px' }}>{phaseHasSlots ? '🏆' : '⏳'}</div>
+          <div style={{ fontSize: '14px' }}>
+            {phaseHasSlots
+              ? 'Você não está no chaveamento desta fase.'
+              : <>Confrontos de <strong style={{ color: 'var(--text-2)' }}>{phase.label}</strong> ainda não foram definidos.</>}
+          </div>
+        </div>
       </div>
     )
   }
@@ -972,6 +1010,8 @@ function AdversarioTab({ myProfile, bracket, matches, currentPhaseIdx }) {
 
   return (
     <div>
+      {phaseNav}
+
       {/* Card do confronto */}
       <div className="glass-card" style={{ padding: '20px', marginBottom: '16px', border: '1px solid rgba(168,85,247,0.3)', background: 'rgba(168,85,247,0.04)' }}>
         <div style={{ fontSize: '10px', fontWeight: 700, color: 'rgba(168,85,247,0.8)', letterSpacing: '0.12em', textTransform: 'uppercase', textAlign: 'center', marginBottom: '16px' }}>
@@ -1013,7 +1053,14 @@ function AdversarioTab({ myProfile, bracket, matches, currentPhaseIdx }) {
           </div>
         </div>
 
-        {myPoints !== null && opPoints !== null && (
+        {myMatchup.winner_id ? (
+          <div style={{ marginTop: '14px', padding: '8px 12px', borderRadius: '8px', background: 'rgba(255,255,255,0.04)', textAlign: 'center', fontSize: '12px' }}>
+            {myMatchup.winner_id === myProfile.id
+              ? <span style={{ color: 'var(--green)' }}>🏆 Você venceu esse confronto!</span>
+              : <span style={{ color: 'var(--red)' }}>Você perdeu esse confronto para {opponent.display_name || opponent.nick}.</span>
+            }
+          </div>
+        ) : myPoints !== null && opPoints !== null && (
           <div style={{ marginTop: '14px', padding: '8px 12px', borderRadius: '8px', background: 'rgba(255,255,255,0.04)', textAlign: 'center', fontSize: '12px', color: 'var(--text-3)' }}>
             {myPoints > opPoints
               ? <span style={{ color: 'var(--green)' }}>Você está na frente! Segura que tá bom...</span>
