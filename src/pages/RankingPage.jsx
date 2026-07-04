@@ -3,8 +3,6 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
 import { FlagCircle, getPT, getGuessResult } from '../lib/teams'
 
-const MEDALS = ['🥇', '🥈', '🥉']
-
 // ── Fases do torneio (espelhado do GuessesPage) ───────────────────────────────
 const TOURNAMENT_PHASES = [
   { key: 'oitavas', label: 'Oitavas',   bonus: 3, start: '2026-06-28', end: '2026-07-03' },
@@ -207,9 +205,10 @@ function SupercopaTab({ ranking, loading, user }) {
             const podiumH = [80, 110, 60][idx === 0 ? 1 : idx === 1 ? 0 : 2]
             const podiumColors = ['var(--gold)', '#C0C0C0', '#CD7F32']
             const color = podiumColors[idx]
+            const trophyFile = ['SUPERCOPA', '2SUPERCOPA', '3SUPERCOPA'][idx]
             return (
               <div key={p.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px', flex: isFirst ? 1.15 : 1 }}>
-                <span style={{ fontSize: isFirst ? '30px' : '24px' }}>{MEDALS[idx]}</span>
+                <img src={`/${trophyFile}.png`} alt="" style={{ width: isFirst ? 40 : 32, height: isFirst ? 40 : 32, objectFit: 'contain' }} />
                 <Avatar profile={p} size={isFirst ? 50 : 40} />
                 <div style={{ fontSize: isFirst ? '13px' : '11px', fontWeight: 600, color: 'var(--text)', textAlign: 'center', maxWidth: 80, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {p.display_name || p.nick}
@@ -242,8 +241,8 @@ function SupercopaTab({ ranking, loading, user }) {
           return (
             <div key={p.id} className="glass-card" style={{ padding: '12px 16px', border: isMe ? '1px solid rgba(232,184,75,0.28)' : undefined, background: isMe ? 'rgba(232,184,75,0.04)' : undefined }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <div style={{ width: 28, textAlign: 'center', fontFamily: 'var(--font-display)', fontSize: '18px', color: i < 3 ? 'var(--gold)' : 'var(--text-3)', flexShrink: 0 }}>
-                  {i < 3 ? MEDALS[i] : `${i + 1}º`}
+                <div style={{ width: 28, textAlign: 'center', fontFamily: 'var(--font-display)', fontSize: '18px', color: i === 0 ? 'var(--gold)' : i === 1 ? '#C0C0C0' : i === 2 ? '#CD7F32' : 'var(--text-3)', flexShrink: 0 }}>
+                  {i + 1}º
                 </div>
                 <Avatar profile={p} size={36} />
                 <div style={{ flex: 1, minWidth: 0 }}>
@@ -427,7 +426,7 @@ function PlayerRow({ mode, profile, position, isMe, stats }) {
       borderLeft: isMe ? '3px solid var(--gold)' : isTop3 ? `3px solid ${posColor}` : '3px solid transparent',
       transition: 'background 0.15s',
     }}>
-      <div style={{ fontFamily: 'var(--font-display)', fontSize: '15px', color: posColor, textAlign: 'center', lineHeight: 1 }}>{position}</div>
+      <div style={{ fontFamily: 'var(--font-display)', fontSize: '15px', color: posColor, textAlign: 'center', lineHeight: 1 }}>{position}º</div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, paddingLeft: 8, minWidth: 0 }}>
         <Avatar profile={profile} size={28} />
         <div style={{ minWidth: 0 }}>
@@ -625,7 +624,7 @@ function TournamentRow({ profile, position, isMe, breakdown, phasesUnlocked }) {
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
         {/* Posição */}
         <div style={{ width: 28, textAlign: 'center', fontFamily: 'var(--font-display)', fontSize: '15px', color: isTop3 ? posColor : 'var(--text-3)', flexShrink: 0 }}>
-          {isTop3 ? MEDALS[position - 1] : `${position}º`}
+          {position}º
         </div>
         <Avatar profile={profile} size={30} />
         <div style={{ flex: 1, minWidth: 0 }}>
