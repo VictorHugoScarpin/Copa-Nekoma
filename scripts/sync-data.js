@@ -405,37 +405,47 @@ async function initOitavas() {
     return
   }
 
-  // Garante 16 slots (preenche com null se tiver menos de 16 participantes)
-  const p = [...profiles]
-  while (p.length < 16) p.push(null)
+  // Pareamento reverso pelo N real de participantes (1ºxúltimo, 2ºxpenúltimo...)
+  // Sem mais preencher até 16 fixo — isso que causava confrontos com "A definir" errado
+  const N = profiles.length
+  const numMatches = Math.floor(N / 2)
 
   const rows = []
-  for (let i = 0; i < 8; i++) {
-    const p1 = p[i]
-    const p2 = p[15 - i]
-    if (!p1 && !p2) continue
+  for (let i = 0; i < numMatches; i++) {
     rows.push({
       phase: 'oitavas',
       slot: i,
-      player1_id: p1?.id || null,
-      player2_id: p2?.id || null,
+      player1_id: profiles[i].id,
+      player2_id: profiles[N - 1 - i].id,
+    })
+  }
+
+  // Se N for ímpar, o melhor colocado que sobrou avança de graça (bye).
+  // Já grava o winner_id na hora pra não travar o seedNextPhase esperando
+  // um jogo que nunca vai ter os dois lados preenchidos.
+  if (N % 2 === 1) {
+    const bye = profiles[numMatches]
+    rows.push({
+      phase: 'oitavas',
+      slot: numMatches,
+      player1_id: bye.id,
+      player2_id: null,
+      winner_id: bye.id,
     })
   }
 
   const { error } = await supabase.from('tournament_matchups').insert(rows)
   if (error) console.error('⚠️ Erro ao fixar oitavas:', error.message)
-  else console.log(`✅ Oitavas fixadas: ${rows.length} confrontos (1ºvs16º, 2ºvs15º...)`)
+  else console.log(`✅ Oitavas fixadas: ${rows.length} confrontos (1º x último, 2º x penúltimo...)`)
 }
 
-// Monta confrontos da próxima fase respeitando a chave A e chave B:
+// Monta confrontos da próxima fase respeitando a chave A e chave B, de forma
+// dinâmica (funciona com qualquer quantidade de participantes, não só 16):
 //
-// Oitavas (8 slots):  chave A = slots pares (0,2,4,6)  |  chave B = slots ímpares (1,3,5,7)
-// Quartas (4 slots):  chave A = slots 0,1  (W0vsW2, W4vsW6)  |  chave B = slots 2,3 (W1vsW3, W5vsW7)
-// Semi    (2 slots):  chave A = slot 0 (W_qA0 vs W_qA1)  |  chave B = slot 1 (W_qB0 vs W_qB1)
-// Final   (1 slot):   slot 0 = vencedor semi A vs vencedor semi B
-//
-// Regra geral: dentro de cada fase, slots pares da chave A se encontram entre si,
-// slots ímpares da chave B se encontram entre si, e só se cruzam na final.
+// Dentro da fase atual: chave A = confrontos de índice par (0,2,4...),
+// chave B = confrontos de índice ímpar (1,3,5...), ordenados por slot.
+// Na fase seguinte, os vencedores da chave A se enfrentam entre si (em pares
+// consecutivos), e o mesmo pra chave B — as duas chaves só se cruzam na final.
 async function seedNextPhase(currentPhase, nextPhase) {
   // Guard: próxima fase já criada?
   const { data: existing } = await supabase
@@ -463,33 +473,19 @@ async function seedNextPhase(currentPhase, nextPhase) {
 
   console.log(`🏆 Montando ${nextPhase.label} pelo chaveamento...`)
 
-  // Monta um mapa slot → winner_id
-  const winnerBySlot = {}
-  allCurrentMatchups.forEach(m => { winnerBySlot[m.slot] = m.winner_id })
+  // Reconstrói chave A (índices pares) e chave B (índices ímpares) da fase atual
+  const chaveA = allCurrentMatchups.filter((_, i) => i % 2 === 0).map(m => m.winner_id)
+  const chaveB = allCurrentMatchups.filter((_, i) => i % 2 === 1).map(m => m.winner_id)
 
   const rows = []
-
-  if (currentPhase.key === 'oitavas') {
-    // Chave A: slots 0,2,4,6 → quartas slots 0,1
-    // W(slot0) vs W(slot2) → quartas slot 0
-    // W(slot4) vs W(slot6) → quartas slot 1
-    // Chave B: slots 1,3,5,7 → quartas slots 2,3
-    // W(slot1) vs W(slot3) → quartas slot 2
-    // W(slot5) vs W(slot7) → quartas slot 3
-    rows.push({ phase: nextPhase.key, slot: 0, player1_id: winnerBySlot[0], player2_id: winnerBySlot[2] })
-    rows.push({ phase: nextPhase.key, slot: 1, player1_id: winnerBySlot[4], player2_id: winnerBySlot[6] })
-    rows.push({ phase: nextPhase.key, slot: 2, player1_id: winnerBySlot[1], player2_id: winnerBySlot[3] })
-    rows.push({ phase: nextPhase.key, slot: 3, player1_id: winnerBySlot[5], player2_id: winnerBySlot[7] })
-  } else if (currentPhase.key === 'quartas') {
-    // Chave A: slots 0,1 → semi slot 0
-    // W(slot0) vs W(slot1) → semi slot 0
-    // Chave B: slots 2,3 → semi slot 1
-    // W(slot2) vs W(slot3) → semi slot 1
-    rows.push({ phase: nextPhase.key, slot: 0, player1_id: winnerBySlot[0], player2_id: winnerBySlot[1] })
-    rows.push({ phase: nextPhase.key, slot: 1, player1_id: winnerBySlot[2], player2_id: winnerBySlot[3] })
-  } else if (currentPhase.key === 'semi') {
-    // Vencedor semi A (slot 0) vs vencedor semi B (slot 1) → final slot 0
-    rows.push({ phase: nextPhase.key, slot: 0, player1_id: winnerBySlot[0], player2_id: winnerBySlot[1] })
+  let slot = 0
+  for (let i = 0; i < chaveA.length; i += 2) {
+    if (chaveA[i] === undefined) continue
+    rows.push({ phase: nextPhase.key, slot: slot++, player1_id: chaveA[i], player2_id: chaveA[i + 1] ?? null })
+  }
+  for (let i = 0; i < chaveB.length; i += 2) {
+    if (chaveB[i] === undefined) continue
+    rows.push({ phase: nextPhase.key, slot: slot++, player1_id: chaveB[i], player2_id: chaveB[i + 1] ?? null })
   }
 
   if (!rows.length) return
