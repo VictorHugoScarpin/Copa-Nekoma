@@ -143,7 +143,9 @@ function StatCard({ icon, title, subtitle, player, value, unit, color, rank }) {
   if (!player) return (
     <div className="glass-card" style={{ padding: '16px', opacity: 0.5 }}>
       <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 10 }}>
-        <div style={{ width: 36, height: 36, borderRadius: 10, background: `${color}1a`, border: `1px solid ${color}33`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0, color }}>{icon}</div>
+        <div style={{ width: 36, height: 36, borderRadius: 10, background: `${color}1a`, border: `1px solid ${color}33`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <img src={`/${icon}.png`} alt="" style={{ width: 24, height: 24, objectFit: 'contain' }} />
+        </div>
         <div>
           <div style={{ fontFamily: 'var(--font-display)', fontSize: 16, letterSpacing: '0.06em', color: 'var(--text)', lineHeight: 1 }}>{title}</div>
           <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 2 }}>{subtitle}</div>
@@ -156,7 +158,9 @@ function StatCard({ icon, title, subtitle, player, value, unit, color, rank }) {
   return (
     <div className="glass-card" style={{ padding: '16px', border: `1px solid ${color}22` }}>
       <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 14 }}>
-        <div style={{ width: 36, height: 36, borderRadius: 10, background: `${color}1a`, border: `1px solid ${color}33`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0, color }}>{icon}</div>
+        <div style={{ width: 36, height: 36, borderRadius: 10, background: `${color}1a`, border: `1px solid ${color}33`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <img src={`/${icon}.png`} alt="" style={{ width: 24, height: 24, objectFit: 'contain' }} />
+        </div>
         <div>
           <div style={{ fontFamily: 'var(--font-display)', fontSize: 16, letterSpacing: '0.06em', color: 'var(--text)', lineHeight: 1 }}>{title}</div>
           <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 2 }}>{subtitle}</div>
@@ -197,13 +201,13 @@ function ComoFunciona() {
   const [open, setOpen] = useState(false)
 
   const regras = [
-    { icon: '🔥', title: 'Em Chamas', desc: 'Maior sequência de acertos consecutivos (placar exato ou resultado certo) nos jogos finalizados.' },
-    { icon: '🎯', title: 'Pé Quente', desc: 'Quem acertou mais placares exatos ao longo da Copa. Placar exato = 3 pontos.' },
-    { icon: '🦓', title: 'Zebra', desc: 'Quem acertou o resultado de jogos que a maioria da galera errou. O visionário do grupo!' },
-    { icon: '📊', title: 'Consistente', desc: 'Melhor porcentagem de acertos (placar exato + resultado certo) em relação ao total de jogos palpitados. Mínimo de 3 jogos para entrar.' },
-    { icon: '⚡', title: 'Mais Ativo', desc: 'Quem mais registrou palpites no total, independente de acertos. Participação é tudo!' },
-    { icon: '🤝', title: 'Diplomata', desc: 'Quem mais apostou em empate nos jogos. Acredita na paz entre as nações!' },
-    { icon: '💀', title: 'Azarão', desc: 'Quem zerou mais vezes — palpites em jogos finalizados que não renderam nenhum ponto. Não é desonra, é azar mesmo!' },
+    { icon: 'EMCHAMAS', title: 'Em Chamas', desc: 'Maior sequência de acertos consecutivos (placar exato ou resultado certo) nos jogos finalizados.' },
+    { icon: 'PEQUENTE', title: 'Pé Quente', desc: 'Quem acertou mais placares exatos ao longo da Copa. Placar exato = 3 pontos.' },
+    { icon: 'ZEBRA', title: 'Zebra', desc: 'Quem acertou o resultado de jogos que a maioria da galera errou. O visionário do grupo!' },
+    { icon: 'CONSISTENTE', title: 'Consistente', desc: 'Melhor porcentagem de acertos (placar exato + resultado certo) em relação ao total de jogos palpitados. Mínimo de 3 jogos para entrar.' },
+    { icon: 'MAISATIVO', title: 'Mais Ativo', desc: 'Quem mais registrou palpites no total, independente de acertos. Participação é tudo!' },
+    { icon: 'DIPLOMATA', title: 'Diplomata', desc: 'Quem mais apostou em empate nos jogos. Acredita na paz entre as nações!' },
+    { icon: 'AZARAO', title: 'Azarão', desc: 'Quem zerou mais vezes — palpites em jogos finalizados que não renderam nenhum ponto. Não é desonra, é azar mesmo!' },
   ]
 
   return (
@@ -223,7 +227,7 @@ function ComoFunciona() {
         <div style={{ borderTop: '1px solid var(--border)', padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 14, animation: 'fadeUp 0.2s ease' }}>
           {regras.map(({ icon, title, desc }) => (
             <div key={title} style={{ display: 'flex', gap: 12 }}>
-              <span style={{ fontSize: 18, flexShrink: 0, marginTop: 1 }}>{icon}</span>
+              <img src={`/${icon}.png`} alt="" style={{ width: 22, height: 22, objectFit: 'contain', flexShrink: 0, marginTop: 1 }} />
               <div>
                 <div style={{ fontWeight: 700, fontSize: 13, color: 'var(--text)', marginBottom: 3 }}>{title}</div>
                 <div style={{ fontSize: 12, color: 'var(--text-3)', lineHeight: 1.55 }}>{desc}</div>
@@ -431,13 +435,13 @@ export default function HallPage() {
   })
 
   const stats = [
-    { icon: '🔥', title: 'EM CHAMAS', subtitle: 'Maior sequência de acertos consecutivos', data: emChamas, unit: 'seguidos', color: '#f97316' },
-    { icon: '🎯', title: 'PÉ QUENTE', subtitle: 'Mais placares exatos', data: peQuente, unit: 'exatos', color: '#f5c518' },
-    { icon: '🦓', title: 'ZEBRA', subtitle: 'Acertou quando a maioria errou', data: zebra, unit: 'zebras', color: '#a855f7' },
-    { icon: '📊', title: 'CONSISTENTE', subtitle: 'Melhor % de acertos (mín. 3 jogos)', data: consistente, unit: '%', color: '#00c853' },
-    { icon: '⚡', title: 'MAIS ATIVO', subtitle: 'Mais palpites registrados', data: maisAtivo, unit: 'palp.', color: '#4d8ef0' },
-    { icon: '🤝', title: 'DIPLOMATA', subtitle: 'Quem mais apostou em empate', data: diplomata, unit: 'empates', color: '#06b6d4' },
-    { icon: '💀', title: 'AZARÃO', subtitle: 'Mais palpites sem ponto', data: azarao, unit: 'zeros', color: '#f03e3e' },
+    { icon: 'EMCHAMAS', title: 'EM CHAMAS', subtitle: 'Maior sequência de acertos consecutivos', data: emChamas, unit: 'seguidos', color: '#f97316' },
+    { icon: 'PEQUENTE', title: 'PÉ QUENTE', subtitle: 'Mais placares exatos', data: peQuente, unit: 'exatos', color: '#f5c518' },
+    { icon: 'ZEBRA', title: 'ZEBRA', subtitle: 'Acertou quando a maioria errou', data: zebra, unit: 'zebras', color: '#a855f7' },
+    { icon: 'CONSISTENTE', title: 'CONSISTENTE', subtitle: 'Melhor % de acertos (mín. 3 jogos)', data: consistente, unit: '%', color: '#00c853' },
+    { icon: 'MAISATIVO', title: 'MAIS ATIVO', subtitle: 'Mais palpites registrados', data: maisAtivo, unit: 'palp.', color: '#4d8ef0' },
+    { icon: 'DIPLOMATA', title: 'DIPLOMATA', subtitle: 'Quem mais apostou em empate', data: diplomata, unit: 'empates', color: '#06b6d4' },
+    { icon: 'AZARAO', title: 'AZARÃO', subtitle: 'Mais palpites sem ponto', data: azarao, unit: 'zeros', color: '#f03e3e' },
   ]
 
   return (
