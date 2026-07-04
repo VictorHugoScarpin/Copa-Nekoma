@@ -143,7 +143,7 @@ function StatCard({ icon, title, subtitle, player, value, unit, color, rank }) {
   if (!player) return (
     <div className="glass-card" style={{ padding: '16px', opacity: 0.5 }}>
       <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 10 }}>
-        <div style={{ width: 64, height: 64, borderRadius: 14, background: `${color}1a`, border: `1px solid ${color}33`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+        <div style={{ width: 36, height: 36, borderRadius: 10, background: `${color}1a`, border: `1px solid ${color}33`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, overflow: 'visible' }}>
           <img src={`/${icon}.png`} alt="" style={{ width: 48, height: 48, objectFit: 'contain' }} />
         </div>
         <div>
@@ -158,7 +158,7 @@ function StatCard({ icon, title, subtitle, player, value, unit, color, rank }) {
   return (
     <div className="glass-card" style={{ padding: '16px', border: `1px solid ${color}22` }}>
       <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 14 }}>
-        <div style={{ width: 64, height: 64, borderRadius: 14, background: `${color}1a`, border: `1px solid ${color}33`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+        <div style={{ width: 36, height: 36, borderRadius: 10, background: `${color}1a`, border: `1px solid ${color}33`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, overflow: 'visible' }}>
           <img src={`/${icon}.png`} alt="" style={{ width: 48, height: 48, objectFit: 'contain' }} />
         </div>
         <div>
@@ -227,7 +227,7 @@ function ComoFunciona() {
         <div style={{ borderTop: '1px solid var(--border)', padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 14, animation: 'fadeUp 0.2s ease' }}>
           {regras.map(({ icon, title, desc }) => (
             <div key={title} style={{ display: 'flex', gap: 12 }}>
-              <img src={`/${icon}.png`} alt="" style={{ width: 44, height: 44, objectFit: 'contain', flexShrink: 0, marginTop: 1 }} />
+              <img src={`/${icon}.png`} alt="" style={{ width: 28, height: 28, objectFit: 'contain', flexShrink: 0, marginTop: 1 }} />
               <div>
                 <div style={{ fontWeight: 700, fontSize: 13, color: 'var(--text)', marginBottom: 3 }}>{title}</div>
                 <div style={{ fontSize: 12, color: 'var(--text-3)', lineHeight: 1.55 }}>{desc}</div>
