@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
 import QuizProfileCard from '../components/QuizProfileCard'
+import { TROPHIES, computeTrophyHolders } from '../lib/trophies'
 
 // ── Regras da Liga ────────────────────────────────────────────────────────────
 function RegrasLiga() {
@@ -298,6 +299,72 @@ function RegrasSection() {
   )
 }
 
+// ── Troféus: cálculo (busca profiles + guesses de TODOS e computa quem tem o quê) ──
+function useTrophyHolders() {
+  const [holders, setHolders] = useState(null)
+
+  useEffect(() => {
+    let active = true
+    async function load() {
+      const [{ data: profiles }, { data: guesses }] = await Promise.all([
+        supabase
+          .from('profiles')
+          .select('id, points, exact_hits, partial_hits, tournament_points, created_at'),
+        supabase
+          .from('guesses')
+          .select('user_id, home_score, away_score, qualifier_guess, matches(id, home_score, away_score, status, match_date, qualifier_result)'),
+      ])
+      if (!active) return
+      setHolders(computeTrophyHolders(profiles || [], guesses || []))
+    }
+    load()
+    return () => { active = false }
+  }, [])
+
+  return holders
+}
+
+// ── Prateleira de Troféus ──────────────────────────────────────────────────────
+function TrophyShelf({ owned }) {
+  const loading = owned === null
+  return (
+    <div className="glass-card" style={{ padding: '16px 14px', marginBottom: '12px' }}>
+      <div style={{ fontSize: '10px', color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '12px', fontWeight: 600, textAlign: 'center' }}>
+        Prateleira de Troféus{!loading && owned.length > 0 ? ` · ${owned.length}` : ''}
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(56px, 1fr))', gap: '10px 6px' }}>
+        {TROPHIES.map(t => {
+          const has = !loading && owned.includes(t.key)
+          return (
+            <div
+              key={t.key}
+              title={t.label}
+              style={{
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+                opacity: loading ? 0.15 : has ? 1 : 0.22,
+                transition: 'opacity 0.3s',
+              }}
+            >
+              <img
+                src={`/${t.key}.png`}
+                alt={t.label}
+                style={{
+                  width: 46, height: 46, objectFit: 'contain',
+                  filter: has ? 'drop-shadow(0 0 6px rgba(232,184,75,0.55))' : 'grayscale(1)',
+                }}
+                onError={e => { e.target.style.visibility = 'hidden' }}
+              />
+              <div style={{ fontSize: '8px', color: has ? 'var(--text-2)' : 'var(--text-3)', textAlign: 'center', lineHeight: 1.2, fontWeight: has ? 700 : 500 }}>
+                {t.label}
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 // ── Cards de Posição nos 3 Rankings ──────────────────────────────────────────
 function PositionCards({ userId }) {
   const [positions, setPositions] = useState(null)
@@ -361,6 +428,7 @@ function PositionCards({ userId }) {
 // ── Perfil de outro jogador (modo visualização) ───────────────────────────────
 function PlayerProfileView({ player, onBack }) {
   const [positions, setPositions] = useState(null)
+  const trophyHolders = useTrophyHolders()
 
   useEffect(() => {
     async function load() {
@@ -416,17 +484,12 @@ function PlayerProfileView({ player, onBack }) {
           </div>
         </div>
 
-        {/* Stats grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '16px' }}>
-          {[
-            ['Pontos Liga', player.points ?? 0, 'var(--gold)'],
-            ['Placares Exatos', player.exact_hits ?? 0, 'var(--green)'],
-          ].map(([label, value, color]) => (
-            <div key={label} style={{ background: 'var(--surface)', borderRadius: 'var(--r-md)', padding: '14px 10px', textAlign: 'center' }}>
-              <div style={{ fontFamily: 'var(--font-display)', fontSize: '30px', color, letterSpacing: '0.04em', lineHeight: 1 }}>{value}</div>
-              <div style={{ fontSize: '10px', color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: '5px', fontWeight: 600 }}>{label}</div>
-            </div>
-          ))}
+        {/* Stats */}
+        <div style={{ marginBottom: '16px' }}>
+          <div style={{ background: 'var(--surface)', borderRadius: 'var(--r-md)', padding: '14px 10px', textAlign: 'center' }}>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: '30px', color: 'var(--green)', letterSpacing: '0.04em', lineHeight: 1 }}>{player.exact_hits ?? 0}</div>
+            <div style={{ fontSize: '10px', color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: '5px', fontWeight: 600 }}>Placares Exatos</div>
+          </div>
         </div>
 
         {/* Posições */}
@@ -446,6 +509,9 @@ function PlayerProfileView({ player, onBack }) {
           </div>
         )}
       </div>
+
+      {/* Prateleira de troféus */}
+      <TrophyShelf owned={trophyHolders ? (trophyHolders[player.id] || []) : null} />
     </div>
   )
 }
@@ -556,6 +622,7 @@ export default function ProfilePage() {
   const [msg, setMsg] = useState('')
   const [view, setView] = useState('perfil')
   const fileRef = useRef()
+  const trophyHolders = useTrophyHolders()
 
   async function saveProfile() {
     if (!displayName.trim()) return
@@ -618,6 +685,9 @@ export default function ProfilePage() {
           {/* Cards de posição nos 3 rankings */}
           <PositionCards userId={user.id} />
 
+          {/* Prateleira de troféus */}
+          <TrophyShelf owned={trophyHolders ? (trophyHolders[user.id] || []) : null} />
+
           <div className="glass-card" style={{ padding: '28px 24px', marginBottom: '12px' }}>
             {/* Avatar */}
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', marginBottom: '24px' }}>
@@ -642,16 +712,11 @@ export default function ProfilePage() {
             </div>
 
             {/* Stats */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '24px' }}>
-              {[
-                ['Pontos Liga', profile?.points ?? 0, 'var(--gold)'],
-                ['Placares Exatos', profile?.exact_hits ?? 0, 'var(--green)'],
-              ].map(([label, value, color]) => (
-                <div key={label} style={{ background: 'var(--surface)', borderRadius: 'var(--r-md)', padding: '16px 12px', textAlign: 'center' }}>
-                  <div style={{ fontFamily: 'var(--font-display)', fontSize: '34px', color, letterSpacing: '0.04em', lineHeight: 1 }}>{value}</div>
-                  <div style={{ fontSize: '10px', color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: '5px', fontWeight: 600 }}>{label}</div>
-                </div>
-              ))}
+            <div style={{ marginBottom: '24px' }}>
+              <div style={{ background: 'var(--surface)', borderRadius: 'var(--r-md)', padding: '16px 12px', textAlign: 'center' }}>
+                <div style={{ fontFamily: 'var(--font-display)', fontSize: '34px', color: 'var(--green)', letterSpacing: '0.04em', lineHeight: 1 }}>{profile?.exact_hits ?? 0}</div>
+                <div style={{ fontSize: '10px', color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: '5px', fontWeight: 600 }}>Placares Exatos</div>
+              </div>
             </div>
 
             <div className="divider" />
