@@ -480,7 +480,7 @@ function PlayerProfileView({ player, onBack }) {
       </button>
 
       {/* Quiz */}
-      <QuizProfileCard userId={player.id} />
+      <QuizProfileCard userId={player.id} playerName={player.display_name || player.nick} isMe={false} />
 
       {/* Card principal */}
       <div className="glass-card" style={{ padding: '28px 24px', marginBottom: '12px' }}>
