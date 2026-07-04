@@ -803,6 +803,7 @@ function buildBracketFromMatchups(matchups, profilesMap) {
   }
 
   const oSlots = oitavas.map(toSlot)
+  // Chave A = jogos de índice par (1x16, 3x14, 5x12...), Chave B = ímpar (2x15, 4x13...)
   const chaveA = oSlots.filter((_, i) => i % 2 === 0)
   const chaveB = oSlots.filter((_, i) => i % 2 === 1)
 
@@ -880,18 +881,29 @@ function AdversarioTab({ myProfile, bracket, matches, currentPhaseIdx }) {
   // Acha o confronto do usuário atual NA FASE ATUAL (não sempre oitavas)
   const myMatchup = useMemo(() => {
     if (!bracket || !myProfile) return null
-    // Pega confrontos da fase atual primeiro, senão cai nas oitavas
     const phaseKey = phase.key
     let phaseSlots = []
     if (phaseKey === 'oitavas') phaseSlots = [...(bracket.chaveA || []), ...(bracket.chaveB || [])]
     else if (phaseKey === 'quartas') phaseSlots = bracket.quartas || []
     else if (phaseKey === 'semi') phaseSlots = bracket.semi || []
     else if (phaseKey === 'final') phaseSlots = bracket.final || []
-    const inPhase = phaseSlots.find(m => m.p1?.id === myProfile.id || m.p2?.id === myProfile.id)
-    if (inPhase) return inPhase
-    // fallback: oitavas (antes do torneio iniciar)
-    const all = [...(bracket.chaveA || []), ...(bracket.chaveB || [])]
-    return all.find(m => m.p1?.id === myProfile.id || m.p2?.id === myProfile.id) || null
+    return phaseSlots.find(m => m.p1?.id === myProfile.id || m.p2?.id === myProfile.id) || null
+  }, [bracket, myProfile, phase])
+
+  // Verifica se o usuário já foi eliminado em alguma fase anterior à atual
+  const eliminatedAt = useMemo(() => {
+    if (!bracket || !myProfile) return null
+    for (const p of TOURNAMENT_PHASES) {
+      if (p.round > phase.round) break
+      let slots = []
+      if (p.key === 'oitavas') slots = [...(bracket.chaveA || []), ...(bracket.chaveB || [])]
+      else if (p.key === 'quartas') slots = bracket.quartas || []
+      else if (p.key === 'semi') slots = bracket.semi || []
+      else if (p.key === 'final') slots = bracket.final || []
+      const m = slots.find(s => s.p1?.id === myProfile.id || s.p2?.id === myProfile.id)
+      if (m && m.winner_id && m.winner_id !== myProfile.id) return p
+    }
+    return null
   }, [bracket, myProfile, phase])
 
   const opponent = myMatchup
@@ -938,6 +950,15 @@ function AdversarioTab({ myProfile, bracket, matches, currentPhaseIdx }) {
   }, [matches, phase])
 
   if (!myMatchup || !opponent) {
+    if (eliminatedAt) {
+      return (
+        <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-3)' }}>
+          <div style={{ fontSize: '32px', marginBottom: '12px' }}>💔</div>
+          <div style={{ fontSize: '14px', color: 'var(--text-2)', fontWeight: 700, marginBottom: '4px' }}>Eliminado</div>
+          <div style={{ fontSize: '13px' }}>Você caiu na fase de {eliminatedAt.label}.</div>
+        </div>
+      )
+    }
     return (
       <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-3)' }}>
         <div style={{ fontSize: '32px', marginBottom: '12px' }}>🏆</div>
@@ -1276,13 +1297,29 @@ function CopaYuutoKidou({ user, matches }) {
           setBracket(buildBracketFromMatchups(matchups, profilesMap))
         } else {
           // Preview pré-torneio: mostra oitavas projetadas pelo ranking atual
+          // Pareamento clássico reverso: 1ºx16º, 2ºx15º, 3ºx14º... (dinâmico pro N real de gente)
           const sorted = [...profiles].sort((a, b) =>
             (b.points - a.points) || (b.exact_hits - a.exact_hits) || (b.partial_hits - a.partial_hits) || (new Date(a.created_at) - new Date(b.created_at))
           ).slice(0, 16)
-          if (sorted.length >= 2) {
+          const N = sorted.length
+          if (N >= 2) {
+            const numMatches = Math.floor(N / 2)
             const preview = []
-            for (let i = 0; i < 8 && i < sorted.length && (15 - i) < sorted.length; i++) {
-              preview.push({ phase: 'oitavas', slot: i, player1_id: sorted[i].id, player2_id: sorted[15 - i].id, winner_id: null, player1_points: 0, player2_points: 0 })
+            for (let i = 0; i < numMatches; i++) {
+              preview.push({
+                phase: 'oitavas',
+                slot: i,
+                player1_id: sorted[i].id,
+                player2_id: sorted[N - 1 - i].id,
+                winner_id: null,
+                player1_points: 0,
+                player2_points: 0,
+              })
+            }
+            // Se N for ímpar, o melhor colocado que sobrou avança de graça (bye)
+            if (N % 2 === 1) {
+              const bye = sorted[numMatches]
+              preview.push({ phase: 'oitavas', slot: numMatches, player1_id: bye.id, player2_id: null, winner_id: bye.id, player1_points: 0, player2_points: 0 })
             }
             setBracket(buildBracketFromMatchups(preview, profilesMap))
           }
