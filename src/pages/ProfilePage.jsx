@@ -306,16 +306,28 @@ function useTrophyHolders() {
   useEffect(() => {
     let active = true
     async function load() {
-      const [{ data: profiles }, { data: guesses }] = await Promise.all([
+      const [{ data: profiles }, { data: guesses }, { data: matchups }] = await Promise.all([
         supabase
           .from('profiles')
-          .select('id, points, exact_hits, partial_hits, tournament_points, created_at'),
+          .select('id, points, exact_hits, partial_hits, qualifier_hits, tournament_points, created_at')
+          .order('points', { ascending: false }),
         supabase
           .from('guesses')
-          .select('user_id, home_score, away_score, qualifier_guess, matches(id, home_score, away_score, status, match_date, qualifier_result)'),
+          .select('user_id, match_id, home_score, away_score, points_earned, created_at, matches(status)'),
+        supabase
+          .from('tournament_matchups')
+          .select('player1_id, player2_id')
+          .eq('phase', 'oitavas'),
       ])
       if (!active) return
-      setHolders(computeTrophyHolders(profiles || [], guesses || []))
+
+      const tournamentIds = new Set()
+      ;(matchups || []).forEach(m => {
+        if (m.player1_id) tournamentIds.add(m.player1_id)
+        if (m.player2_id) tournamentIds.add(m.player2_id)
+      })
+
+      setHolders(computeTrophyHolders(profiles || [], guesses || [], tournamentIds))
     }
     load()
     return () => { active = false }
@@ -680,7 +692,7 @@ export default function ProfilePage() {
       {/* Aba Perfil */}
       {view === 'perfil' && (
         <>
-          <QuizProfileCard userId={user.id} />
+          <QuizProfileCard userId={user.id} isMe />
 
           {/* Cards de posição nos 3 rankings */}
           <PositionCards userId={user.id} />
