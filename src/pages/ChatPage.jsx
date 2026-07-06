@@ -57,7 +57,7 @@ function MessageBubble({ msg, profile, isMe }) {
             />
           )}
           {msg.content && (
-            <span style={{ display: 'block', padding: msg.media_url ? '8px 13px' : 0 }}>
+            <span style={{ display: 'block', padding: msg.media_url ? '8px 13px' : 0, whiteSpace: 'pre-wrap' }}>
               {msg.content}
             </span>
           )}
