@@ -86,24 +86,21 @@ const TEAM_PT = {
 }
 
 // Sequência oficial: Grupos → 16 avos de final → Oitavas de final → Quartas de final → Semifinal → Final / Terceiro lugar
-// A busca é normalizada (maiúsculas, espaços/hífens viram "_") pra aceitar qualquer convenção que a fonte de dados use
-// (ex: "LAST_16", "Round of 16", "last_16", "ROUND_16" etc. caem todos na mesma chave).
+// A busca é normalizada (maiúsculas, espaços/hífens viram "_") só pra pegar variações de escrita
+// (maiúsculo/minúsculo, espaço vs underscore) do MESMO código — sem alterar o que cada código já significava.
 const STAGE_PT = {
-  GROUP_STAGE:      'Fase de Grupos',
-  GROUP:            'Fase de Grupos',
-  GROUPS:           'Fase de Grupos',
+  LAST_32:          'Fase de 32',
+  ROUND_OF_32:      'Fase de 32',
+  ROUND_32:         'Fase de 32',
 
-  LAST_32:          '16 avos de final',
-  ROUND_OF_32:      '16 avos de final',
-  ROUND_32:         '16 avos de final',
+  LAST_16:          '16 avos de final',
+  ROUND_OF_16:      '16 avos de final',
+  ROUND_16:         '16 avos de final',
 
-  LAST_16:          'Oitavas de final',
-  ROUND_OF_16:      'Oitavas de final',
-  ROUND_16:         'Oitavas de final',
+  LAST_8:           'Oitavas de final',
+  ROUND_OF_8:       'Oitavas de final',
+  ROUND_8:          'Oitavas de final',
 
-  LAST_8:           'Quartas de final',
-  ROUND_OF_8:       'Quartas de final',
-  ROUND_8:          'Quartas de final',
   QUARTER_FINAL:    'Quartas de final',
   QUARTER_FINALS:   'Quartas de final',
   QUARTERFINAL:     'Quartas de final',
