@@ -85,23 +85,48 @@ const TEAM_PT = {
   'Bosna i Hercegovina': 'Bósnia e Herzegovina',
 }
 
+// Sequência oficial: Grupos → 16 avos de final → Oitavas de final → Quartas de final → Semifinal → Final / Terceiro lugar
+// A busca é normalizada (maiúsculas, espaços/hífens viram "_") pra aceitar qualquer convenção que a fonte de dados use
+// (ex: "LAST_16", "Round of 16", "last_16", "ROUND_16" etc. caem todos na mesma chave).
 const STAGE_PT = {
-  'LAST_32':        'Fase de 32',
-  'LAST_16':        '16 avos de final',
-  'LAST_8':         'Oitavas de final',   // ← adicionar
-  'QUARTER_FINAL':  'Quartas de final',
-  'SEMI_FINAL':     'Semifinal',
-  'FINAL':          'Final',
-  'Round of 32':    'Fase de 32',
-  'Round of 16':    '16 avos de final',
-  'Round of 8':     'Oitavas de final',   // ← adicionar
-  'Quarter-final':  'Quartas de final',
-  'Semi-final':     'Semifinal',
-  'Final':          'Final',
+  GROUP_STAGE:      'Fase de Grupos',
+  GROUP:            'Fase de Grupos',
+  GROUPS:           'Fase de Grupos',
+
+  LAST_32:          '16 avos de final',
+  ROUND_OF_32:      '16 avos de final',
+  ROUND_32:         '16 avos de final',
+
+  LAST_16:          'Oitavas de final',
+  ROUND_OF_16:      'Oitavas de final',
+  ROUND_16:         'Oitavas de final',
+
+  LAST_8:           'Quartas de final',
+  ROUND_OF_8:       'Quartas de final',
+  ROUND_8:          'Quartas de final',
+  QUARTER_FINAL:    'Quartas de final',
+  QUARTER_FINALS:   'Quartas de final',
+  QUARTERFINAL:     'Quartas de final',
+
+  LAST_4:           'Semifinal',
+  ROUND_OF_4:       'Semifinal',
+  ROUND_4:          'Semifinal',
+  SEMI_FINAL:       'Semifinal',
+  SEMI_FINALS:      'Semifinal',
+  SEMIFINAL:        'Semifinal',
+
+  THIRD_PLACE:      'Terceiro Lugar',
+  THIRD_PLACE_PLAYOFF: 'Terceiro Lugar',
+  '3RD_PLACE':      'Terceiro Lugar',
+  PLACE_3RD:        'Terceiro Lugar',
+
+  FINAL:            'Final',
 }
 
 function getStagePT(stage) {
-  return STAGE_PT[stage] || stage
+  if (!stage) return stage
+  const normalized = stage.trim().toUpperCase().replace(/[\s-]+/g, '_')
+  return STAGE_PT[normalized] || stage
 }
 
 // Brasões fixos por seleção (Wikipedia)
