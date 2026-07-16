@@ -158,25 +158,24 @@ function ScoredGuesses({ userId, tournamentPoints }) {
         </CollapseSection>
       )}
 
-      {knockout.length > 0 && (
-        <CollapseSection label="Mata-Mata" count={knockout.length} pts={calcPts(knockout) + (tournamentPoints > 0 ? tournamentPoints : 0)} accentColor="var(--gold)" defaultOpen>
+      {(knockout.length > 0 || tournamentPoints > 0 || masterPoints > 0) && (
+        <CollapseSection label="Mata-Mata" count={knockout.length} pts={calcPts(knockout) + (tournamentPoints > 0 ? tournamentPoints : 0) + masterPoints} accentColor="var(--gold)" defaultOpen>
           {knockout.map((g, i) => <GuessItem key={i} g={g} />)}
           {tournamentPoints > 0 && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 10px', borderRadius: '8px', background: 'rgba(168,85,247,0.1)', border: '1px solid rgba(168,85,247,0.2)', marginTop: '2px' }}>
-              <span style={{ fontSize: '11px', color: '#c084fc', flex: 1 }}>Bônus Yuuto Kidou</span>
+              <span style={{ fontSize: '11px', color: '#c084fc', flex: 1 }}>Yuuto Kidou</span>
               <span style={{ fontFamily: 'var(--font-display)', fontSize: '13px', color: '#c084fc', fontWeight: 700 }}>+{tournamentPoints}</span>
             </div>
           )}
+          {masterPoints > 0 && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 10px', borderRadius: '8px', background: 'rgba(251,146,60,0.1)', border: '1px solid rgba(251,146,60,0.25)', marginTop: '2px' }}>
+              <span style={{ fontSize: '11px', color: '#fb923c', flex: 1 }}>
+                Palpite Mestre {masterPoints === 10 ? '(2 finalistas ✓✓)' : '(1 finalista ✓)'}
+              </span>
+              <span style={{ fontFamily: 'var(--font-display)', fontSize: '13px', color: '#fb923c', fontWeight: 700 }}>+{masterPoints}</span>
+            </div>
+          )}
         </CollapseSection>
-      )}
-
-      {masterPoints > 0 && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 10px', borderRadius: '8px', background: 'rgba(251,146,60,0.1)', border: '1px solid rgba(251,146,60,0.25)' }}>
-          <span style={{ fontSize: '11px', color: '#fb923c', flex: 1 }}>
-            Palpite Mestre {masterPoints === 10 ? '(2 finalistas ✓✓)' : '(1 finalista ✓)'}
-          </span>
-          <span style={{ fontFamily: 'var(--font-display)', fontSize: '15px', color: '#fb923c', fontWeight: 700 }}>+{masterPoints}</span>
-        </div>
       )}
     </div>
   )
@@ -572,35 +571,57 @@ function NekomaoTab({ ranking, loading, user, guessCounts, masterGuesses }) {
 // ── Aba PONTOS YUUTO KIDOU ────────────────────────────────────────────────────
 
 // Calcula pontos de um usuário em cada fase (filtrando guesses por janela de datas)
+// e o status real do chaveamento (classificado / eliminado / em andamento) por fase
 function useTournamentBreakdown(userId) {
   const [breakdown, setBreakdown] = useState(null) // { oitavas: N, quartas: N, ... }
+  const [status, setStatus] = useState(null) // { oitavas: 'won'|'lost'|'pending'|'none', ... }
 
   useEffect(() => {
     if (!userId) return
-    supabase
-      .from('guesses')
-      .select('points_earned, matches(match_date, status)')
-      .eq('user_id', userId)
-      .then(({ data: guesses }) => {
-        const result = {}
-        TOURNAMENT_PHASES.forEach(phase => {
-          const start = new Date(phase.start + 'T00:00:00')
-          const end = new Date(phase.end + 'T23:59:59')
-          const pts = (guesses || [])
-            .filter(g => {
-              const md = g.matches?.match_date
-              if (!md) return false
-              const d = new Date(md)
-              return d >= start && d <= end && g.matches?.status === 'finished'
-            })
-            .reduce((s, g) => s + (g.points_earned || 0), 0)
-          result[phase.key] = pts
-        })
-        setBreakdown(result)
+    Promise.all([
+      supabase
+        .from('guesses')
+        .select('points_earned, matches(match_date, status)')
+        .eq('user_id', userId),
+      supabase
+        .from('tournament_matchups')
+        .select('phase, player1_id, player2_id, winner_id'),
+    ]).then(([{ data: guesses }, { data: matchups }]) => {
+      const result = {}
+      TOURNAMENT_PHASES.forEach(phase => {
+        const start = new Date(phase.start + 'T00:00:00')
+        const end = new Date(phase.end + 'T23:59:59')
+        const pts = (guesses || [])
+          .filter(g => {
+            const md = g.matches?.match_date
+            if (!md) return false
+            const d = new Date(md)
+            return d >= start && d <= end && g.matches?.status === 'finished'
+          })
+          .reduce((s, g) => s + (g.points_earned || 0), 0)
+        result[phase.key] = pts
       })
+      setBreakdown(result)
+
+      // Status real do chaveamento por fase
+      const rawStatus = {}
+      TOURNAMENT_PHASES.forEach(phase => {
+        const m = (matchups || []).find(x => x.phase === phase.key && (x.player1_id === userId || x.player2_id === userId))
+        if (!m) { rawStatus[phase.key] = 'none'; return }
+        if (!m.winner_id) { rawStatus[phase.key] = 'pending'; return }
+        rawStatus[phase.key] = m.winner_id === userId ? 'won' : 'lost'
+      })
+      // Uma vez eliminado, todas as fases seguintes também contam como eliminado
+      const lostIdx = TOURNAMENT_PHASES.findIndex(ph => rawStatus[ph.key] === 'lost')
+      const finalStatus = {}
+      TOURNAMENT_PHASES.forEach((ph, idx) => {
+        finalStatus[ph.key] = (lostIdx !== -1 && idx > lostIdx) ? 'lost' : rawStatus[ph.key]
+      })
+      setStatus(finalStatus)
+    })
   }, [userId])
 
-  return breakdown
+  return { breakdown, status }
 }
 
 // Linha de um jogador no ranking do torneio
@@ -612,7 +633,7 @@ function TournamentRow({ profile, position, isMe, breakdown, phasesUnlocked }) {
 
   // Pontos acumulados nas fases que o jogador passou
   // tournament_points já é o acumulado salvo no banco — mas vamos mostrar o breakdown calculado
-  const phaseBreakdown = useTournamentBreakdown(expanded ? profile.id : null)
+  const { breakdown: phaseBreakdown, status: phaseStatus } = useTournamentBreakdown(expanded ? profile.id : null)
 
   return (
     <div style={{
@@ -661,17 +682,20 @@ function TournamentRow({ profile, position, isMe, breakdown, phasesUnlocked }) {
               {TOURNAMENT_PHASES.map((phase, idx) => {
                 const pts = phaseBreakdown[phase.key] || 0
                 const unlocked = idx < phasesUnlocked
-                const isCurrent = idx === phasesUnlocked - 1
-                const passed = pts > 0 // simplificação: se fez pontos na fase, estava nela
+                const st = phaseStatus?.[phase.key] || 'none'
+                const passed = st === 'won'
+                const eliminated = st === 'lost'
+                const pending = st === 'pending'
+                const isCurrent = pending && idx === phasesUnlocked - 1
 
                 return (
                   <div key={phase.key} style={{
                     display: 'flex', alignItems: 'center', gap: '10px',
                     padding: '6px 10px', borderRadius: '8px',
-                    background: pts > 0 ? 'rgba(168,85,247,0.1)' : 'rgba(255,255,255,0.02)',
+                    background: passed ? 'rgba(168,85,247,0.1)' : pending ? 'rgba(168,85,247,0.06)' : 'rgba(255,255,255,0.02)',
                     opacity: unlocked ? 1 : 0.4,
                   }}>
-                    <span style={{ fontSize: '11px', fontWeight: 700, color: pts > 0 ? '#c084fc' : 'var(--text-3)', minWidth: '64px' }}>
+                    <span style={{ fontSize: '11px', fontWeight: 700, color: passed || pending ? '#c084fc' : 'var(--text-3)', minWidth: '64px' }}>
                       {phase.label}
                     </span>
                     {isCurrent && (
@@ -680,12 +704,12 @@ function TournamentRow({ profile, position, isMe, breakdown, phasesUnlocked }) {
                       </span>
                     )}
                     <span style={{ flex: 1 }} />
-                    {/* Pontos da liga na fase */}
+                    {/* Pontos da liga na fase (sempre exibido, mesmo eliminado) */}
                     <span style={{ fontSize: '11px', color: 'var(--text-3)' }}>
                       {unlocked ? `${pts}pt na liga` : '—'}
                     </span>
-                    {/* Bônus do torneio se passou */}
-                    {unlocked && pts > 0 && (
+                    {/* Bônus do torneio se realmente classificou */}
+                    {unlocked && passed && (
                       <span style={{
                         fontSize: '12px', fontWeight: 700, color: '#c084fc',
                         background: 'rgba(168,85,247,0.15)', padding: '2px 8px', borderRadius: 8
@@ -693,8 +717,8 @@ function TournamentRow({ profile, position, isMe, breakdown, phasesUnlocked }) {
                         +{phase.bonus}
                       </span>
                     )}
-                    {unlocked && pts === 0 && (
-                      <span style={{ fontSize: '11px', color: 'var(--text-3)' }}>eliminado</span>
+                    {unlocked && eliminated && (
+                      <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--red)' }}>Eliminado</span>
                     )}
                   </div>
                 )
