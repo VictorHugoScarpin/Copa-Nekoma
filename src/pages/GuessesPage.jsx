@@ -1204,30 +1204,29 @@ function BracketSlot({ p, seed, dim = false, winner = false, isFinal = false }) 
   )
 
   return (
-    <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '8px', padding: '7px 10px', borderRadius: '8px', background: dim ? 'rgba(255,255,255,0.02)' : 'rgba(255,255,255,0.05)', border: `1px solid ${dim ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.1)'}`, opacity: dim ? 0.5 : 1 }}>
-      {winner && (
-        <div style={{
-          position: 'absolute', top: '-9px', right: '10px', zIndex: 2,
-          display: 'flex', alignItems: 'center', gap: '3px',
-          padding: isFinal ? '2px 9px' : '1px 7px',
-          borderRadius: '999px',
-          background: isFinal ? 'linear-gradient(90deg, var(--gold), var(--gold-bright))' : '#22c55e',
-          color: isFinal ? '#1a1200' : '#052e12',
-          fontSize: isFinal ? '10px' : '10px',
-          fontWeight: 800,
-          fontFamily: 'var(--font-display)',
-          letterSpacing: '0.05em',
-          boxShadow: '0 1px 5px rgba(0,0,0,0.45)',
-          whiteSpace: 'nowrap',
-        }}>
-          {isFinal ? '🏆 CAMPEÃO' : 'V'}
-        </div>
-      )}
+    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '7px 10px', borderRadius: '8px', background: dim ? 'rgba(255,255,255,0.02)' : 'rgba(255,255,255,0.05)', border: `1px solid ${dim ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.1)'}`, opacity: dim ? 0.5 : 1 }}>
       <div style={{ width: 20, flexShrink: 0, textAlign: 'center', fontSize: '9px', color: 'var(--text-3)', fontFamily: 'var(--font-display)' }}>{seed ? `${seed}º` : ''}</div>
       <Avatar profile={p} size={24} />
       <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
         {p.display_name || p.nick}
       </span>
+      {winner && (
+        <div style={{
+          flexShrink: 0,
+          display: 'flex', alignItems: 'center', gap: '3px',
+          padding: isFinal ? '2px 9px' : '1px 7px',
+          borderRadius: '999px',
+          background: isFinal ? 'linear-gradient(90deg, var(--gold), var(--gold-bright))' : '#22c55e',
+          color: isFinal ? '#1a1200' : '#052e12',
+          fontSize: '10px',
+          fontWeight: 800,
+          fontFamily: 'var(--font-display)',
+          letterSpacing: '0.05em',
+          whiteSpace: 'nowrap',
+        }}>
+          {isFinal ? '🏆 CAMPEÃO' : 'V'}
+        </div>
+      )}
     </div>
   )
 }
@@ -1235,7 +1234,7 @@ function BracketSlot({ p, seed, dim = false, winner = false, isFinal = false }) 
 function MatchupCard({ m1, m2, seed1, seed2, myId, winnerId, isFinal }) {
   const isMe = m1?.id === myId || m2?.id === myId
   return (
-    <div style={{ background: 'var(--surface)', borderRadius: '10px', border: `1px solid ${isMe ? 'rgba(168,85,247,0.4)' : 'var(--border)'}`, overflow: 'visible', marginBottom: '8px', marginTop: '6px' }}>
+    <div style={{ background: 'var(--surface)', borderRadius: '10px', border: `1px solid ${isMe ? 'rgba(168,85,247,0.4)' : 'var(--border)'}`, overflow: 'hidden', marginBottom: '8px' }}>
       <BracketSlot p={m1} seed={seed1} winner={!!winnerId && !!m1 && winnerId === m1.id} isFinal={isFinal} />
       <div style={{ height: '1px', background: 'var(--border)' }} />
       <BracketSlot p={m2} seed={seed2} winner={!!winnerId && !!m2 && winnerId === m2.id} isFinal={isFinal} />
