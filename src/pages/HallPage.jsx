@@ -249,33 +249,26 @@ function BoltIcon()   { return <svg width="18" height="18" viewBox="0 0 24 24" f
 function HandIcon()   { return <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M18 11V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v0"/><path d="M14 10V4a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v2"/><path d="M10 10.5V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/></svg> }
 function SkullIcon()  { return <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><path d="M8 20v2h8v-2"/><path d="m12.5 17-.5-1-.5 1h1z"/><path d="M16 20a2 2 0 0 0 1.956-2.4l-1.536-7.68A5 5 0 0 0 7.58 9.92L6.044 17.6A2 2 0 0 0 8 20Z"/></svg> }
 
-// Convenção do banco: 'LAST_N' = fase que decide quem sobra entre os últimos N times
-// (ex: LAST_16 = jogos que reduzem o campo a 16 = "dezesseis-avos"/rodada de 32;
-//  LAST_8 = oitavas de final; LAST_4 = quartas; LAST_2 = semifinal), seguido de 'Final'.
+// Convenção do banco (stage): 'LAST_16' = dezesseis-avos, 'LAST_8' = oitavas,
+// 'QUARTER_FINAL' = quartas, 'SEMI_FINAL' = semifinal, 'FINAL' = final,
+// 'THIRD_PLACE' = disputa de 3º lugar.
 // A cadeia é sempre projetada até a final (16→8→4→2→1), mesmo que as fases mais
 // avançadas ainda não tenham nenhum jogo cadastrado no banco — assim o chaveamento
 // inteiro aparece de uma vez, com "A definir" nas caixinhas que ainda não têm confronto.
-function buildStageChain(byStage) {
-  const discovered = Object.keys(byStage)
-    .map(s => { const m = /^LAST_(\d+)$/.exec(s); return m ? Number(m[1]) : null })
-    .filter(Boolean)
-  let n = discovered.length ? Math.max(...discovered) : 16
-  const chain = []
-  while (n >= 2) {
-    chain.push(`LAST_${n}`)
-    n = n / 2
-  }
-  chain.push('Final')
-  return chain
+function buildStageChain() {
+  return ['LAST_16', 'LAST_8', 'QUARTER_FINAL', 'SEMI_FINAL', 'FINAL']
 }
 
-const STAGE_LABEL_BY_N = { 32: 'Trinta e dois-avos', 16: 'Dezesseis-avos', 8: 'Oitavas de Final', 4: 'Quartas de Final', 2: 'Semifinal' }
+const STAGE_LABEL = {
+  LAST_16: 'Dezesseis-avos',
+  LAST_8: 'Oitavas de Final',
+  QUARTER_FINAL: 'Quartas de Final',
+  SEMI_FINAL: 'Semifinal',
+  FINAL: 'Final',
+}
 function stageLabel(stage) {
-  if (stage === 'Final') return 'Final'
-  if (stage === '3º Lugar') return 'Disputa de 3º Lugar'
-  const m = /^LAST_(\d+)$/.exec(stage)
-  if (m) return STAGE_LABEL_BY_N[Number(m[1])] || stage
-  return stage
+  if (stage === 'THIRD_PLACE') return 'Disputa de 3º Lugar'
+  return STAGE_LABEL[stage] || stage
 }
 
 export default function HallPage() {
@@ -792,8 +785,8 @@ function onWheelHorizontal(e) {
 }
 
 function MataMataView({ byStage }) {
-  const thirdPlace = byStage['3º Lugar']?.[0]
-  const chain = buildStageChain(byStage)
+  const thirdPlace = byStage['THIRD_PLACE']?.[0]
+  const chain = buildStageChain()
   const round32 = byStage[chain[0]] || []
 
   if (round32.length === 0 && !thirdPlace) {
