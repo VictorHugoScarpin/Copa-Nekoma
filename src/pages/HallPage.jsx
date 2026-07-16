@@ -706,22 +706,22 @@ function normTeam(name) {
 }
 // Slots 1 a 16, na ordem oficial da chave (par de posições consecutivas = 1 jogo das Oitavas)
 const ROUND32_ORDER = [
-  ['south africa', 'canada'],
-  ['netherlands', 'morocco'],
   ['germany', 'paraguay'],
   ['france', 'sweden'],
-  ['belgium', 'senegal'],
-  ['usa', 'bosnia'],
-  ['spain', 'austria'],
+  ['south africa', 'canada'],
+  ['netherlands', 'morocco'],
   ['portugal', 'croatia'],
+  ['spain', 'austria'],
+  ['usa', 'bosnia'],
+  ['belgium', 'senegal'],
   ['brazil', 'japan'],
   ['ivory coast', 'norway'],
   ['mexico', 'ecuador'],
   ['england', 'dr congo'],
+  ['argentina', 'cape verde'],
+  ['australia', 'egypt'],
   ['switzerland', 'algeria'],
   ['colombia', 'ghana'],
-  ['australia', 'egypt'],
-  ['argentina', 'cape verde'],
 ]
 function round32SlotIndex(match) {
   const a = normTeam(match.home_team)
