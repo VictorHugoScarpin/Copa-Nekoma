@@ -263,6 +263,11 @@ function GuessCard({ match, myGuess, onSave }) {
   const qualifierGuess = myGuess?.qualifier_guess
   const qualifierCorrect = knockout && finished && qualifierResult && qualifierGuess && qualifierGuess === qualifierResult
 
+  // Final e disputa de 3º lugar não têm "classificação" (não há próxima fase) —
+  // o rótulo vira "quem vence a partida", mas a mecânica (+2pts) é a mesma
+  const isWinnerOnlyMatch = match.stage === 'Final' || match.stage === '3º Lugar'
+  const qualifierLabel = isWinnerOnlyMatch ? 'Quem vence a partida?' : 'Quem se classifica?'
+
   let totalPts = null
   if (finished && myGuess) {
     let pts = correct ? 3 : partialCorrect ? 1 : 0
@@ -401,7 +406,7 @@ function GuessCard({ match, myGuess, onSave }) {
             {knockout && (
               <div style={{ marginTop: '14px', padding: '12px 14px', borderRadius: '10px', background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.25)' }}>
                 <div style={{ fontSize: '10px', fontWeight: 700, color: '#60a5fa', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '10px' }}>
-                  Quem se classifica? <span style={{ fontSize: '9px', color: 'rgba(96,165,250,0.6)', fontWeight: 400 }}>+2pts bônus</span>
+                  {qualifierLabel} <span style={{ fontSize: '9px', color: 'rgba(96,165,250,0.6)', fontWeight: 400 }}>+2pts bônus</span>
                 </div>
                 {finished ? (
                   <div style={{ display: 'flex', gap: '8px' }}>
