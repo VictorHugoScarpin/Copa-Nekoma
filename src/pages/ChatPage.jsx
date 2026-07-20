@@ -7,6 +7,9 @@ import { ptBR } from 'date-fns/locale'
 const MAX_CHARS = 200
 const COOLDOWN_MS = 5000
 
+// Chat encerrado em 20/07 (fim do bolão). Pra reabrir um dia, é só voltar isso pra false.
+const CHAT_ENCERRADO = true
+
 function Avatar({ profile, size = 32 }) {
   if (profile?.avatar_url) {
     return <img src={profile.avatar_url} alt="" style={{ width: size, height: size, borderRadius: '50%', objectFit: 'cover', flexShrink: 0, border: '1.5px solid var(--border-strong)' }} />
@@ -212,7 +215,7 @@ export default function ChatPage() {
       </div>
 
       {/* Preview de mídia antes de enviar */}
-      {mediaPreview && (
+      {!CHAT_ENCERRADO && mediaPreview && (
         <div style={{ position: 'relative', marginBottom: 8, display: 'inline-block' }}>
           {mediaPreview.type === 'image'
             ? <img src={mediaPreview.url} alt="" style={{ maxHeight: 140, maxWidth: '100%', borderRadius: 10, display: 'block' }} />
@@ -225,7 +228,16 @@ export default function ChatPage() {
         </div>
       )}
 
-      {/* Input fixo */}
+      {/* Input fixo — ou aviso de chat encerrado */}
+      {CHAT_ENCERRADO ? (
+        <div style={{
+          textAlign: 'center', padding: '14px 12px', borderTop: '1px solid var(--border)',
+          marginTop: 8, color: 'var(--text-3)', fontSize: 12.5,
+          paddingBottom: 'max(14px, env(safe-area-inset-bottom, 14px))',
+        }}>
+          Esse chat foi encerrado em 20/07. Foi bom enquanto durou! 🏆
+        </div>
+      ) : (
       <div style={{
         display: 'flex', gap: 8, alignItems: 'flex-end',
         padding: '10px 0', borderTop: '1px solid var(--border)', marginTop: 8,
@@ -267,6 +279,7 @@ export default function ChatPage() {
           {cooldown > 0 ? `${Math.ceil(cooldown / 1000)}s` : sending ? '...' : 'Enviar'}
         </button>
       </div>
+      )}
     </div>
   )
 }
