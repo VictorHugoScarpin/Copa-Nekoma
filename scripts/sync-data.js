@@ -185,6 +185,17 @@ async function recalcMatchPoints(matchId, homeScore, awayScore, qualifierResult,
     affectedUsers.add(g.user_id)
   }
 
+  // Bônus do palpite mestre não fica em `guesses` — fica em `master_guess`,
+  // uma linha por usuário. Busca tudo de uma vez pra somar no total de cada um.
+  const { data: masterGuesses } = await supabase
+    .from('master_guess')
+    .select('user_id, points_earned')
+    .in('user_id', [...affectedUsers])
+
+  const masterBonusByUser = new Map(
+    (masterGuesses || []).map(mg => [mg.user_id, mg.points_earned ?? 0])
+  )
+
   for (const userId of affectedUsers) {
     const { data: allGuesses } = await supabase
       .from('guesses')
@@ -207,6 +218,9 @@ async function recalcMatchPoints(matchId, homeScore, awayScore, qualifierResult,
       const isKo = new Date(String(m.match_date).replace(' ', 'T')) >= KNOCKOUT_START
       if (isKo && m.qualifier_result && ag.qualifier_guess === m.qualifier_result) totalQualifier++
     }
+
+    // Inclui o bônus do palpite mestre no total, senão ele some no próximo recalc
+    totalPts += masterBonusByUser.get(userId) ?? 0
 
     await supabase.from('profiles').update({
       points: totalPts,
