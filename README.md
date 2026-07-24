@@ -1,75 +1,96 @@
-# 🏆 Bolão Copa
-
-O **Bolão Copa** é uma plataforma interativa, dinâmica e moderna desenvolvida para transformar a experiência de acompanhar grandes competições esportivas em um verdadeiro torneio de engajamento, estratégia e rivalidade saudável entre amigos e familiares.
-
+Bolao Copa
+Bolao Copa is an interactive platform developed to support prediction-based competitions ("tipping pools") among groups of participants during major sporting tournaments. The system centralizes match scheduling, prediction submission, automated scoring, and participant ranking, complemented by supplementary engagement features such as a quiz module and real-time chat.
 ---
-
-## 📖 A História e Evolução do Projeto
-
-O projeto nasceu de uma ideia despretensiosa: criar um sistema de palpites simples para um grupo restrito de 5 a 7 pessoas do **Servidor Nekoma**. No entanto, à medida que as linhas de código ganhavam forma, o entusiasmo transbordou o servidor. 
-
-O sistema foi aberto para amigos e familiares próximos, escalando rapidamente para **mais de 20 usuários ativos** competindo diretamente. O que era para ser apenas um controle de palpites individual evoluiu para um ecossistema completo de entretenimento interativo, impulsionado pela paixão por tecnologia e futebol — com direito a **prêmios reais** para os melhores colocados!
-
-Inicialmente concebido apenas como um "Bolão tradicional", o ciclo de desenvolvimento transformou o projeto em um hub de jogos. Ao longo das sprints, foram aplicados conceitos avançados e novas features, como um **Fantasy Game**, sistemas de **Quizzes dinâmicos** e interações síncronas.
-
+Project Background
+The project originated as a lightweight prediction tracker intended for a small group of 5 to 7 participants within the Nekoma community server. As development progressed, the scope expanded to accommodate more than 20 active users competing simultaneously, with real-world prizes awarded to top-performing participants.
+What began as a straightforward tipping pool evolved, across successive development iterations, into a broader entertainment hub encompassing a Fantasy Game mode, a dynamic quiz system, and synchronous chat functionality.
 ---
-
-## 🚀 Funcionalidades da Versão Final
-
-A versão estável e final da plataforma conta com uma arquitetura modularizada e recursos premium voltados para a experiência do usuário (UX):
-
-* 📅 **Matches Page (Datas dos Jogos):** Um calendário completo e automatizado exibindo as datas, horários e confrontos da competição para que ninguém perca o prazo de registrar suas apostas.
-* 🔮 **Guesses Page (Palpites):** A central onde a mágica acontece. Uma interface intuitiva para salvar e atualizar os palpites de cada partida antes do apito inicial.
-* 📊 **Ranking & Tabela de Classificação:** Um ecossistema de pontuação automatizado que processa os resultados reais, atualiza a tabela de classificação e gera o ranking dos participantes em tempo real.
-* 🧠 **Quiz Premiado:** Sistema de perguntas e respostas dinâmicas integrado à plataforma, valendo pontuações extras e recompensas físicas/reais para testar o conhecimento dos competidores.
-* 💬 **Chat em Tempo Real:** Uma sala de bate-papo integrada diretamente no sistema utilizando **Supabase Realtime**, permitindo resenhas, provocações e discussões sobre os jogos instantaneamente à medida que os gols acontecem.
-
+Core Features
+The platform's stable release includes the following modules:
+Matches Page: An automated schedule displaying tournament fixtures, dates, and kickoff times, allowing participants to track submission deadlines for their predictions.
+Guesses Page: The primary interface for submitting and updating predictions for each match prior to kickoff.
+Ranking and Leaderboard: An automated scoring engine that processes official match results, updates standings, and generates participant rankings in real time.
+Quiz Module: A dynamic question-and-answer system integrated into the platform, awarding bonus points and additional rewards to participants.
+Real-Time Chat: An integrated chat room built on Supabase Realtime, enabling instant discussion and commentary among participants as matches unfold.
 ---
-
-## 🛠️ Stack Tecnológica
-
-O projeto foi construído utilizando as ferramentas mais modernas do ecossistema JavaScript/TypeScript, visando performance extrema, design responsivo e banco de dados reativo:
-
-* **Frontend:** [React](https://react.dev/) + [Vite](https://vitejs.dev/) (Garantindo builds instantâneos e SPA de alta performance)
-* **Estilização:** Tailwind CSS / Custom CSS (Design moderno, limpo e imersivo)
-* **Backend & Banco de Dados:** [Supabase](https://supabase.com/) (Autenticação, PostgreSQL e **Realtime WebSockets** para o Chat)
-* **Automação & Infra:** GitHub Actions (Workflows customizados e automatizados para manutenção e deploys controlados via `workflow_dispatch`)
-
+Technology Stack
+The project is built using the following technologies, selected for performance, responsive design, and reactive data handling:
+Frontend: React with Vite, providing fast build times and a high-performance single-page application.
+Styling: Tailwind CSS and custom CSS for a modern, clean interface.
+Backend and Database: Supabase, providing authentication, PostgreSQL storage, and Realtime WebSocket support for the chat feature.
+Automation and Infrastructure: GitHub Actions, used for custom, manually triggered maintenance and deployment workflows.
 ---
-
-## ⚙️ Configuração e Instalação
-
-Caso queira rodar o projeto localmente para testes ou desenvolvimento:
-
-1. **Clone o repositório:**
-   ```bash
-   git clone [https://github.com/seu-usuario/bol-o-copa.git](https://github.com/seu-usuario/bol-o-copa.git)
+Setup and Installation
+To run the project locally for testing or development:
+Clone the repository:
+```bash
+   git clone https://github.com/seu-usuario/bol-o-copa.git
    cd bol-o-copa
    ```
-
-2. **Instale as dependências:**
-   ```bash
+Install dependencies:
+```bash
    npm install
    ```
+Configure environment variables:
+Create a `.env` file in the project root with the following Supabase credentials:
+```env
+   VITE_SUPABASE_URL=your_supabase_url
+   VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+   ```
+Start the development server:
+```bash
+   npm run dev
+   ```
+---
+Maintenance Scripts (GitHub Actions)
+The repository includes GitHub Actions workflows for periodic maintenance tasks. The chat cleanup script, for example, is configured to run exclusively via manual trigger (`workflow_dispatch`), ensuring that administrators retain full control over database operations without unintended automated interference affecting the user experience.
 
-3. **Configure as Variáveis de Ambiente (`.env`):**
-   Crie um arquivo `.env` na raiz do projeto e adicione suas credenciais do Supabase:
-   ```env
+---
+
+
+Bolão Copa
+O Bolão Copa é uma plataforma interativa desenvolvida para viabilizar competições de palpites entre grupos de participantes durante grandes torneios esportivos. O sistema centraliza o calendário de partidas, o registro de palpites, a apuração automatizada de pontuação e a classificação dos participantes, complementados por funcionalidades adicionais de engajamento, como um módulo de quiz e chat em tempo real.
+---
+Histórico do Projeto
+O projeto teve origem como um sistema simples de controle de palpites, destinado a um grupo restrito de 5 a 7 participantes do servidor da comunidade Nekoma. Com o avanço do desenvolvimento, o escopo foi ampliado para atender mais de 20 usuários ativos competindo simultaneamente, com premiações reais destinadas aos participantes mais bem colocados.
+O que começou como um bolão tradicional evoluiu, ao longo de sucessivos ciclos de desenvolvimento, para um hub de entretenimento mais amplo, incorporando um modo Fantasy Game, um sistema dinâmico de quiz e funcionalidades de chat síncrono.
+---
+Funcionalidades Principais
+A versão estável da plataforma inclui os seguintes módulos:
+Página de Partidas: Calendário automatizado exibindo os confrontos, datas e horários da competição, permitindo que os participantes acompanhem os prazos para registro de seus palpites.
+Página de Palpites: Interface principal para registro e atualização dos palpites de cada partida antes do início do jogo.
+Ranking e Classificação: Motor de pontuação automatizado que processa os resultados oficiais das partidas, atualiza a tabela de classificação e gera o ranking dos participantes em tempo real.
+Módulo de Quiz: Sistema dinâmico de perguntas e respostas integrado à plataforma, concedendo pontos extras e recompensas adicionais aos participantes.
+Chat em Tempo Real: Sala de bate-papo integrada, construída sobre o Supabase Realtime, permitindo discussões e comentários instantâneos entre os participantes durante as partidas.
+---
+Stack Tecnológica
+O projeto foi construído utilizando as seguintes tecnologias, selecionadas por performance, design responsivo e manipulação reativa de dados:
+Frontend: React com Vite, garantindo builds rápidos e uma aplicação single-page de alta performance.
+Estilização: Tailwind CSS e CSS customizado, proporcionando uma interface moderna e limpa.
+Backend e Banco de Dados: Supabase, responsável por autenticação, armazenamento em PostgreSQL e suporte a WebSockets em tempo real para o recurso de chat.
+Automação e Infraestrutura: GitHub Actions, utilizado para workflows customizados de manutenção e deploy, acionados manualmente.
+---
+Configuração e Instalação
+Para executar o projeto localmente em ambiente de testes ou desenvolvimento:
+Clone o repositório:
+```bash
+   git clone https://github.com/seu-usuario/bol-o-copa.git
+   cd bol-o-copa
+   ```
+Instale as dependências:
+```bash
+   npm install
+   ```
+Configure as variáveis de ambiente:
+Crie um arquivo `.env` na raiz do projeto com as seguintes credenciais do Supabase:
+```env
    VITE_SUPABASE_URL=sua_supabase_url
    VITE_SUPABASE_ANON_KEY=sua_supabase_anon_key
    ```
-
-4. **Inicie o servidor de desenvolvimento:**
-   ```bash
+Inicie o servidor de desenvolvimento:
+```bash
    npm run dev
    ```
-
 ---
-
-## 🛡️ Scripts de Manutenção (GitHub Actions)
-
-O repositório possui fluxos de trabalho configurados no GitHub Actions para manutenções pontuais. Por exemplo, o script de limpeza de chat foi estruturado para rodar **exclusivamente de forma manual** (`workflow_dispatch`), garantindo que os administradores tenham controle absoluto sobre o banco de dados sem automações indesejadas que possam atrapalhar a experiência dos usuários.
-
----
-
-*Desenvolvido com 💻, ⚽ e muita resenha no Servidor Nekoma.*
+Scripts de Manutenção (GitHub Actions)
+O repositório conta com workflows do GitHub Actions destinados a tarefas de manutenção periódica. O script de limpeza do chat, por exemplo, é configurado para execução exclusivamente manual (`workflow_dispatch`), garantindo que os administradores mantenham controle total sobre as operações no banco de dados, sem interferências automatizadas indesejadas que possam impactar a experiência dos usuários.
